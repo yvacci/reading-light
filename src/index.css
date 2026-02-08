@@ -128,3 +128,52 @@
   background: hsl(var(--muted-foreground) / 0.3);
   border-radius: 2px;
 }
+
+/* Bible content styling */
+.bible-content {
+  color: hsl(var(--foreground));
+  word-wrap: break-word;
+}
+
+.bible-content h1,
+.bible-content h2,
+.bible-content h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.bible-content h1 { font-size: 1.3em; }
+.bible-content h2 { font-size: 1.15em; }
+.bible-content h3 { font-size: 1.05em; }
+
+.bible-content p {
+  margin-bottom: 0.4em;
+  text-align: justify;
+}
+
+.bible-content .verse-num,
+.bible-content sup {
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-size: 0.7em;
+  margin-right: 2px;
+  vertical-align: super;
+}
+
+.bible-content a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+}
+
+.bible-content img {
+  display: none; /* Hide EPUB images that may not load */
+}
+
+/* Hide EPUB navigation elements that may leak into content */
+.bible-content nav,
+.bible-content .navPublications,
+.bible-content .directNav {
+  display: none;
+}
