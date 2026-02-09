@@ -60,21 +60,22 @@ function resolveBookId(name: string): number | null {
 
 /**
  * Parse Bible verse references from text content.
- * Matches patterns like "Genesis 1:1", "Gen. 1:1", "1 Cor. 3:16", "Mga Awit 23:1", etc.
+ * Handles patterns like "Genesis 1:1", "Gen. 1:1", "1 Cor. 3:16", "Mga Awit 23:1",
+ * "Juan 3:16, 17", "Roma 5:12; 6:23", "Genesis 1:1-4", "1 Cronica 1:1-4", etc.
  */
 export function parseVerseReferences(text: string): ParsedReference[] {
   const references: ParsedReference[] = [];
   
-  // Pattern: (optional number prefix) BookName (optional dot) Chapter:Verse(s)
-  // Also handle "BookName Chapter:Verse-Verse" and "BookName Chapter:Verse, Verse"
-  const refPattern = /(?:(\d)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]+(?:\s+[A-Za-zÀ-ÿ]+)?)\s*\.?\s+(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–,]\s*\d{1,3})*/g;
+  // Pattern: (optional number prefix) BookName (optional dot) Chapter:Verse(s) with ranges/lists
+  // Also match references without verse (just chapter) like "Genesis 6" or "Genesis 4, 5"
+  const refPattern = /(?:(\d)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]+(?:\s+(?:ng|ni)\s+[A-Za-zÀ-ÿ]+)?(?:\s+[A-Za-zÀ-ÿ]+)?)\s*\.?\s+(\d{1,3})(?:\s*:\s*(\d{1,3}))?(?:\s*[-–]\s*(\d{1,3}))?(?:\s*,\s*(\d{1,3}))*(?:\s*;\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)*/g;
   
   let match;
   while ((match = refPattern.exec(text)) !== null) {
     const numPrefix = match[1] || '';
     const bookName = (numPrefix ? numPrefix + ' ' : '') + match[2].replace(/\.$/, '').trim();
     const chapter = parseInt(match[3]);
-    const verse = parseInt(match[4]);
+    const verse = match[4] ? parseInt(match[4]) : undefined;
     
     const bookId = resolveBookId(bookName);
     if (bookId) {
@@ -86,6 +87,42 @@ export function parseVerseReferences(text: string): ParsedReference[] {
           verse,
           originalText: match[0].trim(),
         });
+      }
+    }
+  }
+  
+  // Also catch semicolon-separated follow-up references in the same text
+  // e.g. after "Roma 5:12" there might be "; 6:23" which gets missed
+  const semiPattern = /([A-Za-zÀ-ÿ][\w\s.]+?)\s+(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*\d{1,3})?(?:\s*;\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*\d{1,3})?)+/g;
+  let semiMatch;
+  while ((semiMatch = semiPattern.exec(text)) !== null) {
+    const numPrefixMatch = semiMatch[1].match(/^(\d)\s+(.*)/);
+    const bookName = numPrefixMatch 
+      ? numPrefixMatch[1] + ' ' + numPrefixMatch[2].replace(/\.$/, '').trim()
+      : semiMatch[1].replace(/\.$/, '').trim();
+    const bookId = resolveBookId(bookName);
+    if (!bookId) continue;
+    const book = BIBLE_BOOKS.find(b => b.id === bookId);
+    if (!book) continue;
+    
+    // Extract all ch:v pairs after semicolons
+    const fullText = semiMatch[0];
+    const semiParts = fullText.split(/;\s*/);
+    for (let i = 1; i < semiParts.length; i++) {
+      const cvMatch = semiParts[i].match(/(\d{1,3})\s*:\s*(\d{1,3})/);
+      if (cvMatch) {
+        const ch = parseInt(cvMatch[1]);
+        const v = parseInt(cvMatch[2]);
+        if (ch >= 1 && ch <= book.chapters) {
+          // Check not already found
+          const alreadyFound = references.some(r => r.bookId === bookId && r.chapter === ch && r.verse === v);
+          if (!alreadyFound) {
+            references.push({
+              bookId, chapter: ch, verse: v,
+              originalText: semiParts[i].trim(),
+            });
+          }
+        }
       }
     }
   }

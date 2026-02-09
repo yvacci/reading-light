@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
+import { getChapterEvents } from '@/lib/bible-events';
 import { t } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
@@ -73,21 +74,51 @@ export default function HomePage() {
               <span className="text-xs font-semibold text-foreground">{t('home.todaysReading', language)}</span>
             </div>
             <div className="space-y-2">
-              {todaysReading.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate(`/reader/${item.bookId}/${item.chapter}`)}
-                  className="flex w-full items-center gap-3 rounded-xl bg-muted/50 px-3 py-2.5 text-left transition-colors hover:bg-muted"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                    {i + 1}
+              {todaysReading.map((item, i) => {
+                const events = getChapterEvents(item.bookId, item.chapter, language);
+                return (
+                  <div key={i} className="rounded-xl bg-muted/50 overflow-hidden">
+                    <button
+                      onClick={() => navigate(`/reader/${item.bookId}/${item.chapter}`)}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                        {i + 1}
+                      </div>
+                      <span className="text-sm font-medium text-foreground flex-1">
+                        {getLocalizedBookName(item.bookId, language)} {item.chapter}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                    {events && (
+                      <div className="px-3 pb-2.5 pl-14">
+                        {events.events && events.events.length > 0 && (
+                          <div className="space-y-0.5">
+                            {events.events.map((ev, j) => (
+                              <div key={j} className="flex items-start gap-1.5">
+                                <Calendar className="h-3 w-3 text-primary/70 mt-0.5 shrink-0" />
+                                <p className="text-[10px] text-muted-foreground">
+                                  <span className="font-bold">{ev.year}</span> {ev.event}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {events.locations && events.locations.length > 0 && (
+                          <div className="mt-0.5">
+                            {events.locations.map((loc, j) => (
+                              <div key={j} className="flex items-start gap-1.5">
+                                <MapPin className="h-3 w-3 text-primary/70 mt-0.5 shrink-0" />
+                                <p className="text-[10px] text-muted-foreground">{loc.location}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-foreground">
-                    {getLocalizedBookName(item.bookId, language)} {item.chapter}
-                  </span>
-                  <ArrowRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}

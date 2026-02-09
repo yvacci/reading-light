@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle } from 'lucide-react';
+import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
@@ -261,6 +261,23 @@ export default function SettingsPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </div>
+        </section>
+
+        {/* Reading Plans */}
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('plans.title', language)}</h2>
+          <div className="rounded-2xl border border-border bg-card">
+            <button
+              onClick={() => navigate('/plans')}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl"
+            >
+              <CalendarDays className="h-4 w-4 text-primary" />
+              <div>
+                <span className="text-sm font-medium text-foreground">{t('plans.title', language)}</span>
+                <p className="text-[10px] text-muted-foreground">{t('plans.subtitle', language)}</p>
+              </div>
+            </button>
           </div>
         </section>
 
