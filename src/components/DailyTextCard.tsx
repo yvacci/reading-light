@@ -74,10 +74,11 @@ export default function DailyTextCard() {
   if (!dailyText) return null;
 
   const fullHtml = makeReferencesClickable(dailyText.content);
-  const truncatedContent = dailyText.content.length > 200
-    ? dailyText.content.slice(0, 200) + '…'
+  const truncLen = 300;
+  const truncatedContent = dailyText.content.length > truncLen
+    ? dailyText.content.slice(0, truncLen) + '…'
     : dailyText.content;
-  const truncatedHtml = dailyText.content.length > 200
+  const truncatedHtml = dailyText.content.length > truncLen
     ? makeReferencesClickable(truncatedContent)
     : fullHtml;
 
@@ -108,7 +109,7 @@ export default function DailyTextCard() {
             dangerouslySetInnerHTML={{ __html: expanded ? fullHtml : truncatedHtml }}
           />
 
-          {dailyText.content.length > 200 && (
+          {dailyText.content.length > truncLen && (
             <button
               onClick={() => setExpanded(!expanded)}
               className="mt-2 flex items-center gap-1 text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"

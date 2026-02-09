@@ -113,10 +113,13 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
 
         const afterDate = cleanText.substring(cleanText.indexOf(dateMatch[0]) + dateMatch[0].length).trim();
         
-        const titleMatch = afterDate.match(/^["""]?([^"""\n.]{5,120})["""]?/);
-        const title = titleMatch ? titleMatch[1].trim() : '';
+        // Extract title: look for quoted text or first sentence (more generous matching)
+        const titleMatch = afterDate.match(/^["""\u201C]?([^"""\u201D\n]{5,200})["""\u201D]?/);
+        const title = titleMatch ? titleMatch[1].trim().replace(/["""\u201C\u201D]/g, '') : '';
         
-        const content = afterDate.slice(title.length).trim().slice(0, 1500);
+        // Get full remaining content (increased limit to capture all text)
+        const contentStart = title.length > 0 ? afterDate.indexOf(title) + title.length : 0;
+        const content = afterDate.slice(contentStart).trim().replace(/^["""\u201C\u201D.,;\s]+/, '').slice(0, 3000);
 
         entries.push({ date: mmdd, title, content });
       }

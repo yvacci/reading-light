@@ -101,6 +101,9 @@ const strings: Strings = {
   'plans.title': { tg: 'Mga Plano sa Pagbabasa', en: 'Reading Plans' },
   'plans.subtitle': { tg: 'Piliin kung paano basahin ang Bibliya', en: 'Choose how to read the Bible' },
   'plans.readingSpeed': { tg: 'Bilis ng Pagbabasa', en: 'Reading Speed' },
+  'plans.targetDate': { tg: 'Target na Petsa ng Pagtatapos', en: 'Target Completion Date' },
+  'plans.chaptersRemaining': { tg: 'natitirang kabanata', en: 'chapters remaining' },
+  'plans.chaptersPerDay': { tg: 'kabanata/araw', en: 'chapters/day' },
 
   // Settings
   'settings.title': { tg: 'Mga Setting', en: 'Settings' },
