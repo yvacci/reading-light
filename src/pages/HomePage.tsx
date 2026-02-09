@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
 import { Progress } from '@/components/ui/progress';
@@ -144,6 +144,13 @@ export default function HomePage() {
           >
             <Bookmark className="h-6 w-6 text-primary" />
             <span className="text-xs font-medium text-foreground">Bookmarks</span>
+          </button>
+          <button
+            onClick={() => navigate('/journal')}
+            className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+          >
+            <PenLine className="h-6 w-6 text-primary" />
+            <span className="text-xs font-medium text-foreground">Journal</span>
           </button>
           <button
             onClick={() => navigate('/progress')}
