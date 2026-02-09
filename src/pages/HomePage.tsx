@@ -3,13 +3,15 @@ import { motion } from 'framer-motion';
 import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
 import ReadingStreakCard from '@/components/ReadingStreakCard';
+import DailyTextCard from '@/components/DailyTextCard';
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { getOverallProgress, lastRead, getTodaysReading } = useReadingProgress();
+  const { getOverallProgress, lastRead, getTodaysReading, language } = useReadingProgress();
   const overall = getOverallProgress();
   const lastBook = lastRead ? getBookById(lastRead.bookId) : null;
   const todaysReading = getTodaysReading();
@@ -25,7 +27,7 @@ export default function HomePage() {
         >
           <p className="text-xs font-medium uppercase tracking-widest text-primary">NWT Reading Planner</p>
           <h1 className="mt-1 text-3xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Bagong Sanlibutang<br />Salin
+            {language === 'en' ? 'New World\nTranslation' : 'Bagong Sanlibutang\nSalin'}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Track your Bible reading progress
@@ -34,6 +36,9 @@ export default function HomePage() {
       </div>
 
       <div className="space-y-4 px-4 pt-5">
+        {/* Daily Text - first section */}
+        <DailyTextCard />
+
         {/* Overall Progress Card */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -77,7 +82,7 @@ export default function HomePage() {
                     {i + 1}
                   </div>
                   <span className="text-sm font-medium text-foreground">
-                    {item.bookName} {item.chapter}
+                    {getLocalizedBookName(item.bookId, language)} {item.chapter}
                   </span>
                   <ArrowRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
                 </button>
@@ -101,7 +106,7 @@ export default function HomePage() {
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">Continue Reading</p>
               <p className="text-sm font-semibold text-foreground">
-                {lastBook.name} {lastRead.chapter}
+                {getLocalizedBookName(lastRead.bookId, language)} {lastRead.chapter}
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
