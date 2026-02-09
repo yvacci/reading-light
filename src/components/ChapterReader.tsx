@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -13,15 +13,20 @@ interface Props {
   chapter: number;
 }
 
+const SWIPE_THRESHOLD = 60;
+const SWIPE_MAX_Y = 80;
+
 export default function ChapterReader({ bookId, chapter }: Props) {
   const navigate = useNavigate();
   const book = getBookById(bookId);
   const { isChapterRead, toggleChapterRead, setLastRead, fontSize, language, addReadingTime } = useReadingProgress();
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const read = isChapterRead(bookId, chapter);
 
   // Track reading time
@@ -29,7 +34,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     timerRef.current = 0;
     intervalRef.current = setInterval(() => {
       timerRef.current += 10;
-    }, 10000); // increment every 10 seconds
+    }, 10000);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -62,18 +67,51 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     setLoading(false);
   }
 
-  function goToChapter(delta: number) {
+  const goToChapter = useCallback((delta: number) => {
     const newCh = chapter + delta;
     if (book && newCh >= 1 && newCh <= book.chapters) {
+      setSlideDirection(delta > 0 ? 'left' : 'right');
       navigate(`/reader/${bookId}/${newCh}`, { replace: true });
     } else if (delta > 0) {
       const nextBook = BIBLE_BOOKS.find(b => b.id === bookId + 1);
-      if (nextBook) navigate(`/reader/${nextBook.id}/1`, { replace: true });
+      if (nextBook) {
+        setSlideDirection('left');
+        navigate(`/reader/${nextBook.id}/1`, { replace: true });
+      }
     } else if (delta < 0) {
       const prevBook = BIBLE_BOOKS.find(b => b.id === bookId - 1);
-      if (prevBook) navigate(`/reader/${prevBook.id}/${prevBook.chapters}`, { replace: true });
+      if (prevBook) {
+        setSlideDirection('right');
+        navigate(`/reader/${prevBook.id}/${prevBook.chapters}`, { replace: true });
+      }
     }
-  }
+  }, [book, bookId, chapter, navigate]);
+
+  // Swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+    touchStartRef.current = null;
+
+    // Only trigger if horizontal swipe is dominant and exceeds threshold
+    if (deltaY > SWIPE_MAX_Y) return;
+    if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+    if (deltaX < 0) {
+      // Swipe left → next chapter
+      goToChapter(1);
+    } else {
+      // Swipe right → previous chapter
+      goToChapter(-1);
+    }
+  }, [goToChapter]);
 
   function openReference() {
     const url = getWolUrl(bookId, chapter, language);
@@ -81,6 +119,18 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }
 
   if (!book) return null;
+
+  const slideVariants = {
+    enter: (dir: 'left' | 'right' | null) => ({
+      x: dir === 'left' ? 80 : dir === 'right' ? -80 : 0,
+      opacity: 0,
+    }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: 'left' | 'right' | null) => ({
+      x: dir === 'left' ? -80 : dir === 'right' ? 80 : 0,
+      opacity: 0,
+    }),
+  };
 
   return (
     <div className="min-h-screen pb-24">
@@ -112,31 +162,43 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         }
       />
 
-      <motion.div
-        ref={contentRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="px-5 py-4"
-        style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="min-h-[60vh]"
       >
-        {loading ? (
-          <div className="space-y-3 py-4">
-            {Array.from({ length: 10 }).map((_, i) => (
+        <AnimatePresence mode="wait" custom={slideDirection}>
+          <motion.div
+            key={`${bookId}-${chapter}`}
+            ref={contentRef}
+            custom={slideDirection}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="px-5 py-4"
+            style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
+          >
+            {loading ? (
+              <div className="space-y-3 py-4">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-4 animate-pulse rounded bg-muted"
+                    style={{ width: `${60 + Math.random() * 40}%` }}
+                  />
+                ))}
+              </div>
+            ) : (
               <div
-                key={i}
-                className="h-4 animate-pulse rounded bg-muted"
-                style={{ width: `${60 + Math.random() * 40}%` }}
+                className="bible-content"
+                dangerouslySetInnerHTML={{ __html: content }}
               />
-            ))}
-          </div>
-        ) : (
-          <div
-            className="bible-content"
-            dangerouslySetInnerHTML={{ __html: content }}
-          />
-        )}
-      </motion.div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Chapter nav */}
       <div className="fixed bottom-16 left-0 right-0 flex items-center justify-between border-t border-border bg-card/95 px-4 py-2 backdrop-blur-lg safe-bottom">
