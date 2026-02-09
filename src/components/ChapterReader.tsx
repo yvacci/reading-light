@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
 import { loadChapter, initEpub } from '@/lib/epub-service';
@@ -35,12 +36,16 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [selectedText, setSelectedText] = useState('');
   const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
   const [footnotes, setFootnotes] = useState<Footnote[]>([]);
+  const [highlightedFootnote, setHighlightedFootnote] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const read = isChapterRead(bookId, chapter);
   const bookmarked = isBookmarked(bookId, chapter);
+
+  // Localized book name
+  const localizedName = getLocalizedBookName(bookId, language);
 
   // Track reading time
   useEffect(() => {
@@ -62,13 +67,14 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     doLoad();
   }, [bookId, chapter, language]);
 
-  // Add verse tap handlers after content loads
+  // Add verse tap handlers and footnote marker handlers after content loads
   useEffect(() => {
     if (loading || !contentRef.current) return;
 
     const container = contentRef.current;
-    const verseElements = container.querySelectorAll('[data-verse]');
 
+    // Verse tap handlers
+    const verseElements = container.querySelectorAll('[data-verse]');
     const handleVerseTap = (e: Event) => {
       const el = e.currentTarget as HTMLElement;
       const verseNum = parseInt(el.getAttribute('data-verse') || '0');
@@ -85,15 +91,34 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       (el as HTMLElement).style.cursor = 'pointer';
     });
 
+    // Footnote marker tap handlers
+    const footnoteMarkers = container.querySelectorAll('.footnote-marker[data-fn-id]');
+    const handleFootnoteTap = (e: Event) => {
+      e.stopPropagation();
+      const el = e.currentTarget as HTMLElement;
+      const fnId = el.getAttribute('data-fn-id');
+      if (fnId) {
+        setHighlightedFootnote(fnId);
+      }
+    };
+
+    footnoteMarkers.forEach(el => {
+      el.addEventListener('click', handleFootnoteTap);
+    });
+
     return () => {
       verseElements.forEach(el => {
         el.removeEventListener('click', handleVerseTap);
+      });
+      footnoteMarkers.forEach(el => {
+        el.removeEventListener('click', handleFootnoteTap);
       });
     };
   }, [loading, content]);
 
   async function doLoad() {
     setLoading(true);
+    setHighlightedFootnote(null);
     try {
       await initEpub(language);
       const html = await loadChapter(bookId, chapter, language);
@@ -103,12 +128,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         setContent(addVerseDataAttributes(cleanHtml));
         setFootnotes(parsedFootnotes);
       } else {
-        setContent(placeholderHtml(bookId, chapter));
+        setContent(placeholderHtml(bookId, chapter, localizedName));
         setFootnotes([]);
       }
     } catch (err) {
       console.error('[Reader] Error:', err);
-      setContent(placeholderHtml(bookId, chapter));
+      setContent(placeholderHtml(bookId, chapter, localizedName));
     }
     setLoading(false);
   }
@@ -174,6 +199,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  const handleClearHighlight = useCallback(() => {
+    setHighlightedFootnote(null);
+  }, []);
+
   if (!book) return null;
 
   const slideVariants = {
@@ -191,7 +220,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   return (
     <div className="min-h-screen pb-24">
       <PageHeader
-        title={`${book.name} ${chapter}`}
+        title={`${localizedName} ${chapter}`}
         showBack
         actions={
           <div className="flex items-center gap-1">
@@ -274,13 +303,19 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Footnotes panel */}
-      {!loading && <FootnotesPanel footnotes={footnotes} />}
+      {/* Footnotes panel with interactive highlighting */}
+      {!loading && (
+        <FootnotesPanel
+          footnotes={footnotes}
+          highlightedId={highlightedFootnote}
+          onHighlightClear={handleClearHighlight}
+        />
+      )}
 
       {/* Verse selection hint */}
       {!loading && (
         <p className="text-center text-[10px] text-muted-foreground/60 px-4 pb-2">
-          Tap a verse number to bookmark it · Swipe left/right to navigate
+          Tap a verse number to bookmark · Tap * to view footnote · Swipe to navigate
         </p>
       )}
 
@@ -332,10 +367,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
 /**
  * Add data-verse attributes to verse elements for tap-to-bookmark.
- * NWT EPUB verse patterns:
- *   - Verse 1: <strong>1</strong>
- *   - Verse 2+: <strong><a href="#"><sup>N</sup></a></strong>
- * We wrap the entire verse marker in a tappable span.
  */
 function addVerseDataAttributes(html: string): string {
   // Pattern 1: <strong><a...><sup>N</sup></a></strong>
@@ -345,11 +376,10 @@ function addVerseDataAttributes(html: string): string {
       return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
     }
   );
-  // Pattern 2: standalone <strong>N</strong> for verse 1 (only single/double digit numbers to avoid headers)
+  // Pattern 2: standalone <strong>N</strong> for verse 1
   result = result.replace(
     /(<strong>)(\d{1,2})(<\/strong>)(?!\s*<\/h)/gi,
     (match, open, num, close) => {
-      // Skip if already wrapped
       if (match.includes('data-verse')) return match;
       return `<span data-verse="${num}" class="verse-tap-target">${open}${num}${close}</span>`;
     }
@@ -357,11 +387,10 @@ function addVerseDataAttributes(html: string): string {
   return result;
 }
 
-function placeholderHtml(bookId: number, chapter: number): string {
-  const book = getBookById(bookId);
+function placeholderHtml(bookId: number, chapter: number, name: string): string {
   return `
     <div style="text-align:center;padding:2rem 0;">
-      <p style="font-size:1.1rem;font-weight:600;">${book?.name || ''} ${chapter}</p>
+      <p style="font-size:1.1rem;font-weight:600;">${name} ${chapter}</p>
       <p style="font-size:0.85rem;color:var(--muted-foreground);margin-top:0.5rem;">
         Could not load chapter content from EPUB.
       </p>

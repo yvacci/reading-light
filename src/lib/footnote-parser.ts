@@ -3,18 +3,13 @@ import type { Footnote } from '@/components/FootnotesPanel';
 /**
  * Parse footnotes from NWT EPUB chapter HTML.
  * 
- * NWT EPUB footnote patterns:
- * - Inline markers: <a id="XXXX" href="#">*</a>
- * - Footer definitions: Lines starting with ^ followed by reference and content
- *   e.g. "^ Gen. 1:1 O "nilikha.""
- * 
- * Returns { cleanHtml, footnotes } where cleanHtml has footnote definitions removed
- * but inline markers converted to tappable superscript indicators.
+ * Removes all "^" footnote definitions and retains inline markers (*).
+ * Converts inline markers to interactive tappable superscripts.
  */
 export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Footnote[] } {
   const footnotes: Footnote[] = [];
 
-  // Extract footnote definitions from the bottom of the content
+  // Extract footnote definitions from the content
   // Pattern: text content that starts with ^ followed by book reference
   const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   
@@ -36,39 +31,32 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
     }
   }
 
-  // Remove the footnote section from the HTML
-  // The footnotes appear at the bottom as plain text lines starting with ^
-  // They're typically in the last few <p> tags or after the main content
+  // Clean the HTML — remove all ^ footnote sections
   let cleanHtml = html;
 
-  // Remove paragraphs/elements that contain footnote definitions
-  // Look for elements containing "^ BookName Ch:Vs"
-  cleanHtml = cleanHtml.replace(
-    /<p[^>]*>\s*\^[^<]*<\/p>/gi,
-    ''
-  );
+  // Remove paragraphs containing ^ footnote definitions
+  cleanHtml = cleanHtml.replace(/<p[^>]*>\s*\^[^<]*<\/p>/gi, '');
 
-  // Also handle footnotes that appear as loose text at the end
-  // Remove blocks of ^ footnotes that might be in a single container
+  // Remove any remaining ^ references that appear as loose text
   cleanHtml = cleanHtml.replace(
     /(<div[^>]*>)?\s*(\^[^<^]+(?:<[^>]*>[^<]*<\/[^>]*>)*[^<^]*)+\s*(<\/div>)?/gi,
     (match) => {
-      // Only remove if it looks like footnote content (contains ^ references)
-      if (/\^\s+\w+\.?\s+\d+:\d+/.test(match)) {
-        return '';
-      }
+      if (/\^\s+\w+\.?\s+\d+:\d+/.test(match)) return '';
       return match;
     }
   );
 
-  // Style inline footnote markers (* symbols) as tappable indicators
+  // Also clean any standalone ^ text that might remain
+  cleanHtml = cleanHtml.replace(/\^\s+[\w.]+\s+\d+:\d+[a-z]?\s+[^<]*/g, '');
+
+  // Style inline footnote markers (* symbols) as tappable indicators with data attributes
   // Pattern: <a id="XXXX" href="#">*</a>
   cleanHtml = cleanHtml.replace(
     /<a\s+id="(\d+)"\s*(?:href="[^"]*")?\s*>\s*\*\s*<\/a>/gi,
     (_, id) => {
       const fnIdx = getFootnoteIndexForMarker(id, footnotes, html);
       if (fnIdx >= 0) {
-        return `<span class="footnote-marker" data-fn-id="fn_${fnIdx}" title="View footnote">*</span>`;
+        return `<span class="footnote-marker" data-fn-id="fn_${fnIdx}" data-fn-index="${fnIdx}" title="View footnote">*</span>`;
       }
       return `<span class="footnote-marker">*</span>`;
     }
@@ -79,14 +67,12 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
 
 /**
  * Try to match an inline marker to its footnote definition by position.
- * Markers appear in order, so the Nth marker maps to the Nth footnote.
  */
 function getFootnoteIndexForMarker(
   markerId: string,
   footnotes: Footnote[],
   html: string
 ): number {
-  // Find all marker IDs in order
   const markerRegex = /<a\s+id="(\d+)"\s*(?:href="[^"]*")?\s*>\s*\*\s*<\/a>/gi;
   const markerIds: string[] = [];
   let m;

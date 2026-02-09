@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { BIBLE_BOOKS } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { Progress } from '@/components/ui/progress';
 import PageHeader from '@/components/PageHeader';
+import WeeklyCalendarChart from '@/components/WeeklyCalendarChart';
 
 export default function ProgressPage() {
-  const { getOverallProgress, getBookProgress } = useReadingProgress();
+  const { getOverallProgress, getBookProgress, language } = useReadingProgress();
   const overall = getOverallProgress();
 
   const otBooks = BIBLE_BOOKS.filter(b => b.testament === 'OT');
@@ -44,16 +46,23 @@ export default function ProgressPage() {
           <p className="text-xs text-muted-foreground">{overall.read} / {overall.total} chapters</p>
         </motion.div>
 
+        {/* Weekly Calendar Chart */}
+        <WeeklyCalendarChart />
+
         {/* Testament stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">Hebrew Scriptures</p>
+            <p className="text-[10px] font-medium text-muted-foreground">
+              {language === 'en' ? 'Hebrew Scriptures' : 'Hebreong Kasulatan'}
+            </p>
             <p className="text-lg font-bold text-foreground">{Math.round((otRead / otTotal) * 100)}%</p>
             <Progress value={(otRead / otTotal) * 100} className="mt-1 h-1.5" />
             <p className="mt-1 text-[10px] text-muted-foreground">{otRead}/{otTotal}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-[10px] font-medium text-muted-foreground">Greek Scriptures</p>
+            <p className="text-[10px] font-medium text-muted-foreground">
+              {language === 'en' ? 'Greek Scriptures' : 'Kristiyanong Griegong Kasulatan'}
+            </p>
             <p className="text-lg font-bold text-foreground">{Math.round((ntRead / ntTotal) * 100)}%</p>
             <Progress value={(ntRead / ntTotal) * 100} className="mt-1 h-1.5" />
             <p className="mt-1 text-[10px] text-muted-foreground">{ntRead}/{ntTotal}</p>
@@ -68,7 +77,9 @@ export default function ProgressPage() {
             if (prog.read === 0) return null;
             return (
               <div key={book.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5">
-                <span className="w-24 truncate text-xs font-medium text-foreground">{book.name}</span>
+                <span className="w-24 truncate text-xs font-medium text-foreground">
+                  {getLocalizedBookName(book.id, language)}
+                </span>
                 <Progress value={prog.percent} className="h-1.5 flex-1" />
                 <span className="text-[10px] text-muted-foreground w-10 text-right">{prog.percent}%</span>
               </div>
