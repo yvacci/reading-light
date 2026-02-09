@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, Bug } from 'lucide-react';
-import { getBookById, BIBLE_BOOKS } from '@/lib/bible-data';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink } from 'lucide-react';
+import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
-import { loadChapter, initEpub, getDebugInfo } from '@/lib/epub-service';
+import { loadChapter, initEpub } from '@/lib/epub-service';
 import PageHeader from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 
@@ -16,26 +16,39 @@ interface Props {
 export default function ChapterReader({ bookId, chapter }: Props) {
   const navigate = useNavigate();
   const book = getBookById(bookId);
-  const { isChapterRead, toggleChapterRead, setLastRead, fontSize } = useReadingProgress();
+  const { isChapterRead, toggleChapterRead, setLastRead, fontSize, language, addReadingTime } = useReadingProgress();
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [showDebug, setShowDebug] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string>('');
   const contentRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const read = isChapterRead(bookId, chapter);
+
+  // Track reading time
+  useEffect(() => {
+    timerRef.current = 0;
+    intervalRef.current = setInterval(() => {
+      timerRef.current += 10;
+    }, 10000); // increment every 10 seconds
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timerRef.current > 0) {
+        addReadingTime(timerRef.current);
+      }
+    };
+  }, [bookId, chapter, addReadingTime]);
 
   useEffect(() => {
     setLastRead(bookId, chapter);
     doLoad();
-  }, [bookId, chapter]);
+  }, [bookId, chapter, language]);
 
   async function doLoad() {
     setLoading(true);
     try {
-      await initEpub();
-      setDebugInfo(getDebugInfo());
-      
-      const html = await loadChapter(bookId, chapter);
+      await initEpub(language);
+      const html = await loadChapter(bookId, chapter, language);
 
       if (html && html.trim().length > 50) {
         setContent(html);
@@ -62,6 +75,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     }
   }
 
+  function openReference() {
+    const url = getWolUrl(bookId, chapter, language);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   if (!book) return null;
 
   return (
@@ -72,11 +90,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         actions={
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setShowDebug(!showDebug)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-              title="Debug EPUB"
+              onClick={openReference}
+              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              title="View Reference on WOL"
             >
-              <Bug className="h-4 w-4" />
+              <ExternalLink className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Reference</span>
             </button>
             <button
               onClick={() => toggleChapterRead(bookId, chapter)}
@@ -92,15 +111,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           </div>
         }
       />
-
-      {showDebug && (
-        <div className="mx-4 mt-2 rounded-xl border border-border bg-muted/50 p-3">
-          <p className="text-xs font-semibold text-foreground mb-1">EPUB Debug Info</p>
-          <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap overflow-auto max-h-60">
-            {debugInfo}
-          </pre>
-        </div>
-      )}
 
       <motion.div
         ref={contentRef}
@@ -162,7 +172,7 @@ function placeholderHtml(bookId: number, chapter: number): string {
     <div style="text-align:center;padding:2rem 0;">
       <p style="font-size:1.1rem;font-weight:600;">${book?.name || ''} ${chapter}</p>
       <p style="font-size:0.85rem;color:var(--muted-foreground);margin-top:0.5rem;">
-        Could not load chapter content from EPUB. Tap 🐛 for debug info.
+        Could not load chapter content from EPUB.
       </p>
     </div>
   `;
