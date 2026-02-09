@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine, Highlighter } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
+import { useHighlights, HIGHLIGHT_COLORS } from '@/hooks/useHighlights';
 import { loadChapter, initEpub } from '@/lib/epub-service';
 import { parseFootnotes } from '@/lib/footnote-parser';
 import type { Footnote } from '@/components/FootnotesPanel';
@@ -14,6 +15,7 @@ import FootnotesPanel from '@/components/FootnotesPanel';
 import PageHeader from '@/components/PageHeader';
 import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
+import HighlightColorPicker from '@/components/HighlightColorPicker';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -29,6 +31,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const book = getBookById(bookId);
   const { isChapterRead, toggleChapterRead, setLastRead, fontSize, language, addReadingTime } = useReadingProgress();
   const { isBookmarked } = useBookmarks();
+  const { addHighlight, getChapterHighlights } = useHighlights();
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -38,12 +41,17 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
   const [footnotes, setFootnotes] = useState<Footnote[]>([]);
   const [highlightedFootnote, setHighlightedFootnote] = useState<string | null>(null);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [pendingHighlightText, setPendingHighlightText] = useState('');
+  const [pendingHighlightVerse, setPendingHighlightVerse] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const read = isChapterRead(bookId, chapter);
   const bookmarked = isBookmarked(bookId, chapter);
+  const chapterHighlights = getChapterHighlights(bookId, chapter);
 
   const localizedName = getLocalizedBookName(bookId, language);
 
@@ -191,6 +199,101 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     setBookmarkOpen(true);
   }, [content]);
 
+  const handleHighlightTrigger = useCallback(() => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() || '';
+    if (text.length < 3) return;
+
+    // Get approximate verse number from selection context
+    const anchorNode = selection?.anchorNode;
+    let verse = 0;
+    if (anchorNode) {
+      let el: HTMLElement | null = anchorNode.nodeType === Node.TEXT_NODE
+        ? (anchorNode.parentElement as HTMLElement)
+        : (anchorNode as HTMLElement);
+      while (el && !el.getAttribute?.('data-verse')) {
+        el = el.parentElement;
+      }
+      if (el) verse = parseInt(el.getAttribute('data-verse') || '0');
+    }
+
+    // Get click position for color picker
+    const range = selection?.getRangeAt(0);
+    const rect = range?.getBoundingClientRect();
+    if (rect) {
+      setColorPickerPos({ x: rect.left + rect.width / 2, y: rect.top });
+    }
+    setPendingHighlightText(text);
+    setPendingHighlightVerse(verse || 1);
+    setColorPickerOpen(true);
+  }, []);
+
+  const handleColorSelect = useCallback((color: string) => {
+    if (pendingHighlightText) {
+      addHighlight({
+        bookId,
+        chapter,
+        verseStart: pendingHighlightVerse,
+        verseEnd: pendingHighlightVerse,
+        color,
+        text: pendingHighlightText.slice(0, 500),
+      });
+      window.getSelection()?.removeAllRanges();
+      setPendingHighlightText('');
+      // Re-apply highlights
+      applyHighlights();
+    }
+  }, [pendingHighlightText, pendingHighlightVerse, bookId, chapter, addHighlight]);
+
+  // Apply saved highlights to the content
+  const applyHighlights = useCallback(() => {
+    if (!contentRef.current || loading) return;
+    const container = contentRef.current;
+    
+    // Remove old highlight marks
+    container.querySelectorAll('mark.user-highlight').forEach(el => {
+      const parent = el.parentNode;
+      if (parent) {
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+      }
+    });
+
+    // Apply current highlights
+    for (const hl of chapterHighlights) {
+      const textNodes: Text[] = [];
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      let node: Text | null;
+      while ((node = walker.nextNode() as Text | null)) {
+        textNodes.push(node);
+      }
+
+      for (const textNode of textNodes) {
+        const idx = textNode.textContent?.indexOf(hl.text.slice(0, 30)) ?? -1;
+        if (idx >= 0) {
+          const range = document.createRange();
+          range.setStart(textNode, idx);
+          range.setEnd(textNode, Math.min(idx + hl.text.slice(0, 30).length, textNode.textContent?.length || 0));
+          const mark = document.createElement('mark');
+          mark.className = 'user-highlight';
+          mark.style.backgroundColor = hl.color;
+          mark.style.borderRadius = '2px';
+          mark.style.padding = '0 1px';
+          range.surroundContents(mark);
+          break;
+        }
+      }
+    }
+  }, [chapterHighlights, loading]);
+
+  // Re-apply highlights when content changes
+  useEffect(() => {
+    if (!loading && content) {
+      const timer = setTimeout(applyHighlights, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, content, applyHighlights]);
+
   function openReference() {
     const url = getWolUrl(bookId, chapter, language);
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -246,6 +349,13 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               title={t('journal.newEntry', language)}
             >
               <PenLine className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={handleHighlightTrigger}
+              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              title={t('highlights.pickColor', language)}
+            >
+              <Highlighter className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={() => toggleChapterRead(bookId, chapter)}
@@ -352,6 +462,13 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onOpenChange={setJournalOpen}
         prefillBookId={bookId}
         prefillChapter={chapter}
+      />
+
+      <HighlightColorPicker
+        open={colorPickerOpen}
+        onClose={() => setColorPickerOpen(false)}
+        onSelectColor={handleColorSelect}
+        position={colorPickerPos}
       />
     </div>
   );

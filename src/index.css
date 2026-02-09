@@ -211,3 +211,26 @@
 .bible-content .footnote-marker:active {
   background-color: hsl(var(--primary) / 0.15);
 }
+
+/* User highlights */
+.bible-content mark.user-highlight {
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+/* Daily text verse reference links */
+.daily-text-content .verse-ref-link {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.daily-text-content .verse-ref-link:hover,
+.daily-text-content .verse-ref-link:active {
+  opacity: 0.75;
+}
