@@ -194,3 +194,20 @@
 .bible-content .verse-tap-target:active {
   background-color: hsl(var(--primary) / 0.25);
 }
+
+/* Footnote markers - inline asterisks */
+.bible-content .footnote-marker {
+  color: hsl(var(--primary));
+  font-weight: 700;
+  font-size: 0.75em;
+  vertical-align: super;
+  cursor: pointer;
+  padding: 0 1px;
+  border-radius: 2px;
+  transition: background-color 0.15s ease;
+}
+
+.bible-content .footnote-marker:hover,
+.bible-content .footnote-marker:active {
+  background-color: hsl(var(--primary) / 0.15);
+}

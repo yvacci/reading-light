@@ -6,6 +6,9 @@ import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
 import { loadChapter, initEpub } from '@/lib/epub-service';
+import { parseFootnotes } from '@/lib/footnote-parser';
+import type { Footnote } from '@/components/FootnotesPanel';
+import FootnotesPanel from '@/components/FootnotesPanel';
 import PageHeader from '@/components/PageHeader';
 import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
@@ -31,6 +34,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [journalOpen, setJournalOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
+  const [footnotes, setFootnotes] = useState<Footnote[]>([]);
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -95,9 +99,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       const html = await loadChapter(bookId, chapter, language);
 
       if (html && html.trim().length > 50) {
-        setContent(addVerseDataAttributes(html));
+        const { cleanHtml, footnotes: parsedFootnotes } = parseFootnotes(html);
+        setContent(addVerseDataAttributes(cleanHtml));
+        setFootnotes(parsedFootnotes);
       } else {
         setContent(placeholderHtml(bookId, chapter));
+        setFootnotes([]);
       }
     } catch (err) {
       console.error('[Reader] Error:', err);
@@ -266,6 +273,9 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Footnotes panel */}
+      {!loading && <FootnotesPanel footnotes={footnotes} />}
 
       {/* Verse selection hint */}
       {!loading && (
