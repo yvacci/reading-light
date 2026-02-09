@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ReadingProgressProvider } from "@/contexts/ReadingProgressContext";
 import { BookmarksProvider } from "@/contexts/BookmarksContext";
 import BottomNav from "@/components/BottomNav";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import HomePage from "./pages/HomePage";
 import ReaderPage from "./pages/ReaderPage";
 import PlansPage from "./pages/PlansPage";
@@ -24,6 +25,7 @@ const App = () => (
         <BookmarksProvider>
           <Toaster />
           <Sonner />
+          <OfflineIndicator />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<HomePage />} />
