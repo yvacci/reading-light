@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Moon, Sun, Type, Globe, RotateCcw } from 'lucide-react';
+import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import PageHeader from '@/components/PageHeader';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +20,23 @@ import {
 
 export default function SettingsPage() {
   const { darkMode, setDarkMode, fontSize, setFontSize, language, setLanguage, resetProgress } = useReadingProgress();
+  const {
+    isSupported,
+    permissionState,
+    enabled: remindersEnabled,
+    reminderTime,
+    enableReminders,
+    disableReminders,
+    setReminderTime,
+  } = useReminderNotifications();
+
+  const handleReminderToggle = async (checked: boolean) => {
+    if (checked) {
+      await enableReminders();
+    } else {
+      disableReminders();
+    }
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -82,6 +101,46 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Notifications */}
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notifications</h2>
+          <div className="rounded-2xl border border-border bg-card">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Bell className="h-4 w-4 text-primary" />
+                <div>
+                  <span className="text-sm font-medium text-foreground">Daily Reading Reminder</span>
+                  {!isSupported && (
+                    <p className="text-[10px] text-muted-foreground">Not supported in this browser</p>
+                  )}
+                  {isSupported && permissionState === 'denied' && (
+                    <p className="text-[10px] text-destructive">Notifications blocked. Enable in browser settings.</p>
+                  )}
+                </div>
+              </div>
+              <Switch
+                checked={remindersEnabled}
+                onCheckedChange={handleReminderToggle}
+                disabled={!isSupported || permissionState === 'denied'}
+              />
+            </div>
+            {remindersEnabled && (
+              <div className="border-t border-border px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Reminder Time</span>
+                  <Input
+                    type="time"
+                    value={reminderTime}
+                    onChange={(e) => setReminderTime(e.target.value)}
+                    className="ml-auto w-28 text-sm h-8 rounded-xl"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Data */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</h2>
@@ -123,7 +182,7 @@ export default function SettingsPage() {
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">About</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-foreground">NWT Reading Planner</p>
-            <p className="text-xs text-muted-foreground">Version 1.1.0</p>
+            <p className="text-xs text-muted-foreground">Version 1.2.0</p>
             <p className="mt-2 text-xs text-muted-foreground">
               A Bible reading planner for the New World Translation. All data is stored locally on your device.
             </p>

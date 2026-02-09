@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
 import { loadChapter, initEpub } from '@/lib/epub-service';
 import PageHeader from '@/components/PageHeader';
 import BookmarkDialog from '@/components/BookmarkDialog';
+import JournalEntryDialog from '@/components/JournalEntryDialog';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -27,6 +28,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [loading, setLoading] = useState(true);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [bookmarkOpen, setBookmarkOpen] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -206,6 +208,13 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-accent' : ''}`} />
             </button>
             <button
+              onClick={() => setJournalOpen(true)}
+              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+              title="Write journal entry"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+            </button>
+            <button
               onClick={() => toggleChapterRead(bookId, chapter)}
               className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                 read
@@ -299,24 +308,43 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         verse={selectedVerse}
         selectedText={selectedText}
       />
+
+      {/* Journal Dialog */}
+      <JournalEntryDialog
+        open={journalOpen}
+        onOpenChange={setJournalOpen}
+        prefillBookId={bookId}
+        prefillChapter={chapter}
+      />
     </div>
   );
 }
 
 /**
  * Add data-verse attributes to verse elements for tap-to-bookmark.
- * NWT EPUBs use <sup> or <span class="verse-num"> for verse numbers.
- * We wrap the verse content in a tappable span.
+ * NWT EPUB verse patterns:
+ *   - Verse 1: <strong>1</strong>
+ *   - Verse 2+: <strong><a href="#"><sup>N</sup></a></strong>
+ * We wrap the entire verse marker in a tappable span.
  */
 function addVerseDataAttributes(html: string): string {
-  // Pattern: find verse number superscripts and wrap the following text
-  // Match <sup>N</sup> or verse number patterns and add data attributes
-  return html.replace(
-    /(<(?:sup|span)[^>]*>)\s*(\d+)\s*(<\/(?:sup|span)>)/gi,
-    (match, openTag, num, closeTag) => {
-      return `<span data-verse="${num}" class="verse-tap-target">${openTag}${num}${closeTag}</span>`;
+  // Pattern 1: <strong><a...><sup>N</sup></a></strong>
+  let result = html.replace(
+    /(<strong>\s*<a[^>]*>\s*<sup>\s*)(\d+)(\s*<\/sup>\s*<\/a>\s*<\/strong>)/gi,
+    (match, prefix, num, suffix) => {
+      return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
     }
   );
+  // Pattern 2: standalone <strong>N</strong> for verse 1 (only single/double digit numbers to avoid headers)
+  result = result.replace(
+    /(<strong>)(\d{1,2})(<\/strong>)(?!\s*<\/h)/gi,
+    (match, open, num, close) => {
+      // Skip if already wrapped
+      if (match.includes('data-verse')) return match;
+      return `<span data-verse="${num}" class="verse-tap-target">${open}${num}${close}</span>`;
+    }
+  );
+  return result;
 }
 
 function placeholderHtml(bookId: number, chapter: number): string {

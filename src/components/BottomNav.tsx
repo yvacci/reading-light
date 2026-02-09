@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, ListChecks, Search, Settings } from 'lucide-react';
+import { Home, BookOpen, Search, PenLine, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/reader', icon: BookOpen, label: 'Bible' },
   { to: '/search', icon: Search, label: 'Search' },
-  { to: '/plans', icon: ListChecks, label: 'Plans' },
+  { to: '/journal', icon: PenLine, label: 'Journal' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 
