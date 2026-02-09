@@ -2,14 +2,15 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { READING_PLANS, READING_SPEEDS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
 
 export default function PlansPage() {
-  const { currentPlan, setCurrentPlan, readingSpeed, setReadingSpeed } = useReadingProgress();
+  const { currentPlan, setCurrentPlan, readingSpeed, setReadingSpeed, language } = useReadingProgress();
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Reading Plans" subtitle="Choose how to read the Bible" />
+      <PageHeader title={t('plans.title', language)} subtitle={t('plans.subtitle', language)} />
 
       <div className="space-y-3 px-4 pt-4">
         {READING_PLANS.map((plan, i) => {
@@ -42,9 +43,8 @@ export default function PlansPage() {
         })}
       </div>
 
-      {/* Reading Speed Section */}
       <div className="px-4 pt-6">
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Reading Speed</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">{t('plans.readingSpeed', language)}</h2>
         <div className="grid grid-cols-3 gap-2">
           {READING_SPEEDS.map(speed => {
             const active = readingSpeed === speed.id;

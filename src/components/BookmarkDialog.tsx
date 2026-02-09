@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Bookmark } from 'lucide-react';
 import { useBookmarks } from '@/contexts/BookmarksContext';
-import { getBookById } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -32,9 +34,11 @@ interface Props {
 
 export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, verse, selectedText }: Props) {
   const { addBookmark } = useBookmarks();
+  const { language } = useReadingProgress();
   const [note, setNote] = useState('');
   const [color, setColor] = useState('yellow');
-  const book = getBookById(bookId);
+
+  const bookName = getLocalizedBookName(bookId, language);
 
   const handleSave = () => {
     addBookmark({
@@ -51,8 +55,8 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, ve
   };
 
   const locationLabel = verse
-    ? `${book?.name} ${chapter}:${verse}`
-    : `${book?.name} ${chapter}`;
+    ? `${bookName} ${chapter}:${verse}`
+    : `${bookName} ${chapter}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,22 +64,20 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, ve
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Bookmark className="h-4 w-4 text-primary" />
-            Save Bookmark
+            {t('bookmarks.saveBookmark', language)}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {locationLabel}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Selected text preview */}
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-foreground/80 leading-relaxed max-h-24 overflow-y-auto">
           {selectedText.slice(0, 200)}
           {selectedText.length > 200 && '…'}
         </div>
 
-        {/* Color picker */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2">Highlight Color</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">{t('bookmarks.highlightColor', language)}</p>
           <div className="flex gap-2">
             {COLORS.map((c) => (
               <button
@@ -92,21 +94,20 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, ve
           </div>
         </div>
 
-        {/* Note */}
         <Textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Add a note (optional)..."
+          placeholder={t('bookmarks.addNote', language)}
           className="text-sm rounded-xl resize-none"
           rows={2}
         />
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel', language)}
           </Button>
           <Button size="sm" onClick={handleSave}>
-            Save Bookmark
+            {t('bookmarks.saveBookmark', language)}
           </Button>
         </DialogFooter>
       </DialogContent>

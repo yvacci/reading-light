@@ -1,11 +1,11 @@
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function WeeklyCalendarChart() {
-  const { getWeeklyReadingData, progress } = useReadingProgress();
+  const { getWeeklyReadingData, progress, language } = useReadingProgress();
   const data = getWeeklyReadingData();
 
-  // Determine which days had reading activity (chapters marked)
   const weekDates = getWeekDates();
   const enrichedData = data.map((d, i) => {
     const dateKey = weekDates[i];
@@ -24,9 +24,8 @@ export default function WeeklyCalendarChart() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <h3 className="mb-3 text-xs font-semibold text-foreground">This Week</h3>
+      <h3 className="mb-3 text-xs font-semibold text-foreground">{t('progress.thisWeek', language)}</h3>
 
-      {/* Day dots */}
       <div className="flex justify-around mb-4">
         {enrichedData.map((d, i) => (
           <div key={i} className="flex flex-col items-center gap-1.5">
@@ -47,7 +46,6 @@ export default function WeeklyCalendarChart() {
         ))}
       </div>
 
-      {/* Bar chart for time */}
       {hasAnyData && (
         <div className="h-28">
           <ResponsiveContainer width="100%" height="100%">
@@ -73,7 +71,7 @@ export default function WeeklyCalendarChart() {
                   fontSize: '11px',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value} min`, 'Reading Time']}
+                formatter={(value: number) => [`${value} min`, language === 'en' ? 'Reading Time' : 'Oras ng Pagbabasa']}
               />
               <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
                 {enrichedData.map((entry, index) => (
@@ -90,7 +88,7 @@ export default function WeeklyCalendarChart() {
 
       {!hasAnyData && (
         <p className="text-center text-[10px] text-muted-foreground py-4">
-          Start reading to see your weekly activity
+          {t('progress.startWeekly', language)}
         </p>
       )}
     </div>

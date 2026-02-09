@@ -1,14 +1,15 @@
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function WeeklyChart() {
-  const { getWeeklyReadingData } = useReadingProgress();
+  const { getWeeklyReadingData, language } = useReadingProgress();
   const data = getWeeklyReadingData();
   const hasData = data.some(d => d.minutes > 0);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <h3 className="mb-3 text-xs font-semibold text-foreground">Weekly Reading Activity</h3>
+      <h3 className="mb-3 text-xs font-semibold text-foreground">{t('progress.weeklyActivity', language)}</h3>
       {hasData ? (
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
@@ -34,7 +35,7 @@ export default function WeeklyChart() {
                   fontSize: '12px',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value: number) => [`${value} min`, 'Reading Time']}
+                formatter={(value: number) => [`${value} min`, language === 'en' ? 'Reading Time' : 'Oras ng Pagbabasa']}
               />
               <Line
                 type="monotone"
@@ -49,7 +50,7 @@ export default function WeeklyChart() {
         </div>
       ) : (
         <div className="flex h-32 items-center justify-center">
-          <p className="text-xs text-muted-foreground">Start reading to see your activity chart</p>
+          <p className="text-xs text-muted-foreground">{t('progress.startWeekly', language)}</p>
         </div>
       )}
     </div>

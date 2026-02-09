@@ -7,23 +7,23 @@ interface DailyTextEntry {
 }
 
 const DAILY_TEXT_CACHE_KEY = 'nwt-daily-text-cache';
-const DAILY_TEXT_FILE_KEY = 'nwt-daily-text-file';
+const DAILY_TEXT_LANG_KEY = 'nwt-daily-text-lang';
 
 let parsedEntries: DailyTextEntry[] | null = null;
+let loadedLang: string | null = null;
 
 /**
  * Get the default bundled daily text path based on language
  */
 function getDefaultPath(lang: string): string {
   switch (lang) {
-    case 'en': return '/bibles/es26_TG.epub'; // fallback to TG if no EN daily text
+    case 'en': return '/bibles/es26_E.epub';
     default: return '/bibles/es26_TG.epub';
   }
 }
 
 /**
  * Parse a daily text EPUB file and extract entries by date.
- * The EPUB contains daily devotional entries organized by date.
  */
 async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTextEntry[]> {
   const zip = await JSZip.loadAsync(arrayBuffer);
@@ -50,7 +50,6 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
   const parser = new DOMParser();
   const opfDoc = parser.parseFromString(opfXml, 'application/xml');
 
-  // Get manifest items
   const manifestMap: Record<string, string> = {};
   opfDoc.querySelectorAll('manifest item').forEach(item => {
     const id = item.getAttribute('id') || '';
@@ -58,7 +57,6 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
     manifestMap[id] = href;
   });
 
-  // Get spine items
   const spineHrefs: string[] = [];
   opfDoc.querySelectorAll('spine itemref').forEach(ref => {
     const idref = ref.getAttribute('idref') || '';
@@ -73,7 +71,6 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
     'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
   };
 
-  // Parse each content file
   for (const href of spineHrefs) {
     const filePath = contentPrefix + href;
     const file = zip.file(filePath);
@@ -82,11 +79,9 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
     const xhtml = await file.async('string');
     if (!xhtml || xhtml.length < 50) continue;
 
-    // Extract body content
     const bodyMatch = xhtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     const body = bodyMatch ? bodyMatch[1] : xhtml;
 
-    // Clean HTML to text for parsing
     const cleanText = body
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -102,8 +97,6 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
 
     if (cleanText.length < 20) continue;
 
-    // Try to extract date from the content
-    // Pattern: "Enero 1" or "January 1" or similar
     const datePattern = new RegExp(
       `(${Object.keys(monthNames).join('|')})\\s+(\\d{1,2})`,
       'i'
@@ -118,14 +111,11 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
       if (month && day >= 1 && day <= 31) {
         const mmdd = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-        // Extract title (usually a scripture reference after the date)
         const afterDate = cleanText.substring(cleanText.indexOf(dateMatch[0]) + dateMatch[0].length).trim();
         
-        // First line or scripture reference is the title
         const titleMatch = afterDate.match(/^["""]?([^"""\n.]{5,120})["""]?/);
         const title = titleMatch ? titleMatch[1].trim() : '';
         
-        // Rest is the content
         const content = afterDate.slice(title.length).trim().slice(0, 1500);
 
         entries.push({ date: mmdd, title, content });
@@ -137,27 +127,22 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
 }
 
 /**
- * Initialize daily text from bundled EPUB or user-uploaded file
+ * Initialize daily text from bundled EPUB or user-uploaded file.
+ * Now respects the language parameter to load the correct bundled file.
  */
 export async function loadDailyText(lang: string = 'tg'): Promise<void> {
-  if (parsedEntries && parsedEntries.length > 0) return;
+  // If already loaded for this language, skip
+  if (parsedEntries && parsedEntries.length > 0 && loadedLang === lang) return;
 
-  // Check for cached data first
-  try {
-    const cached = localStorage.getItem(DAILY_TEXT_CACHE_KEY);
-    if (cached) {
-      parsedEntries = JSON.parse(cached);
-      if (parsedEntries && parsedEntries.length > 0) return;
-    }
-  } catch {}
-
-  // Check for user-uploaded file in IndexedDB
+  // Check for user-uploaded file in IndexedDB (user uploads override language)
   try {
     const userFile = await getUserUploadedFile();
     if (userFile) {
       parsedEntries = await parseEpubForDailyText(userFile);
+      loadedLang = lang;
       if (parsedEntries.length > 0) {
         localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
+        localStorage.setItem(DAILY_TEXT_LANG_KEY, lang);
         return;
       }
     }
@@ -165,24 +150,37 @@ export async function loadDailyText(lang: string = 'tg'): Promise<void> {
     console.warn('[DailyText] Error loading user file:', err);
   }
 
-  // Load bundled EPUB
+  // Check cache for matching language
+  try {
+    const cachedLang = localStorage.getItem(DAILY_TEXT_LANG_KEY);
+    if (cachedLang === lang) {
+      const cached = localStorage.getItem(DAILY_TEXT_CACHE_KEY);
+      if (cached) {
+        parsedEntries = JSON.parse(cached);
+        loadedLang = lang;
+        if (parsedEntries && parsedEntries.length > 0) return;
+      }
+    }
+  } catch {}
+
+  // Load bundled EPUB based on language
   try {
     const response = await fetch(getDefaultPath(lang));
     const arrayBuffer = await response.arrayBuffer();
     parsedEntries = await parseEpubForDailyText(arrayBuffer);
+    loadedLang = lang;
     if (parsedEntries.length > 0) {
       localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
+      localStorage.setItem(DAILY_TEXT_LANG_KEY, lang);
     }
-    console.log(`[DailyText] Parsed ${parsedEntries.length} entries`);
+    console.log(`[DailyText] Parsed ${parsedEntries.length} entries for lang=${lang}`);
   } catch (err) {
     console.error('[DailyText] Error loading bundled file:', err);
     parsedEntries = [];
+    loadedLang = lang;
   }
 }
 
-/**
- * Get today's daily text entry
- */
 export function getTodaysDailyText(): DailyTextEntry | null {
   if (!parsedEntries || parsedEntries.length === 0) return null;
   
@@ -192,29 +190,20 @@ export function getTodaysDailyText(): DailyTextEntry | null {
   return parsedEntries.find(e => e.date === mmdd) || null;
 }
 
-/**
- * Get a specific date's daily text
- */
 export function getDailyTextByDate(month: number, day: number): DailyTextEntry | null {
   if (!parsedEntries || parsedEntries.length === 0) return null;
   const mmdd = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   return parsedEntries.find(e => e.date === mmdd) || null;
 }
 
-/**
- * Store user-uploaded file in IndexedDB
- */
 export async function saveUserUploadedFile(file: File): Promise<number> {
   const arrayBuffer = await file.arrayBuffer();
-  
-  // Parse it first to validate
   const entries = await parseEpubForDailyText(arrayBuffer);
   
   if (entries.length === 0) {
     throw new Error('Could not parse any daily text entries from the file');
   }
 
-  // Save to IndexedDB
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('nwt-daily-text', 1);
     request.onupgradeneeded = () => {
@@ -229,7 +218,6 @@ export async function saveUserUploadedFile(file: File): Promise<number> {
       const store = tx.objectStore('files');
       store.put(arrayBuffer, 'uploaded-daily-text');
       tx.oncomplete = () => {
-        // Update cache
         parsedEntries = entries;
         localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(entries));
         resolve(entries.length);
@@ -240,9 +228,6 @@ export async function saveUserUploadedFile(file: File): Promise<number> {
   });
 }
 
-/**
- * Get user-uploaded file from IndexedDB
- */
 async function getUserUploadedFile(): Promise<ArrayBuffer | null> {
   return new Promise((resolve) => {
     const request = indexedDB.open('nwt-daily-text', 1);
@@ -264,12 +249,11 @@ async function getUserUploadedFile(): Promise<ArrayBuffer | null> {
   });
 }
 
-/**
- * Clear user-uploaded daily text and revert to bundled
- */
 export async function clearUserUploadedFile(): Promise<void> {
   parsedEntries = null;
+  loadedLang = null;
   localStorage.removeItem(DAILY_TEXT_CACHE_KEY);
+  localStorage.removeItem(DAILY_TEXT_LANG_KEY);
   
   return new Promise((resolve) => {
     const request = indexedDB.open('nwt-daily-text', 1);

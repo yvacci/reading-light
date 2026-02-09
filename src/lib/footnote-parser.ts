@@ -3,14 +3,13 @@ import type { Footnote } from '@/components/FootnotesPanel';
 /**
  * Parse footnotes from NWT EPUB chapter HTML.
  * 
- * Removes all "^" footnote definitions and retains inline markers (*).
- * Converts inline markers to interactive tappable superscripts.
+ * Aggressively removes ALL lines/elements containing the "^" symbol
+ * (legacy footnote definitions), while retaining inline markers (*).
  */
 export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Footnote[] } {
   const footnotes: Footnote[] = [];
 
   // Extract footnote definitions from the content
-  // Pattern: text content that starts with ^ followed by book reference
   const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   
   // Find all footnote definitions: ^ Book Ch:Vs Content
@@ -31,23 +30,20 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
     }
   }
 
-  // Clean the HTML — remove all ^ footnote sections
+  // Clean the HTML — aggressively remove ALL content with ^ symbols
   let cleanHtml = html;
 
-  // Remove paragraphs containing ^ footnote definitions
-  cleanHtml = cleanHtml.replace(/<p[^>]*>\s*\^[^<]*<\/p>/gi, '');
-
-  // Remove any remaining ^ references that appear as loose text
-  cleanHtml = cleanHtml.replace(
-    /(<div[^>]*>)?\s*(\^[^<^]+(?:<[^>]*>[^<]*<\/[^>]*>)*[^<^]*)+\s*(<\/div>)?/gi,
-    (match) => {
-      if (/\^\s+\w+\.?\s+\d+:\d+/.test(match)) return '';
-      return match;
-    }
-  );
-
-  // Also clean any standalone ^ text that might remain
-  cleanHtml = cleanHtml.replace(/\^\s+[\w.]+\s+\d+:\d+[a-z]?\s+[^<]*/g, '');
+  // Remove any paragraph, div, span, or other element containing ^
+  cleanHtml = cleanHtml.replace(/<p[^>]*>[^<]*\^[^<]*(<[^>]*>[^<]*)*<\/p>/gi, '');
+  cleanHtml = cleanHtml.replace(/<div[^>]*>[^<]*\^[^<]*(<[^>]*>[^<]*)*<\/div>/gi, '');
+  cleanHtml = cleanHtml.replace(/<span[^>]*>[^<]*\^[^<]*(<[^>]*>[^<]*)*<\/span>/gi, '');
+  
+  // Remove any remaining loose text lines containing ^
+  cleanHtml = cleanHtml.replace(/\^[^<\n]*/g, '');
+  
+  // Remove empty paragraphs and divs left behind
+  cleanHtml = cleanHtml.replace(/<p[^>]*>\s*<\/p>/gi, '');
+  cleanHtml = cleanHtml.replace(/<div[^>]*>\s*<\/div>/gi, '');
 
   // Style inline footnote markers (* symbols) as tappable indicators with data attributes
   // Pattern: <a id="XXXX" href="#">*</a>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, X, Loader2 } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { searchBible, type SearchResult } from '@/lib/search-service';
+import { t } from '@/lib/i18n';
 import { Input } from '@/components/ui/input';
 import PageHeader from '@/components/PageHeader';
 import { motion } from 'framer-motion';
@@ -65,17 +66,16 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Search" subtitle="Find verses and keywords" showBack />
+      <PageHeader title={t('search.title', language)} subtitle={t('search.subtitle', language)} showBack />
 
       <div className="px-4 pt-3">
-        {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="Search the Bible..."
+            placeholder={t('search.placeholder', language)}
             className="pl-9 pr-9 rounded-xl"
             autoFocus
           />
@@ -89,7 +89,6 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* Search Button */}
         <button
           onClick={handleSearch}
           disabled={searching || query.trim().length < 2}
@@ -98,14 +97,13 @@ export default function SearchPage() {
           {searching ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Searching… {progress}%
+              {t('search.searching', language)} {progress}%
             </span>
           ) : (
-            'Search'
+            t('search.button', language)
           )}
         </button>
 
-        {/* Progress bar */}
         {searching && (
           <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -115,17 +113,16 @@ export default function SearchPage() {
           </div>
         )}
 
-        {/* Results */}
         <div className="mt-4 space-y-2">
           {!searching && searched && results.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No results found for "{query}"
+              {t('search.noResults', language)} "{query}"
             </p>
           )}
 
           {results.length > 0 && (
             <p className="text-xs text-muted-foreground mb-2">
-              {results.length} result{results.length !== 1 ? 's' : ''} found
+              {results.length} {t('search.results', language)}
             </p>
           )}
 

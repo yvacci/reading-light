@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { loadDailyText, getTodaysDailyText } from '@/lib/daily-text-service';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 
 export default function DailyTextCard() {
+  const { language } = useReadingProgress();
   const [dailyText, setDailyText] = useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -11,8 +14,9 @@ export default function DailyTextCard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       try {
-        await loadDailyText();
+        await loadDailyText(language);
         if (!cancelled) {
           const today = getTodaysDailyText();
           setDailyText(today);
@@ -24,10 +28,10 @@ export default function DailyTextCard() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [language]);
 
   const today = new Date();
-  const dateStr = today.toLocaleDateString('en-US', {
+  const dateStr = today.toLocaleDateString(language === 'en' ? 'en-US' : 'fil-PH', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -38,7 +42,7 @@ export default function DailyTextCard() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center gap-2 mb-2">
           <BookOpen className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Daily Text</span>
+          <span className="text-xs font-semibold text-foreground">{t('dailyText.title', language)}</span>
         </div>
         <div className="space-y-2">
           <div className="h-3 w-32 animate-pulse rounded bg-muted" />
@@ -64,7 +68,7 @@ export default function DailyTextCard() {
       <div className="p-4">
         <div className="flex items-center gap-2 mb-1">
           <BookOpen className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Daily Text</span>
+          <span className="text-xs font-semibold text-foreground">{t('dailyText.title', language)}</span>
           <span className="ml-auto text-[10px] text-muted-foreground">{dateStr}</span>
         </div>
 
@@ -84,9 +88,9 @@ export default function DailyTextCard() {
             className="mt-2 flex items-center gap-1 text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
           >
             {expanded ? (
-              <>Show less <ChevronUp className="h-3 w-3" /></>
+              <>{t('dailyText.showLess', language)} <ChevronUp className="h-3 w-3" /></>
             ) : (
-              <>Read more <ChevronDown className="h-3 w-3" /></>
+              <>{t('dailyText.readMore', language)} <ChevronDown className="h-3 w-3" /></>
             )}
           </button>
         )}

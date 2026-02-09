@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { BIBLE_BOOKS, type BibleBook } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
@@ -10,41 +12,37 @@ import ChapterReader from '@/components/ChapterReader';
 export default function ReaderPage() {
   const { bookId, chapter } = useParams();
   const navigate = useNavigate();
-  const { getBookProgress } = useReadingProgress();
+  const { getBookProgress, language } = useReadingProgress();
   const [testamentFilter, setTestamentFilter] = useState<'OT' | 'NT'>('OT');
 
-  // If we have bookId and chapter, show the reader
   if (bookId && chapter) {
     return <ChapterReader bookId={Number(bookId)} chapter={Number(chapter)} />;
   }
 
-  // If we have bookId, show chapters
   if (bookId) {
     const book = BIBLE_BOOKS.find(b => b.id === Number(bookId));
     if (!book) return null;
-    return <ChapterSelector book={book} />;
+    return <ChapterSelector book={book} language={language} />;
   }
 
-  // Show book list
   const filteredBooks = BIBLE_BOOKS.filter(b => b.testament === testamentFilter);
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Bible" subtitle="Select a book to read" />
+      <PageHeader title={t('reader.title', language)} subtitle={t('reader.subtitle', language)} />
 
-      {/* Testament Toggle */}
       <div className="flex gap-1 px-4 py-3">
-        {(['OT', 'NT'] as const).map(t => (
+        {(['OT', 'NT'] as const).map(tt => (
           <button
-            key={t}
-            onClick={() => setTestamentFilter(t)}
+            key={tt}
+            onClick={() => setTestamentFilter(tt)}
             className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-all ${
-              testamentFilter === t
+              testamentFilter === tt
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'bg-muted text-muted-foreground'
             }`}
           >
-            {t === 'OT' ? 'Hebrew Scriptures' : 'Greek Scriptures'}
+            {tt === 'OT' ? t('reader.hebrewScriptures', language) : t('reader.greekScriptures', language)}
           </button>
         ))}
       </div>
@@ -70,8 +68,8 @@ export default function ReaderPage() {
                   {book.id}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{book.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{book.chapters} chapters</p>
+                  <p className="text-sm font-medium text-foreground truncate">{getLocalizedBookName(book.id, language)}</p>
+                  <p className="text-[10px] text-muted-foreground">{book.chapters} {t('reader.chapters', language)}</p>
                 </div>
                 {prog.percent > 0 && (
                   <span className="text-[10px] font-semibold text-primary">{prog.percent}%</span>
@@ -86,14 +84,15 @@ export default function ReaderPage() {
   );
 }
 
-function ChapterSelector({ book }: { book: BibleBook }) {
+function ChapterSelector({ book, language }: { book: BibleBook; language: string }) {
   const navigate = useNavigate();
   const { isChapterRead } = useReadingProgress();
   const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1);
+  const localizedName = getLocalizedBookName(book.id, language);
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title={book.name} subtitle={`${book.chapters} chapters`} showBack />
+      <PageHeader title={localizedName} subtitle={`${book.chapters} ${t('reader.chapters', language)}`} showBack />
 
       <div className="grid grid-cols-5 gap-2 p-4">
         {chapters.map(ch => {
