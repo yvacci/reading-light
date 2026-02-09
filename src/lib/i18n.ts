@@ -142,6 +142,8 @@ const strings: Strings = {
   'nav.search': { tg: 'Hanap', en: 'Search' },
   'nav.journal': { tg: 'Talaarawan', en: 'Journal' },
   'nav.settings': { tg: 'Settings', en: 'Settings' },
+  'nav.pioneer': { tg: 'Pioneer', en: 'Pioneer' },
+  'nav.studies': { tg: 'Pag-aaral', en: 'Studies' },
 
   // How-to
   'howto.title': { tg: 'Paano Gamitin', en: 'How to Use' },
@@ -151,6 +153,37 @@ const strings: Strings = {
 
   // Highlights
   'highlights.pickColor': { tg: 'Pumili ng kulay ng highlight', en: 'Pick highlight color' },
+
+  // Pioneer
+  'pioneer.title': { tg: 'Regular Pioneer', en: 'Regular Pioneer' },
+  'pioneer.subtitle': { tg: 'Subaybayan ang iyong ministeryo', en: 'Track your ministry activity' },
+  'pioneer.monthlySummary': { tg: 'Buod ng Buwan', en: 'Monthly Summary' },
+  'pioneer.totalHours': { tg: 'Kabuuang Oras', en: 'Total Hours' },
+  'pioneer.bibleStudies': { tg: 'Bible Study', en: 'Bible Studies' },
+  'pioneer.returnVisits': { tg: 'Return Visit', en: 'Return Visits' },
+  'pioneer.witnessing': { tg: 'Public Witnessing', en: 'Public Witnessing' },
+  'pioneer.daysLogged': { tg: 'araw na naitala', en: 'days logged' },
+  'pioneer.ministryHours': { tg: 'Oras ng Ministeryo', en: 'Ministry Hours' },
+  'pioneer.witnessingHours': { tg: 'Oras ng Public Witnessing', en: 'Public Witnessing Hours' },
+
+  // Studies & Visits
+  'studies.title': { tg: 'Pag-aaral at Pagdalaw', en: 'Studies & Visits' },
+  'studies.subtitle': { tg: 'Pamahalaan ang iyong Bible study at return visit', en: 'Manage your Bible studies and return visits' },
+  'studies.bibleStudies': { tg: 'Bible Study', en: 'Bible Studies' },
+  'studies.returnVisits': { tg: 'Return Visit', en: 'Return Visits' },
+  'studies.bibleStudy': { tg: 'Bible Study', en: 'Bible Study' },
+  'studies.returnVisit': { tg: 'Return Visit', en: 'Return Visit' },
+  'studies.all': { tg: 'Lahat', en: 'All' },
+  'studies.add': { tg: 'Dagdag', en: 'Add' },
+  'studies.addNew': { tg: 'Bagong Entry', en: 'New Entry' },
+  'studies.edit': { tg: 'I-edit', en: 'Edit' },
+  'studies.name': { tg: 'Pangalan', en: 'Name' },
+  'studies.contact': { tg: 'Contact Info', en: 'Contact Info' },
+  'studies.lastVisit': { tg: 'Huling Pagdalaw', en: 'Last Visit Date' },
+  'studies.notes': { tg: 'Mga Tala', en: 'Notes' },
+  'studies.searchPlaceholder': { tg: 'Maghanap ng pangalan...', en: 'Search by name...' },
+  'studies.empty': { tg: 'Wala pang entry', en: 'No entries yet' },
+  'studies.deleteConfirm': { tg: 'Hindi ito maaaring i-undo.', en: 'This cannot be undone.' },
 
   // Common
   'common.cancel': { tg: 'Kanselahin', en: 'Cancel' },
