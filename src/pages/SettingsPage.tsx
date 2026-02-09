@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { darkMode, setDarkMode, fontSize, setFontSize, language, setLanguage, resetProgress } = useReadingProgress();
   const {
     isSupported,
@@ -262,12 +264,29 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* How-to Guide */}
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.howTo', language)}</h2>
+          <div className="rounded-2xl border border-border bg-card">
+            <button
+              onClick={() => navigate('/how-to')}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl"
+            >
+              <HelpCircle className="h-4 w-4 text-primary" />
+              <div>
+                <span className="text-sm font-medium text-foreground">{t('settings.howTo', language)}</span>
+                <p className="text-[10px] text-muted-foreground">{t('settings.howToDesc', language)}</p>
+              </div>
+            </button>
+          </div>
+        </section>
+
         {/* About */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.about', language)}</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-            <p className="text-xs text-muted-foreground">Version 1.4.0</p>
+            <p className="text-xs text-muted-foreground">Version 1.5.0</p>
             <p className="mt-2 text-xs text-muted-foreground">
               {t('settings.aboutDesc', language)}
             </p>

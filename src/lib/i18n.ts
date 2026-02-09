@@ -140,6 +140,15 @@ const strings: Strings = {
   'nav.journal': { tg: 'Talaarawan', en: 'Journal' },
   'nav.settings': { tg: 'Settings', en: 'Settings' },
 
+  // How-to
+  'howto.title': { tg: 'Paano Gamitin', en: 'How to Use' },
+  'howto.subtitle': { tg: 'Gabay sa lahat ng feature ng app', en: 'Guide to all app features' },
+  'settings.howTo': { tg: 'Paano Gamitin', en: 'How to Use' },
+  'settings.howToDesc': { tg: 'Mga gabay sa lahat ng feature', en: 'Guide to all app features' },
+
+  // Highlights
+  'highlights.pickColor': { tg: 'Pumili ng kulay ng highlight', en: 'Pick highlight color' },
+
   // Common
   'common.cancel': { tg: 'Kanselahin', en: 'Cancel' },
   'common.save': { tg: 'I-save', en: 'Save' },
