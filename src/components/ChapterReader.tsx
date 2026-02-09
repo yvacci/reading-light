@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { useBookmarks } from '@/contexts/BookmarksContext';
 import { loadChapter, initEpub } from '@/lib/epub-service';
 import PageHeader from '@/components/PageHeader';
+import BookmarkDialog from '@/components/BookmarkDialog';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface Props {
   bookId: number;
@@ -20,14 +23,18 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const navigate = useNavigate();
   const book = getBookById(bookId);
   const { isChapterRead, toggleChapterRead, setLastRead, fontSize, language, addReadingTime } = useReadingProgress();
+  const { isBookmarked } = useBookmarks();
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [bookmarkOpen, setBookmarkOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const read = isChapterRead(bookId, chapter);
+  const bookmarked = isBookmarked(bookId, chapter);
 
   // Track reading time
   useEffect(() => {
@@ -100,18 +107,28 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
     touchStartRef.current = null;
 
-    // Only trigger if horizontal swipe is dominant and exceeds threshold
     if (deltaY > SWIPE_MAX_Y) return;
     if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
 
     if (deltaX < 0) {
-      // Swipe left → next chapter
       goToChapter(1);
     } else {
-      // Swipe right → previous chapter
       goToChapter(-1);
     }
   }, [goToChapter]);
+
+  const handleBookmark = useCallback(() => {
+    // Get selected text from browser selection, or use chapter summary
+    const selection = window.getSelection()?.toString().trim();
+    if (selection && selection.length > 5) {
+      setSelectedText(selection);
+    } else {
+      // Get first ~150 chars of chapter content as default text
+      const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      setSelectedText(plainText.slice(0, 200));
+    }
+    setBookmarkOpen(true);
+  }, [content]);
 
   function openReference() {
     const url = getWolUrl(bookId, chapter, language);
@@ -146,6 +163,17 @@ export default function ChapterReader({ bookId, chapter }: Props) {
             >
               <ExternalLink className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Reference</span>
+            </button>
+            <button
+              onClick={handleBookmark}
+              className={`flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition-colors ${
+                bookmarked
+                  ? 'text-accent bg-accent/10'
+                  : 'text-muted-foreground hover:bg-muted'
+              }`}
+              title="Bookmark this chapter"
+            >
+              <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-accent' : ''}`} />
             </button>
             <button
               onClick={() => toggleChapterRead(bookId, chapter)}
@@ -224,6 +252,15 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           Next <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Bookmark Dialog */}
+      <BookmarkDialog
+        open={bookmarkOpen}
+        onOpenChange={setBookmarkOpen}
+        bookId={bookId}
+        chapter={chapter}
+        selectedText={selectedText}
+      />
     </div>
   );
 }
