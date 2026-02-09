@@ -3,6 +3,7 @@ import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
+import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
@@ -48,16 +49,9 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    const validTypes = ['.epub', '.pdf'];
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    if (!validTypes.includes(ext)) {
-      toast.error('Please upload an EPUB or PDF file');
-      return;
-    }
-
-    if (ext === '.pdf') {
-      toast.error('PDF support coming soon. Please use EPUB format for now.');
+    if (ext !== '.epub') {
+      toast.error(language === 'en' ? 'Please upload an EPUB file' : 'Mag-upload ng EPUB file');
       return;
     }
 
@@ -65,10 +59,10 @@ export default function SettingsPage() {
     try {
       const count = await saveUserUploadedFile(file);
       setDailyTextCount(count);
-      toast.success(`Daily text uploaded! ${count} entries parsed.`);
+      toast.success(`${language === 'en' ? 'Daily text uploaded!' : 'Na-upload ang daily text!'} ${count} entries.`);
     } catch (err) {
       console.error('[Settings] Upload error:', err);
-      toast.error('Could not parse the file. Make sure it\'s a valid daily text EPUB.');
+      toast.error(language === 'en' ? 'Could not parse the file.' : 'Hindi ma-parse ang file.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -78,29 +72,29 @@ export default function SettingsPage() {
   const handleClearDailyText = async () => {
     await clearUserUploadedFile();
     setDailyTextCount(0);
-    toast.success('Custom daily text removed. Using bundled version.');
+    toast.success(language === 'en' ? 'Custom daily text removed.' : 'Inalis ang custom daily text.');
   };
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Settings" subtitle="Customize your experience" />
+      <PageHeader title={t('settings.title', language)} subtitle={t('settings.subtitle', language)} />
 
       <div className="space-y-6 px-4 pt-4">
         {/* Appearance */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Appearance</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.appearance', language)}</h2>
           <div className="space-y-1 rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 {darkMode ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
-                <span className="text-sm font-medium text-foreground">Dark Mode</span>
+                <span className="text-sm font-medium text-foreground">{t('settings.darkMode', language)}</span>
               </div>
               <Switch checked={darkMode} onCheckedChange={setDarkMode} />
             </div>
             <div className="border-t border-border px-4 py-3">
               <div className="flex items-center gap-3 mb-2">
                 <Type className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Font Size</span>
+                <span className="text-sm font-medium text-foreground">{t('settings.fontSize', language)}</span>
                 <span className="ml-auto text-xs text-muted-foreground">{fontSize}px</span>
               </div>
               <Slider
@@ -117,11 +111,11 @@ export default function SettingsPage() {
 
         {/* Language */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Language</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.language', language)}</h2>
           <div className="space-y-1 rounded-2xl border border-border bg-card">
             <div className="flex items-center gap-3 px-4 py-3">
               <Globe className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">Bible Language</span>
+              <span className="text-sm font-medium text-foreground">{t('settings.bibleLanguage', language)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 px-4 pb-4">
               {[
@@ -146,17 +140,17 @@ export default function SettingsPage() {
 
         {/* Daily Text Upload */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Daily Text</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.dailyText', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <div className="px-4 py-3">
               <div className="flex items-center gap-3 mb-2">
                 <FileText className="h-4 w-4 text-primary" />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">Daily Text File</span>
+                  <span className="text-sm font-medium text-foreground">{t('settings.dailyTextFile', language)}</span>
                   <p className="text-[10px] text-muted-foreground">
                     {dailyTextCount > 0
-                      ? `${dailyTextCount} entries loaded`
-                      : 'Using bundled daily text'}
+                      ? `${dailyTextCount} ${t('settings.entriesLoaded', language)}`
+                      : t('settings.usingBundled', language)}
                   </p>
                 </div>
               </div>
@@ -168,7 +162,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  {uploading ? 'Uploading...' : 'Upload EPUB'}
+                  {uploading ? t('settings.uploading', language) : t('settings.uploadEpub', language)}
                 </button>
 
                 {dailyTextCount > 0 && (
@@ -177,7 +171,7 @@ export default function SettingsPage() {
                     className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    Remove
+                    {t('settings.remove', language)}
                   </button>
                 )}
               </div>
@@ -195,18 +189,18 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notifications</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.notifications', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 <Bell className="h-4 w-4 text-primary" />
                 <div>
-                  <span className="text-sm font-medium text-foreground">Daily Reading Reminder</span>
+                  <span className="text-sm font-medium text-foreground">{t('settings.dailyReminder', language)}</span>
                   {!isSupported && (
-                    <p className="text-[10px] text-muted-foreground">Not supported in this browser</p>
+                    <p className="text-[10px] text-muted-foreground">{t('settings.notSupported', language)}</p>
                   )}
                   {isSupported && permissionState === 'denied' && (
-                    <p className="text-[10px] text-destructive">Notifications blocked. Enable in browser settings.</p>
+                    <p className="text-[10px] text-destructive">{t('settings.blocked', language)}</p>
                   )}
                 </div>
               </div>
@@ -220,7 +214,7 @@ export default function SettingsPage() {
               <div className="border-t border-border px-4 py-3">
                 <div className="flex items-center gap-3">
                   <Clock className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Reminder Time</span>
+                  <span className="text-sm font-medium text-foreground">{t('settings.reminderTime', language)}</span>
                   <Input
                     type="time"
                     value={reminderTime}
@@ -235,33 +229,32 @@ export default function SettingsPage() {
 
         {/* Data */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Data</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.data', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl">
                   <RotateCcw className="h-4 w-4 text-destructive" />
                   <div>
-                    <span className="text-sm font-medium text-destructive">Reset Progress</span>
-                    <p className="text-[10px] text-muted-foreground">Clear all reading progress and time data</p>
+                    <span className="text-sm font-medium text-destructive">{t('settings.resetProgress', language)}</span>
+                    <p className="text-[10px] text-muted-foreground">{t('settings.resetDesc', language)}</p>
                   </div>
                 </button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Reset all progress?</AlertDialogTitle>
+                  <AlertDialogTitle>{t('settings.resetConfirm', language)}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently clear all your reading progress, chapter marks, and reading time data. 
-                    Your plan selection, language preference, daily text, and appearance settings will be preserved.
+                    {t('settings.resetConfirmDesc', language)}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t('common.cancel', language)}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={resetProgress}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Reset Progress
+                    {t('settings.resetProgress', language)}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -271,12 +264,12 @@ export default function SettingsPage() {
 
         {/* About */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">About</h2>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.about', language)}</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
-            <p className="text-sm font-medium text-foreground">NWT Reading Planner</p>
-            <p className="text-xs text-muted-foreground">Version 1.3.0</p>
+            <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
+            <p className="text-xs text-muted-foreground">Version 1.4.0</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              A Bible reading planner for the New World Translation. All data is stored locally on your device.
+              {t('settings.aboutDesc', language)}
             </p>
           </div>
         </section>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
 import { loadChapter, initEpub } from '@/lib/epub-service';
@@ -44,7 +45,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const read = isChapterRead(bookId, chapter);
   const bookmarked = isBookmarked(bookId, chapter);
 
-  // Localized book name
   const localizedName = getLocalizedBookName(bookId, language);
 
   // Track reading time
@@ -73,7 +73,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
     const container = contentRef.current;
 
-    // Verse tap handlers
     const verseElements = container.querySelectorAll('[data-verse]');
     const handleVerseTap = (e: Event) => {
       const el = e.currentTarget as HTMLElement;
@@ -91,7 +90,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       (el as HTMLElement).style.cursor = 'pointer';
     });
 
-    // Footnote marker tap handlers
     const footnoteMarkers = container.querySelectorAll('.footnote-marker[data-fn-id]');
     const handleFootnoteTap = (e: Event) => {
       e.stopPropagation();
@@ -128,12 +126,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         setContent(addVerseDataAttributes(cleanHtml));
         setFootnotes(parsedFootnotes);
       } else {
-        setContent(placeholderHtml(bookId, chapter, localizedName));
+        setContent(placeholderHtml(bookId, chapter, localizedName, language));
         setFootnotes([]);
       }
     } catch (err) {
       console.error('[Reader] Error:', err);
-      setContent(placeholderHtml(bookId, chapter, localizedName));
+      setContent(placeholderHtml(bookId, chapter, localizedName, language));
     }
     setLoading(false);
   }
@@ -158,7 +156,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     }
   }, [book, bookId, chapter, navigate]);
 
-  // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -227,10 +224,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
             <button
               onClick={openReference}
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title="View Reference on WOL"
+              title={t('reader.reference', language)}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Reference</span>
+              <span className="hidden sm:inline">{t('reader.reference', language)}</span>
             </button>
             <button
               onClick={handleBookmark}
@@ -239,14 +236,14 @@ export default function ChapterReader({ bookId, chapter }: Props) {
                   ? 'text-accent bg-accent/10'
                   : 'text-muted-foreground hover:bg-muted'
               }`}
-              title="Bookmark this chapter"
+              title={t('bookmarks.saveBookmark', language)}
             >
               <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-accent' : ''}`} />
             </button>
             <button
               onClick={() => setJournalOpen(true)}
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title="Write journal entry"
+              title={t('journal.newEntry', language)}
             >
               <PenLine className="h-3.5 w-3.5" />
             </button>
@@ -259,7 +256,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               }`}
             >
               {read ? <Check className="h-3.5 w-3.5" /> : <BookmarkCheck className="h-3.5 w-3.5" />}
-              {read ? 'Read' : 'Mark Read'}
+              {read ? t('reader.read', language) : t('reader.markRead', language)}
             </button>
           </div>
         }
@@ -303,7 +300,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         </AnimatePresence>
       </div>
 
-      {/* Footnotes panel with interactive highlighting */}
       {!loading && (
         <FootnotesPanel
           footnotes={footnotes}
@@ -312,14 +308,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         />
       )}
 
-      {/* Verse selection hint */}
       {!loading && (
         <p className="text-center text-[10px] text-muted-foreground/60 px-4 pb-2">
-          Tap a verse number to bookmark · Tap * to view footnote · Swipe to navigate
+          {t('reader.verseTip', language)}
         </p>
       )}
 
-      {/* Chapter nav */}
       <div className="fixed bottom-16 left-0 right-0 flex items-center justify-between border-t border-border bg-card/95 px-4 py-2 backdrop-blur-lg safe-bottom">
         <Button
           variant="ghost"
@@ -328,7 +322,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           disabled={bookId === 1 && chapter === 1}
           className="gap-1 text-xs"
         >
-          <ChevronLeft className="h-4 w-4" /> Previous
+          <ChevronLeft className="h-4 w-4" /> {t('reader.previous', language)}
         </Button>
         <span className="text-xs text-muted-foreground">
           {chapter} / {book.chapters}
@@ -340,11 +334,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           disabled={bookId === 66 && chapter === book.chapters}
           className="gap-1 text-xs"
         >
-          Next <ChevronRight className="h-4 w-4" />
+          {t('reader.next', language)} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Bookmark Dialog */}
       <BookmarkDialog
         open={bookmarkOpen}
         onOpenChange={setBookmarkOpen}
@@ -354,7 +347,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         selectedText={selectedText}
       />
 
-      {/* Journal Dialog */}
       <JournalEntryDialog
         open={journalOpen}
         onOpenChange={setJournalOpen}
@@ -365,18 +357,13 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   );
 }
 
-/**
- * Add data-verse attributes to verse elements for tap-to-bookmark.
- */
 function addVerseDataAttributes(html: string): string {
-  // Pattern 1: <strong><a...><sup>N</sup></a></strong>
   let result = html.replace(
     /(<strong>\s*<a[^>]*>\s*<sup>\s*)(\d+)(\s*<\/sup>\s*<\/a>\s*<\/strong>)/gi,
     (match, prefix, num, suffix) => {
       return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
     }
   );
-  // Pattern 2: standalone <strong>N</strong> for verse 1
   result = result.replace(
     /(<strong>)(\d{1,2})(<\/strong>)(?!\s*<\/h)/gi,
     (match, open, num, close) => {
@@ -387,12 +374,15 @@ function addVerseDataAttributes(html: string): string {
   return result;
 }
 
-function placeholderHtml(bookId: number, chapter: number, name: string): string {
+function placeholderHtml(bookId: number, chapter: number, name: string, language: string): string {
+  const msg = language === 'en'
+    ? 'Could not load chapter content from EPUB.'
+    : 'Hindi ma-load ang nilalaman ng kabanata mula sa EPUB.';
   return `
     <div style="text-align:center;padding:2rem 0;">
       <p style="font-size:1.1rem;font-weight:600;">${name} ${chapter}</p>
       <p style="font-size:0.85rem;color:var(--muted-foreground);margin-top:0.5rem;">
-        Could not load chapter content from EPUB.
+        ${msg}
       </p>
     </div>
   `;

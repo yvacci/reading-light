@@ -1,20 +1,24 @@
 import { NavLink } from 'react-router-dom';
 import { Home, BookOpen, Search, PenLine, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const navItems = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/reader', icon: BookOpen, label: 'Bible' },
-  { to: '/search', icon: Search, label: 'Search' },
-  { to: '/journal', icon: PenLine, label: 'Journal' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 
 export default function BottomNav() {
+  const { language } = useReadingProgress();
+
+  const navItems = [
+    { to: '/', icon: Home, labelKey: 'nav.home' },
+    { to: '/reader', icon: BookOpen, labelKey: 'nav.bible' },
+    { to: '/search', icon: Search, labelKey: 'nav.search' },
+    { to: '/journal', icon: PenLine, labelKey: 'nav.journal' },
+    { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
+  ];
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg safe-bottom">
       <div className="mx-auto flex max-w-lg items-center justify-around py-1.5">
-        {navItems.map(({ to, icon: Icon, label }) => (
+        {navItems.map(({ to, icon: Icon, labelKey }) => (
           <NavLink
             key={to}
             to={to}
@@ -27,7 +31,7 @@ export default function BottomNav() {
             }
           >
             <Icon className="h-5 w-5" />
-            <span>{label}</span>
+            <span>{t(labelKey, language)}</span>
           </NavLink>
         ))}
       </div>

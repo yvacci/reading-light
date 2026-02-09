@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { PenLine, BookOpen } from 'lucide-react';
 import { useJournal, type JournalEntry } from '@/contexts/JournalContext';
 import { BIBLE_BOOKS, getBookById } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import {
@@ -41,6 +44,7 @@ export default function JournalEntryDialog({
   prefillVerse,
 }: Props) {
   const { addEntry, updateEntry } = useJournal();
+  const { language } = useReadingProgress();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [mood, setMood] = useState<string>('');
@@ -92,19 +96,18 @@ export default function JournalEntryDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <PenLine className="h-4 w-4 text-primary" />
-            {editEntry ? 'Edit Entry' : 'New Journal Entry'}
+            {editEntry ? t('journal.editEntry', language) : t('journal.newJournalEntry', language)}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Write your personal reflection
+            {t('journal.writeReflection', language)}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Scripture reference selector */}
         {!editEntry && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
               <BookOpen className="h-3 w-3" />
-              Scripture Reference
+              {t('journal.scriptureRef', language)}
             </p>
             <div className="grid grid-cols-3 gap-2">
               <Select value={bookId.toString()} onValueChange={(v) => { setBookId(Number(v)); setChapter(1); }}>
@@ -114,7 +117,7 @@ export default function JournalEntryDialog({
                 <SelectContent className="max-h-48">
                   {BIBLE_BOOKS.map(b => (
                     <SelectItem key={b.id} value={b.id.toString()} className="text-xs">
-                      {b.name}
+                      {getLocalizedBookName(b.id, language)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -135,7 +138,7 @@ export default function JournalEntryDialog({
                 type="number"
                 value={verse}
                 onChange={(e) => setVerse(e.target.value)}
-                placeholder="Verse"
+                placeholder={language === 'en' ? 'Verse' : 'Talata'}
                 className="text-xs h-9 rounded-xl"
                 min={1}
               />
@@ -143,17 +146,15 @@ export default function JournalEntryDialog({
           </div>
         )}
 
-        {/* Title */}
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Entry title..."
+          placeholder={t('journal.entryTitle', language)}
           className="text-sm rounded-xl"
         />
 
-        {/* Mood */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground mb-2">Mood (optional)</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2">{t('journal.moodOptional', language)}</p>
           <div className="flex gap-2">
             {MOODS.map((m) => (
               <button
@@ -171,21 +172,20 @@ export default function JournalEntryDialog({
           </div>
         </div>
 
-        {/* Content */}
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Write your reflection..."
+          placeholder={t('journal.writePlaceholder', language)}
           className="text-sm rounded-xl resize-none"
           rows={5}
         />
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel', language)}
           </Button>
           <Button size="sm" onClick={handleSave} disabled={!title.trim() || !content.trim()}>
-            {editEntry ? 'Update' : 'Save Entry'}
+            {editEntry ? t('journal.update', language) : t('journal.save', language)}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, BookText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { t } from '@/lib/i18n';
 
 export interface Footnote {
   id: string;
@@ -15,18 +17,15 @@ interface Props {
 }
 
 export default function FootnotesPanel({ footnotes, highlightedId, onHighlightClear }: Props) {
+  const { language } = useReadingProgress();
   const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const footnoteRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Auto-expand and scroll when a footnote is highlighted
   useEffect(() => {
     if (!highlightedId) return;
-
-    // Expand the panel
     setExpanded(true);
 
-    // Scroll to the highlighted footnote after expansion animation
     const timer = setTimeout(() => {
       const el = footnoteRefs.current[highlightedId];
       if (el && scrollRef.current) {
@@ -34,7 +33,6 @@ export default function FootnotesPanel({ footnotes, highlightedId, onHighlightCl
       }
     }, 300);
 
-    // Clear highlight after a few seconds
     const clearTimer = setTimeout(() => {
       onHighlightClear?.();
     }, 3000);
@@ -56,7 +54,7 @@ export default function FootnotesPanel({ footnotes, highlightedId, onHighlightCl
         <div className="flex items-center gap-2">
           <BookText className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-foreground">
-            Footnotes & Cross-References
+            {t('footnotes.title', language)}
           </span>
           <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
             {footnotes.length}

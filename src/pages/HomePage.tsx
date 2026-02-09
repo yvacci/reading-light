@@ -4,9 +4,10 @@ import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, Pen
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
-import ReadingStreakCard from '@/components/ReadingStreakCard';
+import ReadingStatsCard from '@/components/ReadingStatsCard';
 import DailyTextCard from '@/components/DailyTextCard';
 
 export default function HomePage() {
@@ -25,18 +26,18 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-xs font-medium uppercase tracking-widest text-primary">NWT Reading Planner</p>
-          <h1 className="mt-1 text-3xl font-bold text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {language === 'en' ? 'New World\nTranslation' : 'Bagong Sanlibutang\nSalin'}
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('app.title', language)}</p>
+          <h1 className="mt-1 text-3xl font-bold text-foreground whitespace-pre-line" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {t('home.subtitle', language)}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Track your Bible reading progress
+            {t('home.tagline', language)}
           </p>
         </motion.div>
       </div>
 
       <div className="space-y-4 px-4 pt-5">
-        {/* Daily Text - first section */}
+        {/* Daily Text */}
         <DailyTextCard />
 
         {/* Overall Progress Card */}
@@ -47,17 +48,17 @@ export default function HomePage() {
           className="rounded-2xl border border-border bg-card p-4"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Overall Progress</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('home.overallProgress', language)}</span>
             <span className="text-2xl font-bold text-primary">{overall.percent}%</span>
           </div>
           <Progress value={overall.percent} className="mt-2 h-2" />
           <p className="mt-2 text-xs text-muted-foreground">
-            {overall.read} of {overall.total} chapters read
+            {overall.read} {t('home.chaptersOf', language)} {overall.total} {t('home.chaptersRead', language)}
           </p>
         </motion.div>
 
-        {/* Reading Streak */}
-        <ReadingStreakCard />
+        {/* Reading Statistics */}
+        <ReadingStatsCard />
 
         {/* Today's Reading */}
         {todaysReading && todaysReading.length > 0 && (
@@ -69,7 +70,7 @@ export default function HomePage() {
           >
             <div className="flex items-center gap-2 mb-3">
               <CalendarDays className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold text-foreground">Today's Reading</span>
+              <span className="text-xs font-semibold text-foreground">{t('home.todaysReading', language)}</span>
             </div>
             <div className="space-y-2">
               {todaysReading.map((item, i) => (
@@ -104,7 +105,7 @@ export default function HomePage() {
               <BookOpen className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground">Continue Reading</p>
+              <p className="text-xs text-muted-foreground">{t('home.continueReading', language)}</p>
               <p className="text-sm font-semibold text-foreground">
                 {getLocalizedBookName(lastRead.bookId, language)} {lastRead.chapter}
               </p>
@@ -134,35 +135,35 @@ export default function HomePage() {
             className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
           >
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="text-xs font-medium text-foreground">Open Bible</span>
+            <span className="text-xs font-medium text-foreground">{t('home.openBible', language)}</span>
           </button>
           <button
             onClick={() => navigate('/search')}
             className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
           >
             <Search className="h-6 w-6 text-primary" />
-            <span className="text-xs font-medium text-foreground">Search</span>
+            <span className="text-xs font-medium text-foreground">{t('home.search', language)}</span>
           </button>
           <button
             onClick={() => navigate('/bookmarks')}
             className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
           >
             <Bookmark className="h-6 w-6 text-primary" />
-            <span className="text-xs font-medium text-foreground">Bookmarks</span>
+            <span className="text-xs font-medium text-foreground">{t('home.bookmarks', language)}</span>
           </button>
           <button
             onClick={() => navigate('/journal')}
             className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
           >
             <PenLine className="h-6 w-6 text-primary" />
-            <span className="text-xs font-medium text-foreground">Journal</span>
+            <span className="text-xs font-medium text-foreground">{t('home.journal', language)}</span>
           </button>
           <button
             onClick={() => navigate('/progress')}
             className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
           >
             <CheckCircle2 className="h-6 w-6 text-primary" />
-            <span className="text-xs font-medium text-foreground">View Progress</span>
+            <span className="text-xs font-medium text-foreground">{t('home.viewProgress', language)}</span>
           </button>
         </motion.div>
       </div>

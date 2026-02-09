@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine, Trash2, Edit3, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { useJournal, type JournalEntry } from '@/contexts/JournalContext';
-import { getBookById } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import PageHeader from '@/components/PageHeader';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,7 @@ const MOODS: Record<string, string> = {
 
 export default function JournalPage() {
   const { entries, removeEntry } = useJournal();
+  const { language } = useReadingProgress();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -46,12 +49,12 @@ export default function JournalPage() {
   return (
     <div className="min-h-screen pb-20">
       <PageHeader
-        title="Journal"
-        subtitle="Personal reflections"
+        title={t('journal.title', language)}
+        subtitle={t('journal.subtitle', language)}
         actions={
           <Button size="sm" onClick={handleNew} className="gap-1 text-xs rounded-full">
             <PenLine className="h-3.5 w-3.5" />
-            New Entry
+            {t('journal.newEntry', language)}
           </Button>
         }
       />
@@ -66,22 +69,22 @@ export default function JournalPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
               <PenLine className="h-8 w-8 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">No journal entries yet</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('journal.empty', language)}</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Start writing reflections about your Bible reading. Tie them to specific chapters or verses.
+              {t('journal.emptyHint', language)}
             </p>
             <Button onClick={handleNew} className="mt-2 gap-2 rounded-full">
               <PenLine className="h-4 w-4" />
-              Write First Entry
+              {t('journal.writeFirst', language)}
             </Button>
           </motion.div>
         ) : (
           <AnimatePresence>
             {entries.map((entry) => {
-              const book = getBookById(entry.bookId);
+              const bookName = getLocalizedBookName(entry.bookId, language);
               const location = entry.verse
-                ? `${book?.name} ${entry.chapter}:${entry.verse}`
-                : `${book?.name} ${entry.chapter}`;
+                ? `${bookName} ${entry.chapter}:${entry.verse}`
+                : `${bookName} ${entry.chapter}`;
               const isExpanded = expandedId === entry.id;
               const dateStr = new Date(entry.createdAt).toLocaleDateString(undefined, {
                 month: 'short',
@@ -140,7 +143,7 @@ export default function JournalPage() {
                           </div>
                           {entry.mood && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              Mood: {entry.mood} {MOODS[entry.mood] || ''}
+                              {t('journal.mood', language)}: {entry.mood} {MOODS[entry.mood] || ''}
                             </p>
                           )}
                           <div className="flex gap-2 mt-3">
@@ -151,27 +154,27 @@ export default function JournalPage() {
                               className="gap-1 text-xs rounded-full"
                             >
                               <Edit3 className="h-3 w-3" />
-                              Edit
+                              {t('journal.edit', language)}
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="gap-1 text-xs text-destructive rounded-full">
                                   <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  {t('journal.delete', language)}
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-                                  <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+                                  <AlertDialogTitle>{t('journal.deleteConfirm', language)}</AlertDialogTitle>
+                                  <AlertDialogDescription>{t('journal.deleteDesc', language)}</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('common.cancel', language)}</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => removeEntry(entry.id)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
-                                    Delete
+                                    {t('common.delete', language)}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

@@ -2,7 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark, Trash2 } from 'lucide-react';
 import { useBookmarks } from '@/contexts/BookmarksContext';
-import { getBookById } from '@/lib/bible-data';
+import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import PageHeader from '@/components/PageHeader';
 
 const HIGHLIGHT_COLORS: Record<string, string> = {
@@ -16,19 +18,20 @@ const HIGHLIGHT_COLORS: Record<string, string> = {
 export default function BookmarksPage() {
   const navigate = useNavigate();
   const { bookmarks, removeBookmark } = useBookmarks();
+  const { language } = useReadingProgress();
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Bookmarks" subtitle={`${bookmarks.length} saved`} showBack />
+      <PageHeader title={t('bookmarks.title', language)} subtitle={`${bookmarks.length} ${t('bookmarks.saved', language)}`} showBack />
 
       <div className="px-4 pt-3 space-y-2">
         {bookmarks.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <Bookmark className="h-10 w-10 text-muted-foreground/40" />
             <div>
-              <p className="text-sm font-medium text-muted-foreground">No bookmarks yet</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('bookmarks.empty', language)}</p>
               <p className="text-xs text-muted-foreground/70 mt-1">
-                Tap the bookmark icon while reading to save verses
+                {t('bookmarks.emptyHint', language)}
               </p>
             </div>
           </div>
@@ -36,7 +39,7 @@ export default function BookmarksPage() {
 
         <AnimatePresence>
           {bookmarks.map((bm) => {
-            const book = getBookById(bm.bookId);
+            const bookName = getLocalizedBookName(bm.bookId, language);
             const colorClass = HIGHLIGHT_COLORS[bm.color] || HIGHLIGHT_COLORS.yellow;
 
             return (
@@ -53,7 +56,7 @@ export default function BookmarksPage() {
                     className="flex-1 text-left"
                   >
                     <span className="text-xs font-semibold text-primary">
-                      {book?.name || `Book ${bm.bookId}`} {bm.chapter}
+                      {bookName} {bm.chapter}
                       {bm.verse ? `:${bm.verse}` : ''}
                     </span>
                     <p className="mt-1 text-xs text-foreground/80 leading-relaxed line-clamp-3">

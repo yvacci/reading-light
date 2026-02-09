@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
 import { BIBLE_BOOKS } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
+import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { Progress } from '@/components/ui/progress';
 import PageHeader from '@/components/PageHeader';
 import WeeklyCalendarChart from '@/components/WeeklyCalendarChart';
+import ReadingStatsCard from '@/components/ReadingStatsCard';
 
 export default function ProgressPage() {
   const { getOverallProgress, getBookProgress, language } = useReadingProgress();
@@ -20,7 +22,7 @@ export default function ProgressPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title="Progress" subtitle="Your reading journey" />
+      <PageHeader title={t('progress.title', language)} subtitle={t('progress.subtitle', language)} />
 
       <div className="space-y-4 px-4 pt-4">
         {/* Overall */}
@@ -42,9 +44,12 @@ export default function ProgressPage() {
             </svg>
             <span className="text-2xl font-bold text-foreground">{overall.percent}%</span>
           </div>
-          <p className="mt-3 text-sm font-medium text-foreground">Overall Progress</p>
-          <p className="text-xs text-muted-foreground">{overall.read} / {overall.total} chapters</p>
+          <p className="mt-3 text-sm font-medium text-foreground">{t('progress.overall', language)}</p>
+          <p className="text-xs text-muted-foreground">{overall.read} / {overall.total} {t('reader.chapters', language)}</p>
         </motion.div>
+
+        {/* Statistics */}
+        <ReadingStatsCard />
 
         {/* Weekly Calendar Chart */}
         <WeeklyCalendarChart />
@@ -53,7 +58,7 @@ export default function ProgressPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] font-medium text-muted-foreground">
-              {language === 'en' ? 'Hebrew Scriptures' : 'Hebreong Kasulatan'}
+              {t('reader.hebrewScriptures', language)}
             </p>
             <p className="text-lg font-bold text-foreground">{Math.round((otRead / otTotal) * 100)}%</p>
             <Progress value={(otRead / otTotal) * 100} className="mt-1 h-1.5" />
@@ -61,7 +66,7 @@ export default function ProgressPage() {
           </div>
           <div className="rounded-xl border border-border bg-card p-3">
             <p className="text-[10px] font-medium text-muted-foreground">
-              {language === 'en' ? 'Greek Scriptures' : 'Kristiyanong Griegong Kasulatan'}
+              {t('reader.greekScriptures', language)}
             </p>
             <p className="text-lg font-bold text-foreground">{Math.round((ntRead / ntTotal) * 100)}%</p>
             <Progress value={(ntRead / ntTotal) * 100} className="mt-1 h-1.5" />
@@ -70,7 +75,7 @@ export default function ProgressPage() {
         </div>
 
         {/* Per book */}
-        <h2 className="pt-2 text-sm font-semibold text-foreground">By Book</h2>
+        <h2 className="pt-2 text-sm font-semibold text-foreground">{t('progress.byBook', language)}</h2>
         <div className="space-y-1">
           {BIBLE_BOOKS.map(book => {
             const prog = getBookProgress(book.id);
@@ -87,7 +92,7 @@ export default function ProgressPage() {
           })}
           {BIBLE_BOOKS.every(b => getBookProgress(b.id).read === 0) && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Start reading to see your progress here!
+              {t('progress.startReading', language)}
             </p>
           )}
         </div>
