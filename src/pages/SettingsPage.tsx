@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays } from 'lucide-react';
+import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays, Download, FolderInput } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
+import { exportBackup, importBackup } from '@/lib/backup-service';
 import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
 import { Switch } from '@/components/ui/switch';
@@ -38,6 +39,7 @@ export default function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [dailyTextCount, setDailyTextCount] = useState(() => getDailyTextEntryCount());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backupInputRef = useRef<HTMLInputElement>(null);
 
   const handleReminderToggle = async (checked: boolean) => {
     if (checked) {
@@ -52,8 +54,8 @@ export default function SettingsPage() {
     if (!file) return;
 
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
-    if (ext !== '.epub') {
-      toast.error(language === 'en' ? 'Please upload an EPUB file' : 'Mag-upload ng EPUB file');
+    if (ext !== '.pdf') {
+      toast.error(language === 'en' ? 'Please upload a PDF file' : 'Mag-upload ng PDF file');
       return;
     }
 
@@ -75,6 +77,29 @@ export default function SettingsPage() {
     await clearUserUploadedFile();
     setDailyTextCount(0);
     toast.success(language === 'en' ? 'Custom daily text removed.' : 'Inalis ang custom daily text.');
+  };
+
+  const handleExportBackup = () => {
+    try {
+      exportBackup();
+      toast.success(language === 'en' ? 'Backup exported!' : 'Na-export ang backup!');
+    } catch (err) {
+      toast.error(language === 'en' ? 'Export failed.' : 'Nabigo ang pag-export.');
+    }
+  };
+
+  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const count = await importBackup(file);
+      toast.success(`${language === 'en' ? 'Backup restored!' : 'Na-restore ang backup!'} ${count} keys.`);
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      toast.error(language === 'en' ? 'Invalid backup file.' : 'Hindi valid ang backup file.');
+    } finally {
+      if (backupInputRef.current) backupInputRef.current.value = '';
+    }
   };
 
   return (
@@ -181,7 +206,7 @@ export default function SettingsPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".epub"
+                accept=".pdf"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -298,12 +323,49 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Backup & Restore */}
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.backup', language)}</h2>
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
+            <div className="flex items-center gap-3 mb-2">
+              <Download className="h-4 w-4 text-primary" />
+              <div>
+                <span className="text-sm font-medium text-foreground">{t('settings.backupRestore', language)}</span>
+                <p className="text-[10px] text-muted-foreground">{t('settings.backupDesc', language)}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={handleExportBackup}
+                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {t('settings.export', language)}
+              </button>
+              <button
+                onClick={() => backupInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              >
+                <FolderInput className="h-3.5 w-3.5" />
+                {t('settings.import', language)}
+              </button>
+            </div>
+            <input
+              ref={backupInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportBackup}
+              className="hidden"
+            />
+          </div>
+        </section>
+
         {/* About */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.about', language)}</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-            <p className="text-xs text-muted-foreground">Version 1.5.0</p>
+            <p className="text-xs text-muted-foreground">Version 1.6.0</p>
             <p className="mt-2 text-xs text-muted-foreground">
               {t('settings.aboutDesc', language)}
             </p>

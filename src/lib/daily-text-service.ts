@@ -1,4 +1,7 @@
-import JSZip from 'jszip';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up the worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 interface DailyTextEntry {
   date: string; // "MM-DD" format
@@ -12,117 +15,104 @@ const DAILY_TEXT_LANG_KEY = 'nwt-daily-text-lang';
 let parsedEntries: DailyTextEntry[] | null = null;
 let loadedLang: string | null = null;
 
-/**
- * Get the default bundled daily text path based on language
- */
 function getDefaultPath(lang: string): string {
   switch (lang) {
-    case 'en': return '/bibles/es26_E.epub';
-    default: return '/bibles/es26_TG.epub';
+    case 'en': return '/bibles/es26_E.pdf';
+    default: return '/bibles/es26_TG.pdf';
   }
 }
 
-/**
- * Parse a daily text EPUB file and extract entries by date.
- */
-async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTextEntry[]> {
-  const zip = await JSZip.loadAsync(arrayBuffer);
-  const entries: DailyTextEntry[] = [];
+// Month names for date parsing
+const monthNames: Record<string, number> = {
+  'enero': 1, 'pebrero': 2, 'marso': 3, 'abril': 4, 'mayo': 5, 'hunyo': 6,
+  'hulyo': 7, 'agosto': 8, 'setyembre': 9, 'oktubre': 10, 'nobyembre': 11, 'disyembre': 12,
+  'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+  'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
+};
 
-  // Find the OPF file
-  let opfPath = '';
-  const containerXml = await zip.file('META-INF/container.xml')?.async('string');
-  if (containerXml) {
-    const match = containerXml.match(/full-path="([^"]+\.opf)"/);
-    if (match) opfPath = match[1];
+// Day names in English and Tagalog
+const dayNames = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+  'lunes', 'martes', 'miyerkules', 'huwebes', 'biyernes', 'sabado', 'linggo',
+];
+
+/**
+ * Parse a daily text PDF and extract entries by date.
+ */
+async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]> {
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const entries: DailyTextEntry[] = [];
+  
+  // Collect all text from all pages
+  let allText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items
+      .map((item: any) => item.str)
+      .join(' ');
+    allText += pageText + '\n';
   }
-  if (!opfPath) {
-    for (const p of ['content.opf', 'OEBPS/content.opf', 'OPS/content.opf']) {
-      if (zip.file(p)) { opfPath = p; break; }
+
+  // Build a regex to find date headers like "Thursday, January 1" or "Huwebes, Enero 1"
+  const dayNamesPattern = dayNames.join('|');
+  const monthNamesPattern = Object.keys(monthNames).join('|');
+  const dateHeaderRegex = new RegExp(
+    `(?:${dayNamesPattern})[,\\s]+(?:${monthNamesPattern})\\s+(\\d{1,2})`,
+    'gi'
+  );
+
+  // Find all date matches and their positions
+  const matches: { index: number; month: number; day: number; fullMatch: string }[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = dateHeaderRegex.exec(allText)) !== null) {
+    // Extract month from the match
+    const monthMatch = match[0].match(new RegExp(`(${monthNamesPattern})`, 'i'));
+    if (monthMatch) {
+      const monthNum = monthNames[monthMatch[1].toLowerCase()];
+      const dayNum = parseInt(match[1]);
+      if (monthNum && dayNum >= 1 && dayNum <= 31) {
+        matches.push({
+          index: match.index,
+          month: monthNum,
+          day: dayNum,
+          fullMatch: match[0],
+        });
+      }
     }
   }
 
-  const contentPrefix = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/') + 1) : '';
+  // Extract entries between date headers
+  for (let i = 0; i < matches.length; i++) {
+    const current = matches[i];
+    const nextIndex = i + 1 < matches.length ? matches[i + 1].index : allText.length;
+    const entryText = allText.slice(current.index + current.fullMatch.length, nextIndex).trim();
 
-  const opfXml = await zip.file(opfPath)?.async('string');
-  if (!opfXml) return entries;
+    const mmdd = `${String(current.month).padStart(2, '0')}-${String(current.day).padStart(2, '0')}`;
 
-  const parser = new DOMParser();
-  const opfDoc = parser.parseFromString(opfXml, 'application/xml');
+    // The title is the scripture reference (first line after the date, ending with a book reference)
+    // Pattern: text ending with —Book chapter:verse or similar
+    const titleMatch = entryText.match(/^[\s]*(.+?[.!?]?\s*—.+?\d+:\d+[^.]*\.?)/s);
+    let title = '';
+    let content = entryText;
 
-  const manifestMap: Record<string, string> = {};
-  opfDoc.querySelectorAll('manifest item').forEach(item => {
-    const id = item.getAttribute('id') || '';
-    const href = item.getAttribute('href') || '';
-    manifestMap[id] = href;
-  });
-
-  const spineHrefs: string[] = [];
-  opfDoc.querySelectorAll('spine itemref').forEach(ref => {
-    const idref = ref.getAttribute('idref') || '';
-    if (manifestMap[idref]) spineHrefs.push(manifestMap[idref]);
-  });
-
-  // Month names in Tagalog and English for date parsing
-  const monthNames: Record<string, number> = {
-    'enero': 1, 'pebrero': 2, 'marso': 3, 'abril': 4, 'mayo': 5, 'hunyo': 6,
-    'hulyo': 7, 'agosto': 8, 'setyembre': 9, 'oktubre': 10, 'nobyembre': 11, 'disyembre': 12,
-    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
-    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
-  };
-
-  for (const href of spineHrefs) {
-    const filePath = contentPrefix + href;
-    const file = zip.file(filePath);
-    if (!file) continue;
-
-    const xhtml = await file.async('string');
-    if (!xhtml || xhtml.length < 50) continue;
-
-    const bodyMatch = xhtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-    const body = bodyMatch ? bodyMatch[1] : xhtml;
-
-    const cleanText = body
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/&amp;/gi, '&')
-      .replace(/&lt;/gi, '<')
-      .replace(/&gt;/gi, '>')
-      .replace(/&quot;/gi, '"')
-      .replace(/&#\d+;/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (cleanText.length < 20) continue;
-
-    const datePattern = new RegExp(
-      `(${Object.keys(monthNames).join('|')})\\s+(\\d{1,2})`,
-      'i'
-    );
-    const dateMatch = cleanText.match(datePattern);
-
-    if (dateMatch) {
-      const monthName = dateMatch[1].toLowerCase();
-      const day = parseInt(dateMatch[2]);
-      const month = monthNames[monthName];
-
-      if (month && day >= 1 && day <= 31) {
-        const mmdd = `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-        const afterDate = cleanText.substring(cleanText.indexOf(dateMatch[0]) + dateMatch[0].length).trim();
-        
-        // Extract title: look for quoted text or first sentence (more generous matching)
-        const titleMatch = afterDate.match(/^["""\u201C]?([^"""\u201D\n]{5,200})["""\u201D]?/);
-        const title = titleMatch ? titleMatch[1].trim().replace(/["""\u201C\u201D]/g, '') : '';
-        
-        // Get full remaining content (increased limit to capture all text)
-        const contentStart = title.length > 0 ? afterDate.indexOf(title) + title.length : 0;
-        const content = afterDate.slice(contentStart).trim().replace(/^["""\u201C\u201D.,;\s]+/, '').slice(0, 3000);
-
-        entries.push({ date: mmdd, title, content });
+    if (titleMatch) {
+      title = titleMatch[1].replace(/\s+/g, ' ').trim();
+      content = entryText.slice(titleMatch[0].length).trim();
+    } else {
+      // Fallback: first sentence
+      const firstSentence = entryText.match(/^(.+?[.!?])\s/);
+      if (firstSentence) {
+        title = firstSentence[1].trim();
+        content = entryText.slice(firstSentence[0].length).trim();
       }
+    }
+
+    // Clean up content - limit length
+    content = content.replace(/\s+/g, ' ').trim().slice(0, 3000);
+
+    if (title || content) {
+      entries.push({ date: mmdd, title, content });
     }
   }
 
@@ -130,18 +120,16 @@ async function parseEpubForDailyText(arrayBuffer: ArrayBuffer): Promise<DailyTex
 }
 
 /**
- * Initialize daily text from bundled EPUB or user-uploaded file.
- * Now respects the language parameter to load the correct bundled file.
+ * Initialize daily text from bundled PDF or user-uploaded file.
  */
 export async function loadDailyText(lang: string = 'tg'): Promise<void> {
-  // If already loaded for this language, skip
   if (parsedEntries && parsedEntries.length > 0 && loadedLang === lang) return;
 
-  // Check for user-uploaded file in IndexedDB (user uploads override language)
+  // Check for user-uploaded file in IndexedDB
   try {
     const userFile = await getUserUploadedFile();
     if (userFile) {
-      parsedEntries = await parseEpubForDailyText(userFile);
+      parsedEntries = await parsePdfForDailyText(userFile);
       loadedLang = lang;
       if (parsedEntries.length > 0) {
         localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
@@ -153,7 +141,7 @@ export async function loadDailyText(lang: string = 'tg'): Promise<void> {
     console.warn('[DailyText] Error loading user file:', err);
   }
 
-  // Check cache for matching language
+  // Check cache
   try {
     const cachedLang = localStorage.getItem(DAILY_TEXT_LANG_KEY);
     if (cachedLang === lang) {
@@ -166,11 +154,11 @@ export async function loadDailyText(lang: string = 'tg'): Promise<void> {
     }
   } catch {}
 
-  // Load bundled EPUB based on language
+  // Load bundled PDF
   try {
     const response = await fetch(getDefaultPath(lang));
     const arrayBuffer = await response.arrayBuffer();
-    parsedEntries = await parseEpubForDailyText(arrayBuffer);
+    parsedEntries = await parsePdfForDailyText(arrayBuffer);
     loadedLang = lang;
     if (parsedEntries.length > 0) {
       localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
@@ -186,10 +174,8 @@ export async function loadDailyText(lang: string = 'tg'): Promise<void> {
 
 export function getTodaysDailyText(): DailyTextEntry | null {
   if (!parsedEntries || parsedEntries.length === 0) return null;
-  
   const now = new Date();
   const mmdd = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  
   return parsedEntries.find(e => e.date === mmdd) || null;
 }
 
@@ -201,8 +187,8 @@ export function getDailyTextByDate(month: number, day: number): DailyTextEntry |
 
 export async function saveUserUploadedFile(file: File): Promise<number> {
   const arrayBuffer = await file.arrayBuffer();
-  const entries = await parseEpubForDailyText(arrayBuffer);
-  
+  const entries = await parsePdfForDailyText(arrayBuffer);
+
   if (entries.length === 0) {
     throw new Error('Could not parse any daily text entries from the file');
   }
@@ -257,7 +243,7 @@ export async function clearUserUploadedFile(): Promise<void> {
   loadedLang = null;
   localStorage.removeItem(DAILY_TEXT_CACHE_KEY);
   localStorage.removeItem(DAILY_TEXT_LANG_KEY);
-  
+
   return new Promise((resolve) => {
     const request = indexedDB.open('nwt-daily-text', 1);
     request.onupgradeneeded = () => {

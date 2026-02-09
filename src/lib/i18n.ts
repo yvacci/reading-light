@@ -117,7 +117,7 @@ const strings: Strings = {
   'settings.dailyTextFile': { tg: 'File ng Daily Text', en: 'Daily Text File' },
   'settings.entriesLoaded': { tg: 'entry ang na-load', en: 'entries loaded' },
   'settings.usingBundled': { tg: 'Gamit ang bundled daily text', en: 'Using bundled daily text' },
-  'settings.uploadEpub': { tg: 'Mag-upload ng EPUB', en: 'Upload EPUB' },
+  'settings.uploadEpub': { tg: 'Mag-upload ng PDF', en: 'Upload PDF' },
   'settings.uploading': { tg: 'Nag-a-upload...', en: 'Uploading...' },
   'settings.remove': { tg: 'Alisin', en: 'Remove' },
   'settings.notifications': { tg: 'Mga Notipikasyon', en: 'Notifications' },
@@ -132,6 +132,11 @@ const strings: Strings = {
   'settings.resetConfirmDesc': { tg: 'Permanenteng maaalis ang lahat ng iyong reading progress, chapter marks, at reading time data. Ang plan selection, language preference, daily text, at appearance settings ay mananatili.', en: 'This will permanently clear all your reading progress, chapter marks, and reading time data. Your plan selection, language preference, daily text, and appearance settings will be preserved.' },
   'settings.about': { tg: 'Tungkol sa', en: 'About' },
   'settings.aboutDesc': { tg: 'Isang plano sa pagbabasa ng Bibliya para sa New World Translation. Ang lahat ng data ay naka-store nang lokal sa iyong device.', en: 'A Bible reading planner for the New World Translation. All data is stored locally on your device.' },
+  'settings.backup': { tg: 'Backup', en: 'Backup' },
+  'settings.backupRestore': { tg: 'Backup at Restore', en: 'Backup & Restore' },
+  'settings.backupDesc': { tg: 'I-export o i-import ang lahat ng data ng app', en: 'Export or import all app data' },
+  'settings.export': { tg: 'I-export', en: 'Export' },
+  'settings.import': { tg: 'I-import', en: 'Import' },
 
   // Footnotes
   'footnotes.title': { tg: 'Mga Footnote at Cross-Reference', en: 'Footnotes & Cross-References' },
