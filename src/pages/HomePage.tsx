@@ -5,6 +5,7 @@ import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
+import ReadingStreakCard from '@/components/ReadingStreakCard';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -49,6 +50,9 @@ export default function HomePage() {
             {overall.read} of {overall.total} chapters read
           </p>
         </motion.div>
+
+        {/* Reading Streak */}
+        <ReadingStreakCard />
 
         {/* Today's Reading */}
         {todaysReading && todaysReading.length > 0 && (

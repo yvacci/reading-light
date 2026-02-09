@@ -4,6 +4,7 @@ export interface Bookmark {
   id: string;
   bookId: number;
   chapter: number;
+  verse?: number; // optional verse number for verse-level bookmarks
   verseText: string; // snippet of verse content
   note: string;
   color: string; // highlight color
@@ -16,7 +17,8 @@ interface BookmarksContextType {
   removeBookmark: (id: string) => void;
   updateBookmark: (id: string, updates: Partial<Pick<Bookmark, 'note' | 'color'>>) => void;
   getBookmarksByChapter: (bookId: number, chapter: number) => Bookmark[];
-  isBookmarked: (bookId: number, chapter: number) => boolean;
+  isBookmarked: (bookId: number, chapter: number, verse?: number) => boolean;
+  getVerseBookmarks: (bookId: number, chapter: number) => Bookmark[];
 }
 
 const STORAGE_KEY = 'nwt-bookmarks';
@@ -68,14 +70,24 @@ export function BookmarksProvider({ children }: { children: React.ReactNode }) {
   );
 
   const isBookmarked = useCallback(
+    (bookId: number, chapter: number, verse?: number) => {
+      if (verse !== undefined) {
+        return bookmarks.some(b => b.bookId === bookId && b.chapter === chapter && b.verse === verse);
+      }
+      return bookmarks.some(b => b.bookId === bookId && b.chapter === chapter);
+    },
+    [bookmarks]
+  );
+
+  const getVerseBookmarks = useCallback(
     (bookId: number, chapter: number) =>
-      bookmarks.some(b => b.bookId === bookId && b.chapter === chapter),
+      bookmarks.filter(b => b.bookId === bookId && b.chapter === chapter && b.verse !== undefined),
     [bookmarks]
   );
 
   return (
     <BookmarksContext.Provider
-      value={{ bookmarks, addBookmark, removeBookmark, updateBookmark, getBookmarksByChapter, isBookmarked }}
+      value={{ bookmarks, addBookmark, removeBookmark, updateBookmark, getBookmarksByChapter, isBookmarked, getVerseBookmarks }}
     >
       {children}
     </BookmarksContext.Provider>

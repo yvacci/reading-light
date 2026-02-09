@@ -54,6 +54,7 @@ export default function BookmarksPage() {
                   >
                     <span className="text-xs font-semibold text-primary">
                       {book?.name || `Book ${bm.bookId}`} {bm.chapter}
+                      {bm.verse ? `:${bm.verse}` : ''}
                     </span>
                     <p className="mt-1 text-xs text-foreground/80 leading-relaxed line-clamp-3">
                       {bm.verseText}

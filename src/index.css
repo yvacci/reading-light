@@ -177,3 +177,20 @@
 .bible-content .directNav {
   display: none;
 }
+
+/* Verse tap targets for bookmarking */
+.bible-content .verse-tap-target {
+  cursor: pointer;
+  border-radius: 2px;
+  padding: 0 1px;
+  transition: background-color 0.15s ease;
+}
+
+.bible-content .verse-tap-target:hover,
+.bible-content .verse-tap-target:active {
+  background-color: hsl(var(--primary) / 0.12);
+}
+
+.bible-content .verse-tap-target:active {
+  background-color: hsl(var(--primary) / 0.25);
+}

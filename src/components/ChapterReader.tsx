@@ -9,7 +9,6 @@ import { loadChapter, initEpub } from '@/lib/epub-service';
 import PageHeader from '@/components/PageHeader';
 import BookmarkDialog from '@/components/BookmarkDialog';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 
 interface Props {
   bookId: number;
@@ -29,6 +28,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [bookmarkOpen, setBookmarkOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
+  const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -56,6 +56,36 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     doLoad();
   }, [bookId, chapter, language]);
 
+  // Add verse tap handlers after content loads
+  useEffect(() => {
+    if (loading || !contentRef.current) return;
+
+    const container = contentRef.current;
+    const verseElements = container.querySelectorAll('[data-verse]');
+
+    const handleVerseTap = (e: Event) => {
+      const el = e.currentTarget as HTMLElement;
+      const verseNum = parseInt(el.getAttribute('data-verse') || '0');
+      if (verseNum > 0) {
+        const text = el.textContent?.trim() || '';
+        setSelectedVerse(verseNum);
+        setSelectedText(text.slice(0, 300));
+        setBookmarkOpen(true);
+      }
+    };
+
+    verseElements.forEach(el => {
+      el.addEventListener('click', handleVerseTap);
+      (el as HTMLElement).style.cursor = 'pointer';
+    });
+
+    return () => {
+      verseElements.forEach(el => {
+        el.removeEventListener('click', handleVerseTap);
+      });
+    };
+  }, [loading, content]);
+
   async function doLoad() {
     setLoading(true);
     try {
@@ -63,7 +93,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       const html = await loadChapter(bookId, chapter, language);
 
       if (html && html.trim().length > 50) {
-        setContent(html);
+        setContent(addVerseDataAttributes(html));
       } else {
         setContent(placeholderHtml(bookId, chapter));
       }
@@ -118,14 +148,14 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }, [goToChapter]);
 
   const handleBookmark = useCallback(() => {
-    // Get selected text from browser selection, or use chapter summary
     const selection = window.getSelection()?.toString().trim();
     if (selection && selection.length > 5) {
       setSelectedText(selection);
+      setSelectedVerse(undefined);
     } else {
-      // Get first ~150 chars of chapter content as default text
       const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       setSelectedText(plainText.slice(0, 200));
+      setSelectedVerse(undefined);
     }
     setBookmarkOpen(true);
   }, [content]);
@@ -228,6 +258,13 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         </AnimatePresence>
       </div>
 
+      {/* Verse selection hint */}
+      {!loading && (
+        <p className="text-center text-[10px] text-muted-foreground/60 px-4 pb-2">
+          Tap a verse number to bookmark it · Swipe left/right to navigate
+        </p>
+      )}
+
       {/* Chapter nav */}
       <div className="fixed bottom-16 left-0 right-0 flex items-center justify-between border-t border-border bg-card/95 px-4 py-2 backdrop-blur-lg safe-bottom">
         <Button
@@ -259,9 +296,26 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onOpenChange={setBookmarkOpen}
         bookId={bookId}
         chapter={chapter}
+        verse={selectedVerse}
         selectedText={selectedText}
       />
     </div>
+  );
+}
+
+/**
+ * Add data-verse attributes to verse elements for tap-to-bookmark.
+ * NWT EPUBs use <sup> or <span class="verse-num"> for verse numbers.
+ * We wrap the verse content in a tappable span.
+ */
+function addVerseDataAttributes(html: string): string {
+  // Pattern: find verse number superscripts and wrap the following text
+  // Match <sup>N</sup> or verse number patterns and add data attributes
+  return html.replace(
+    /(<(?:sup|span)[^>]*>)\s*(\d+)\s*(<\/(?:sup|span)>)/gi,
+    (match, openTag, num, closeTag) => {
+      return `<span data-verse="${num}" class="verse-tap-target">${openTag}${num}${closeTag}</span>`;
+    }
   );
 }
 

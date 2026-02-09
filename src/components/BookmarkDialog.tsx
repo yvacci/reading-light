@@ -26,10 +26,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   bookId: number;
   chapter: number;
+  verse?: number;
   selectedText: string;
 }
 
-export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, selectedText }: Props) {
+export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, verse, selectedText }: Props) {
   const { addBookmark } = useBookmarks();
   const [note, setNote] = useState('');
   const [color, setColor] = useState('yellow');
@@ -39,6 +40,7 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, se
     addBookmark({
       bookId,
       chapter,
+      verse,
       verseText: selectedText.slice(0, 300),
       note: note.trim(),
       color,
@@ -47,6 +49,10 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, se
     setColor('yellow');
     onOpenChange(false);
   };
+
+  const locationLabel = verse
+    ? `${book?.name} ${chapter}:${verse}`
+    : `${book?.name} ${chapter}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,7 +63,7 @@ export default function BookmarkDialog({ open, onOpenChange, bookId, chapter, se
             Save Bookmark
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {book?.name} {chapter}
+            {locationLabel}
           </DialogDescription>
         </DialogHeader>
 
