@@ -98,13 +98,17 @@ export default function DailyTextCard() {
           </div>
 
           {dailyText.title && (
-            <p className="text-sm font-semibold text-foreground mt-2 italic" style={{ fontFamily: "'Playfair Display', serif" }}>
-              "{dailyText.title}"
-            </p>
+            <p
+              className="text-sm font-semibold text-foreground mt-2 italic text-center daily-text-content"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+              onClick={handleContentClick}
+              dangerouslySetInnerHTML={{ __html: `\u201C${makeReferencesClickable(dailyText.title)}\u201D` }}
+            />
           )}
 
           <div
             className="text-xs text-muted-foreground mt-2 leading-relaxed daily-text-content"
+            style={{ textAlign: 'justify' }}
             onClick={handleContentClick}
             dangerouslySetInnerHTML={{ __html: expanded ? fullHtml : truncatedHtml }}
           />
