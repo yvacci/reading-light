@@ -24,6 +24,9 @@ const strings: Strings = {
   'dailyText.title': { tg: 'Teksto sa Araw na Ito', en: 'Daily Text' },
   'dailyText.readMore': { tg: 'Magbasa pa', en: 'Read more' },
   'dailyText.showLess': { tg: 'Mas kaunti', en: 'Show less' },
+  'dailyText.pageSubtitle': { tg: 'Pagsusuri ng Kasulatan Araw-araw', en: 'Examining the Scriptures Daily' },
+  'dailyText.goToToday': { tg: 'Pumunta sa ngayon', en: 'Go to today' },
+  'dailyText.noEntry': { tg: 'Walang teksto para sa araw na ito', en: 'No text available for this date' },
 
   // Reader
   'reader.title': { tg: 'Bibliya', en: 'Bible' },
@@ -144,6 +147,7 @@ const strings: Strings = {
   // Bottom nav
   'nav.home': { tg: 'Home', en: 'Home' },
   'nav.bible': { tg: 'Bibliya', en: 'Bible' },
+  'nav.dailyText': { tg: 'Teksto', en: 'Text' },
   'nav.search': { tg: 'Hanap', en: 'Search' },
   'nav.journal': { tg: 'Talaarawan', en: 'Journal' },
   'nav.settings': { tg: 'Settings', en: 'Settings' },
@@ -172,6 +176,9 @@ const strings: Strings = {
   'pioneer.daysLogged': { tg: 'araw na naitala', en: 'days logged' },
   'pioneer.ministryHours': { tg: 'Oras ng Ministeryo', en: 'Ministry Hours' },
   'pioneer.witnessingHours': { tg: 'Oras ng Public Witnessing', en: 'Public Witnessing Hours' },
+  'pioneer.serviceYear': { tg: 'Target ng Taon ng Serbisyo', en: 'Service Year Target' },
+  'pioneer.serviceYearHours': { tg: 'Oras sa Taon ng Serbisyo', en: 'Service Year Hours' },
+  'pioneer.expectedPace': { tg: 'Inaasahang bilis', en: 'Expected pace' },
 
   // Studies & Visits
   'studies.title': { tg: 'Pag-aaral at Pagdalaw', en: 'Studies & Visits' },

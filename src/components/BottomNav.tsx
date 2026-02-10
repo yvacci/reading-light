@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, Search, CalendarCheck, Users, Settings } from 'lucide-react';
+import { Home, BookOpen, CalendarCheck, BookText, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
@@ -10,8 +10,8 @@ export default function BottomNav() {
   const navItems = [
     { to: '/', icon: Home, labelKey: 'nav.home' },
     { to: '/reader', icon: BookOpen, labelKey: 'nav.bible' },
+    { to: '/daily-text', icon: BookText, labelKey: 'nav.dailyText' },
     { to: '/pioneer', icon: CalendarCheck, labelKey: 'nav.pioneer' },
-    { to: '/studies', icon: Users, labelKey: 'nav.studies' },
     { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
   ];
 
