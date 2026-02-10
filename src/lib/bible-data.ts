@@ -5,7 +5,7 @@ export interface BibleBook {
   shortName: string;
   chapters: number;
   testament: 'OT' | 'NT';
-  wolBookNum: number; // WOL book number for reference links
+  wolBookNum: number;
 }
 
 // Tagalog NWT book names
@@ -90,30 +90,10 @@ export interface ReadingPlan {
 }
 
 export const READING_PLANS: ReadingPlan[] = [
-  {
-    id: 'canonical',
-    name: 'Canonical Order',
-    description: 'Read the Bible in its standard sequence from Genesis to Revelation.',
-    icon: '📖',
-  },
-  {
-    id: 'chronological',
-    name: 'Chronological Order',
-    description: 'Follow events in the approximate historical timeline.',
-    icon: '📅',
-  },
-  {
-    id: 'writing-order',
-    name: 'By Writing Order',
-    description: 'Read in the approximate order the books were composed.',
-    icon: '✍️',
-  },
-  {
-    id: 'nt-first',
-    name: 'New Testament First',
-    description: 'Start with the Christian Greek Scriptures before the Hebrew Scriptures.',
-    icon: '✝️',
-  },
+  { id: 'canonical', name: 'Canonical Order', description: 'Basahin ang Bibliya mula Genesis hanggang Apocalipsis.', icon: '📖' },
+  { id: 'chronological', name: 'Chronological Order', description: 'Sundin ang mga pangyayari ayon sa timeline.', icon: '📅' },
+  { id: 'writing-order', name: 'By Writing Order', description: 'Basahin ayon sa pagkakasulat ng mga aklat.', icon: '✍️' },
+  { id: 'nt-first', name: 'New Testament First', description: 'Simulan sa Kristiyanong Griegong Kasulatan.', icon: '✝️' },
 ];
 
 export interface ReadingSpeed {
@@ -129,7 +109,6 @@ export const READING_SPEEDS: ReadingSpeed[] = [
   { id: '3yr', label: '3 yr', description: '1 ch/day', chaptersPerDay: 1 },
 ];
 
-// Generate canonical reading order
 export function getCanonicalOrder(): { bookId: number; chapter: number }[] {
   const order: { bookId: number; chapter: number }[] = [];
   for (const book of BIBLE_BOOKS) {
@@ -140,7 +119,6 @@ export function getCanonicalOrder(): { bookId: number; chapter: number }[] {
   return order;
 }
 
-// NT-first order: New Testament then Old Testament
 export function getNtFirstOrder(): { bookId: number; chapter: number }[] {
   const order: { bookId: number; chapter: number }[] = [];
   const ntBooks = BIBLE_BOOKS.filter(b => b.testament === 'NT');
@@ -153,7 +131,6 @@ export function getNtFirstOrder(): { bookId: number; chapter: number }[] {
   return order;
 }
 
-// Approximate chronological order (simplified)
 const CHRONOLOGICAL_BOOK_ORDER = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 19, 20, 21, 22, 29, 30, 31, 32, 28,
   23, 33, 34, 35, 36, 24, 25, 13, 14, 26, 27, 37, 38, 39, 15, 16, 17,
@@ -174,7 +151,6 @@ export function getChronologicalOrder(): { bookId: number; chapter: number }[] {
   return order;
 }
 
-// Approximate writing order (simplified)
 const WRITING_ORDER_BOOKS = [
   18, 1, 2, 3, 4, 5, 19, 6, 7, 8, 9, 10, 22, 29, 30, 28, 23, 20, 21, 11, 12, 32,
   33, 34, 35, 36, 24, 25, 26, 31, 27, 37, 38, 39, 13, 14, 15, 16, 17,
@@ -208,14 +184,9 @@ export function getBookById(id: number): BibleBook | undefined {
   return BIBLE_BOOKS.find(b => b.id === id);
 }
 
-/** Build the WOL reference URL for a given book/chapter and language */
-export function getWolUrl(bookId: number, chapter: number, lang: string): string {
+/** Build the WOL reference URL for a given book/chapter — always Tagalog */
+export function getWolUrl(bookId: number, chapter: number, _lang?: string): string {
   const book = getBookById(bookId);
   if (!book) return 'https://wol.jw.org';
-  const wolNum = book.wolBookNum;
-  if (lang === 'en') {
-    return `https://wol.jw.org/en/wol/b/r1/lp-e/nwtsty/${wolNum}/${chapter}`;
-  }
-  // Default: Tagalog
-  return `https://wol.jw.org/tl/wol/b/r27/lp-tg/nwtsty/${wolNum}/${chapter}`;
+  return `https://wol.jw.org/tl/wol/b/r27/lp-tg/nwtsty/${book.wolBookNum}/${chapter}`;
 }

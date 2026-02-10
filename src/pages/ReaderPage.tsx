@@ -14,7 +14,7 @@ const VIEW_PREF_KEY = 'nwt-book-view';
 export default function ReaderPage() {
   const { bookId, chapter } = useParams();
   const navigate = useNavigate();
-  const { getBookProgress, language } = useReadingProgress();
+  const { getBookProgress } = useReadingProgress();
   const [testamentFilter, setTestamentFilter] = useState<'OT' | 'NT'>('OT');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
     return (localStorage.getItem(VIEW_PREF_KEY) as 'list' | 'grid') || 'list';
@@ -32,7 +32,7 @@ export default function ReaderPage() {
   if (bookId) {
     const book = BIBLE_BOOKS.find(b => b.id === Number(bookId));
     if (!book) return null;
-    return <ChapterSelector book={book} language={language} />;
+    return <ChapterSelector book={book} />;
   }
 
   const filteredBooks = BIBLE_BOOKS.filter(b => b.testament === testamentFilter);
@@ -45,8 +45,8 @@ export default function ReaderPage() {
   return (
     <div className="min-h-screen pb-20">
       <PageHeader
-        title={t('reader.title', language)}
-        subtitle={t('reader.subtitle', language)}
+        title={t('reader.title')}
+        subtitle={t('reader.subtitle')}
         actions={
           <div className="flex items-center gap-1">
             <button
@@ -76,7 +76,7 @@ export default function ReaderPage() {
                 : 'bg-muted text-muted-foreground'
             }`}
           >
-            {tt === 'OT' ? t('reader.hebrewScriptures', language) : t('reader.greekScriptures', language)}
+            {tt === 'OT' ? t('reader.hebrewScriptures') : t('reader.greekScriptures')}
           </button>
         ))}
       </div>
@@ -88,7 +88,7 @@ export default function ReaderPage() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: testamentFilter === 'NT' ? -20 : 20 }}
           transition={{ duration: 0.2 }}
-          className={viewMode === 'grid' ? 'grid grid-cols-3 gap-2 px-4' : 'space-y-1 px-4'}
+          className={viewMode === 'grid' ? 'grid grid-cols-3 gap-2.5 px-4' : 'space-y-1 px-4'}
         >
           {filteredBooks.map(book => {
             const prog = getBookProgress(book.id);
@@ -99,16 +99,19 @@ export default function ReaderPage() {
                 <motion.button
                   key={book.id}
                   onClick={() => handleBookTap(book.id)}
-                  animate={isTapped ? { scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.3)', '0 0 0 0 hsl(var(--primary) / 0)'] } : {}}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={isTapped
+                    ? { opacity: 1, scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.3)', '0 0 0 0 hsl(var(--primary) / 0)'] }
+                    : { opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3 transition-colors hover:bg-muted/60"
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:bg-muted/60"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
                     {book.id}
                   </div>
                   <p className="text-[11px] font-medium text-foreground text-center leading-tight truncate w-full">
-                    {getLocalizedBookName(book.id, language)}
+                    {getLocalizedBookName(book.id)}
                   </p>
                   {prog.percent > 0 && (
                     <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
@@ -132,8 +135,8 @@ export default function ReaderPage() {
                   {book.id}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{getLocalizedBookName(book.id, language)}</p>
-                  <p className="text-[10px] text-muted-foreground">{book.chapters} {t('reader.chapters', language)}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{getLocalizedBookName(book.id)}</p>
+                  <p className="text-[10px] text-muted-foreground">{book.chapters} {t('reader.chapters')}</p>
                 </div>
                 {prog.percent > 0 && (
                   <span className="text-[10px] font-semibold text-primary">{prog.percent}%</span>
@@ -148,24 +151,34 @@ export default function ReaderPage() {
   );
 }
 
-function ChapterSelector({ book, language }: { book: BibleBook; language: string }) {
+function ChapterSelector({ book }: { book: BibleBook }) {
   const navigate = useNavigate();
   const { isChapterRead } = useReadingProgress();
   const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1);
-  const localizedName = getLocalizedBookName(book.id, language);
+  const [tappedCh, setTappedCh] = useState<number | null>(null);
+
+  const handleChapterTap = (ch: number) => {
+    setTappedCh(ch);
+    setTimeout(() => navigate(`/reader/${book.id}/${ch}`), 200);
+  };
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title={localizedName} subtitle={`${book.chapters} ${t('reader.chapters', language)}`} showBack />
+      <PageHeader title={getLocalizedBookName(book.id)} subtitle={`${book.chapters} ${t('reader.chapters')}`} showBack />
 
-      <div className="grid grid-cols-5 gap-2 p-4">
+      <div className="grid grid-cols-5 gap-2.5 p-4">
         {chapters.map(ch => {
           const read = isChapterRead(book.id, ch);
+          const isTapped = tappedCh === ch;
           return (
             <motion.button
               key={ch}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate(`/reader/${book.id}/${ch}`)}
+              animate={isTapped
+                ? { scale: [0.95, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 16px 3px hsl(var(--primary) / 0.25)', '0 0 0 0 hsl(var(--primary) / 0)'] }
+                : {}}
+              transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+              onClick={() => handleChapterTap(ch)}
               className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold transition-all ${
                 read
                   ? 'bg-primary text-primary-foreground shadow-sm'

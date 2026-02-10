@@ -1,5 +1,4 @@
 import { BIBLE_BOOKS } from './bible-data';
-import { ENGLISH_BOOK_NAMES } from './bible-data-en';
 
 interface ParsedReference {
   bookId: number;
@@ -15,11 +14,6 @@ const bookNameMap: Map<string, number> = new Map();
 BIBLE_BOOKS.forEach(b => {
   bookNameMap.set(b.name.toLowerCase(), b.id);
   bookNameMap.set(b.shortName.toLowerCase(), b.id);
-});
-
-// English names
-Object.entries(ENGLISH_BOOK_NAMES).forEach(([id, name]) => {
-  bookNameMap.set(name.toLowerCase(), Number(id));
 });
 
 // Additional common abbreviations
