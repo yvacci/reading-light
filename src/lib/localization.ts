@@ -1,27 +1,21 @@
-import { BibleBook, BIBLE_BOOKS } from './bible-data';
-import { ENGLISH_BOOK_NAMES } from './bible-data-en';
+import { BIBLE_BOOKS } from './bible-data';
 
 /**
- * Get the localized name for a Bible book based on the current language.
- * Tagalog names are the default in BIBLE_BOOKS.
- * English names come from the separate mapping.
+ * Get the book name — always Tagalog (from BIBLE_BOOKS).
+ * The lang parameter is kept for API compatibility but ignored.
  */
-export function getLocalizedBookName(bookId: number, lang: string): string {
-  if (lang === 'en') {
-    return ENGLISH_BOOK_NAMES[bookId] || BIBLE_BOOKS.find(b => b.id === bookId)?.name || '';
-  }
-  // Default: Tagalog (already in BIBLE_BOOKS)
+export function getLocalizedBookName(bookId: number, _lang?: string): string {
   return BIBLE_BOOKS.find(b => b.id === bookId)?.name || '';
 }
 
 /**
  * Get book data with localized name
  */
-export function getLocalizedBook(bookId: number, lang: string): (BibleBook & { localizedName: string }) | undefined {
+export function getLocalizedBook(bookId: number, _lang?: string) {
   const book = BIBLE_BOOKS.find(b => b.id === bookId);
   if (!book) return undefined;
   return {
     ...book,
-    localizedName: getLocalizedBookName(bookId, lang),
+    localizedName: book.name,
   };
 }

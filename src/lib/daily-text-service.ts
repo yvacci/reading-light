@@ -10,29 +10,19 @@ interface DailyTextEntry {
 }
 
 const DAILY_TEXT_CACHE_KEY = 'nwt-daily-text-cache';
-const DAILY_TEXT_LANG_KEY = 'nwt-daily-text-lang';
 
 let parsedEntries: DailyTextEntry[] | null = null;
-let loadedLang: string | null = null;
 
-function getDefaultPath(lang: string): string {
-  switch (lang) {
-    case 'en': return '/bibles/es26_E.pdf';
-    default: return '/bibles/es26_TG.pdf';
-  }
-}
+const DEFAULT_PDF_PATH = '/bibles/es26_TG.pdf';
 
-// Month names for date parsing
+// Month names for date parsing (Tagalog)
 const monthNames: Record<string, number> = {
   'enero': 1, 'pebrero': 2, 'marso': 3, 'abril': 4, 'mayo': 5, 'hunyo': 6,
   'hulyo': 7, 'agosto': 8, 'setyembre': 9, 'oktubre': 10, 'nobyembre': 11, 'disyembre': 12,
-  'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
-  'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
 };
 
-// Day names in English and Tagalog
+// Day names in Tagalog
 const dayNames = [
-  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
   'lunes', 'martes', 'miyerkules', 'huwebes', 'biyernes', 'sabado', 'linggo',
 ];
 
@@ -43,7 +33,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
   const pdf = await pdfjsLib.getDocument({ data }).promise;
   const entries: DailyTextEntry[] = [];
   
-  // Collect all text from all pages
   let allText = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
@@ -54,7 +43,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
     allText += pageText + '\n';
   }
 
-  // Build a regex to find date headers like "Thursday, January 1" or "Huwebes, Enero 1"
   const dayNamesPattern = dayNames.join('|');
   const monthNamesPattern = Object.keys(monthNames).join('|');
   const dateHeaderRegex = new RegExp(
@@ -62,11 +50,9 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
     'gi'
   );
 
-  // Find all date matches and their positions
   const matches: { index: number; month: number; day: number; fullMatch: string }[] = [];
   let match: RegExpExecArray | null;
   while ((match = dateHeaderRegex.exec(allText)) !== null) {
-    // Extract month from the match
     const monthMatch = match[0].match(new RegExp(`(${monthNamesPattern})`, 'i'));
     if (monthMatch) {
       const monthNum = monthNames[monthMatch[1].toLowerCase()];
@@ -82,7 +68,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
     }
   }
 
-  // Extract entries between date headers
   for (let i = 0; i < matches.length; i++) {
     const current = matches[i];
     const nextIndex = i + 1 < matches.length ? matches[i + 1].index : allText.length;
@@ -90,8 +75,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
 
     const mmdd = `${String(current.month).padStart(2, '0')}-${String(current.day).padStart(2, '0')}`;
 
-    // The title is the scripture reference (first line after the date, ending with a book reference)
-    // Pattern: text ending with —Book chapter:verse or similar
     const titleMatch = entryText.match(/^[\s]*(.+?[.!?]?\s*—.+?\d+:\d+[^.]*\.?)/s);
     let title = '';
     let content = entryText;
@@ -100,7 +83,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
       title = titleMatch[1].replace(/\s+/g, ' ').trim();
       content = entryText.slice(titleMatch[0].length).trim();
     } else {
-      // Fallback: first sentence
       const firstSentence = entryText.match(/^(.+?[.!?])\s/);
       if (firstSentence) {
         title = firstSentence[1].trim();
@@ -108,7 +90,6 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
       }
     }
 
-    // Clean up content - limit length
     content = content.replace(/\s+/g, ' ').trim().slice(0, 3000);
 
     if (title || content) {
@@ -122,18 +103,16 @@ async function parsePdfForDailyText(data: ArrayBuffer): Promise<DailyTextEntry[]
 /**
  * Initialize daily text from bundled PDF or user-uploaded file.
  */
-export async function loadDailyText(lang: string = 'tg'): Promise<void> {
-  if (parsedEntries && parsedEntries.length > 0 && loadedLang === lang) return;
+export async function loadDailyText(_lang?: string): Promise<void> {
+  if (parsedEntries && parsedEntries.length > 0) return;
 
   // Check for user-uploaded file in IndexedDB
   try {
     const userFile = await getUserUploadedFile();
     if (userFile) {
       parsedEntries = await parsePdfForDailyText(userFile);
-      loadedLang = lang;
       if (parsedEntries.length > 0) {
         localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
-        localStorage.setItem(DAILY_TEXT_LANG_KEY, lang);
         return;
       }
     }
@@ -143,32 +122,25 @@ export async function loadDailyText(lang: string = 'tg'): Promise<void> {
 
   // Check cache
   try {
-    const cachedLang = localStorage.getItem(DAILY_TEXT_LANG_KEY);
-    if (cachedLang === lang) {
-      const cached = localStorage.getItem(DAILY_TEXT_CACHE_KEY);
-      if (cached) {
-        parsedEntries = JSON.parse(cached);
-        loadedLang = lang;
-        if (parsedEntries && parsedEntries.length > 0) return;
-      }
+    const cached = localStorage.getItem(DAILY_TEXT_CACHE_KEY);
+    if (cached) {
+      parsedEntries = JSON.parse(cached);
+      if (parsedEntries && parsedEntries.length > 0) return;
     }
   } catch {}
 
   // Load bundled PDF
   try {
-    const response = await fetch(getDefaultPath(lang));
+    const response = await fetch(DEFAULT_PDF_PATH);
     const arrayBuffer = await response.arrayBuffer();
     parsedEntries = await parsePdfForDailyText(arrayBuffer);
-    loadedLang = lang;
     if (parsedEntries.length > 0) {
       localStorage.setItem(DAILY_TEXT_CACHE_KEY, JSON.stringify(parsedEntries));
-      localStorage.setItem(DAILY_TEXT_LANG_KEY, lang);
     }
-    console.log(`[DailyText] Parsed ${parsedEntries.length} entries for lang=${lang}`);
+    console.log(`[DailyText] Parsed ${parsedEntries.length} entries`);
   } catch (err) {
     console.error('[DailyText] Error loading bundled file:', err);
     parsedEntries = [];
-    loadedLang = lang;
   }
 }
 
@@ -240,9 +212,7 @@ async function getUserUploadedFile(): Promise<ArrayBuffer | null> {
 
 export async function clearUserUploadedFile(): Promise<void> {
   parsedEntries = null;
-  loadedLang = null;
   localStorage.removeItem(DAILY_TEXT_CACHE_KEY);
-  localStorage.removeItem(DAILY_TEXT_LANG_KEY);
 
   return new Promise((resolve) => {
     const request = indexedDB.open('nwt-daily-text', 1);

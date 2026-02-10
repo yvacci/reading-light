@@ -18,24 +18,18 @@ interface EpubInstance {
   contentPrefix: string;
 }
 
-// Cache by language code
-const epubCache: Record<string, EpubInstance> = {};
-const initPromises: Record<string, Promise<void>> = {};
+let epubInstance: EpubInstance | null = null;
+let initPromise: Promise<void> | null = null;
 
-function getEpubPath(lang: string): string {
-  switch (lang) {
-    case 'en': return '/bibles/nwt_EN.epub';
-    default: return '/bibles/nwt_TG.epub';
-  }
-}
+const EPUB_PATH = '/bibles/nwt_TG.epub';
 
-export async function initEpub(lang: string = 'tg'): Promise<void> {
-  if (epubCache[lang]) return;
-  if (initPromises[lang]) return initPromises[lang];
+export async function initEpub(_lang?: string): Promise<void> {
+  if (epubInstance) return;
+  if (initPromise) return initPromise;
 
-  initPromises[lang] = (async () => {
+  initPromise = (async () => {
     try {
-      const response = await fetch(getEpubPath(lang));
+      const response = await fetch(EPUB_PATH);
       const arrayBuffer = await response.arrayBuffer();
       const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -73,7 +67,6 @@ export async function initEpub(lang: string = 'tg'): Promise<void> {
         spineEntries.push({ index, href });
       });
 
-      // Phase 1: Find all books that have biblechapternav entries
       const bookRanges: BookSpineRange[] = [];
       for (let i = 0; i < spineEntries.length; i++) {
         const match = spineEntries[i].href.match(/biblechapternav(\d+)\.xhtml/i);
@@ -85,7 +78,6 @@ export async function initEpub(lang: string = 'tg'): Promise<void> {
         }
       }
 
-      // Phase 2: Handle single-chapter books that don't have biblechapternav
       const foundIds = new Set(bookRanges.map(r => r.bookId));
       const missingBooks = BIBLE_BOOKS.filter(b => !foundIds.has(b.id));
 
@@ -140,32 +132,31 @@ export async function initEpub(lang: string = 'tg'): Promise<void> {
         bookRanges.sort((a, b) => a.bookId - b.bookId);
       }
 
-      epubCache[lang] = { zip, bookRanges, spineEntries, contentPrefix };
-      console.log(`[EPUB:${lang}] ${bookRanges.length}/66 books mapped from ${spineEntries.length} spine items`);
+      epubInstance = { zip, bookRanges, spineEntries, contentPrefix };
+      console.log(`[EPUB] ${bookRanges.length}/66 books mapped from ${spineEntries.length} spine items`);
     } catch (err) {
-      console.error(`[EPUB:${lang}] Init error:`, err);
-      delete initPromises[lang];
+      console.error('[EPUB] Init error:', err);
+      initPromise = null;
       throw err;
     }
   })();
 
-  return initPromises[lang];
+  return initPromise;
 }
 
-export async function loadChapter(bookId: number, chapter: number, lang: string = 'tg'): Promise<string | null> {
-  await initEpub(lang);
-  const instance = epubCache[lang];
-  if (!instance) return null;
+export async function loadChapter(bookId: number, chapter: number, _lang?: string): Promise<string | null> {
+  await initEpub();
+  if (!epubInstance) return null;
 
-  const range = instance.bookRanges.find(r => r.bookId === bookId);
+  const range = epubInstance.bookRanges.find(r => r.bookId === bookId);
   if (!range) return null;
 
   const spineIndex = range.firstChapterSpineIndex + chapter - 1;
-  const entry = instance.spineEntries[spineIndex];
+  const entry = epubInstance.spineEntries[spineIndex];
   if (!entry) return null;
 
-  const filePath = instance.contentPrefix + entry.href;
-  const file = instance.zip.file(filePath);
+  const filePath = epubInstance.contentPrefix + entry.href;
+  const file = epubInstance.zip.file(filePath);
   if (!file) return null;
 
   const xhtml = await file.async('string');
@@ -188,19 +179,18 @@ function extractBody(xhtml: string): string {
   return html;
 }
 
-export function getDebugInfo(lang: string = 'tg'): string {
-  const instance = epubCache[lang];
-  if (!instance) return 'EPUB not loaded';
+export function getDebugInfo(): string {
+  if (!epubInstance) return 'EPUB not loaded';
 
-  let info = `Lang: ${lang}\nSpine: ${instance.spineEntries.length} items\nBooks: ${instance.bookRanges.length}/66\nPrefix: "${instance.contentPrefix}"\n\n`;
-  const foundIds = new Set(instance.bookRanges.map(r => r.bookId));
+  let info = `Spine: ${epubInstance.spineEntries.length} items\nBooks: ${epubInstance.bookRanges.length}/66\nPrefix: "${epubInstance.contentPrefix}"\n\n`;
+  const foundIds = new Set(epubInstance.bookRanges.map(r => r.bookId));
   const missing = BIBLE_BOOKS.filter(b => !foundIds.has(b.id));
   if (missing.length > 0) {
     info += `MISSING: ${missing.map(b => `${b.id}:${b.name}`).join(', ')}\n\n`;
   }
-  for (const range of instance.bookRanges) {
+  for (const range of epubInstance.bookRanges) {
     const book = BIBLE_BOOKS.find(b => b.id === range.bookId);
-    const href = instance.spineEntries[range.firstChapterSpineIndex]?.href || '?';
+    const href = epubInstance.spineEntries[range.firstChapterSpineIndex]?.href || '?';
     info += `${(book?.name || `#${range.bookId}`).padEnd(18)} ch1=[${range.firstChapterSpineIndex}] ${href}\n`;
   }
   return info;

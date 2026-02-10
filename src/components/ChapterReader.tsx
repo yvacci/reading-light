@@ -56,7 +56,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const bookmarked = isBookmarked(bookId, chapter);
   const chapterHighlights = getChapterHighlights(bookId, chapter);
 
-  const localizedName = getLocalizedBookName(bookId, language);
+  const localizedName = getLocalizedBookName(bookId);
 
   // Track reading time
   useEffect(() => {
@@ -76,12 +76,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   useEffect(() => {
     setLastRead(bookId, chapter);
     doLoad();
-  }, [bookId, chapter, language]);
+  }, [bookId, chapter]);
 
-  // Add verse tap handlers and footnote marker handlers after content loads
   useEffect(() => {
     if (loading || !contentRef.current) return;
-
     const container = contentRef.current;
 
     const verseElements = container.querySelectorAll('[data-verse]');
@@ -104,9 +102,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       e.stopPropagation();
       const el = e.currentTarget as HTMLElement;
       const fnId = el.getAttribute('data-fn-id');
-      if (fnId) {
-        setHighlightedFootnote(fnId);
-      }
+      if (fnId) setHighlightedFootnote(fnId);
     };
 
     footnoteMarkers.forEach(el => {
@@ -114,16 +110,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     });
 
     return () => {
-      verseElements.forEach(el => {
-        el.removeEventListener('click', handleVerseTap);
-      });
-      footnoteMarkers.forEach(el => {
-        el.removeEventListener('click', handleFootnoteTap);
-      });
+      verseElements.forEach(el => el.removeEventListener('click', handleVerseTap));
+      footnoteMarkers.forEach(el => el.removeEventListener('click', handleFootnoteTap));
     };
   }, [loading, content]);
 
-  // Apply verse emphasis class
   useEffect(() => {
     if (!contentRef.current) return;
     const container = contentRef.current;
@@ -141,20 +132,20 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     setLoading(true);
     setHighlightedFootnote(null);
     try {
-      await initEpub(language);
-      const html = await loadChapter(bookId, chapter, language);
+      await initEpub();
+      const html = await loadChapter(bookId, chapter);
 
       if (html && html.trim().length > 50) {
         const { cleanHtml, footnotes: parsedFootnotes } = parseFootnotes(html);
         setContent(addVerseDataAttributes(cleanHtml));
         setFootnotes(parsedFootnotes);
       } else {
-        setContent(placeholderHtml(bookId, chapter, localizedName, language));
+        setContent(placeholderHtml(bookId, chapter, localizedName));
         setFootnotes([]);
       }
     } catch (err) {
       console.error('[Reader] Error:', err);
-      setContent(placeholderHtml(bookId, chapter, localizedName, language));
+      setContent(placeholderHtml(bookId, chapter, localizedName));
     }
     setLoading(false);
   }
@@ -194,11 +185,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     if (deltaY > SWIPE_MAX_Y) return;
     if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
 
-    if (deltaX < 0) {
-      goToChapter(1);
-    } else {
-      goToChapter(-1);
-    }
+    if (deltaX < 0) goToChapter(1);
+    else goToChapter(-1);
   }, [goToChapter]);
 
   const handleBookmark = useCallback(() => {
@@ -219,7 +207,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     const text = selection?.toString().trim() || '';
     if (text.length < 3) return;
 
-    // Get approximate verse number from selection context
     const anchorNode = selection?.anchorNode;
     let verse = 0;
     if (anchorNode) {
@@ -232,7 +219,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       if (el) verse = parseInt(el.getAttribute('data-verse') || '0');
     }
 
-    // Get click position for color picker
     const range = selection?.getRangeAt(0);
     const rect = range?.getBoundingClientRect();
     if (rect) {
@@ -270,12 +256,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     }
   }, [editingHighlightId, removeHighlight]);
 
-  // Apply saved highlights to the content
   const applyHighlights = useCallback(() => {
     if (!contentRef.current || loading) return;
     const container = contentRef.current;
     
-    // Remove old highlight marks
     container.querySelectorAll('mark.user-highlight').forEach(el => {
       const parent = el.parentNode;
       if (parent) {
@@ -284,7 +268,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       }
     });
 
-    // Apply current highlights
     for (const hl of chapterHighlights) {
       const textNodes: Text[] = [];
       const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
@@ -322,7 +305,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     }
   }, [chapterHighlights, loading]);
 
-  // Re-apply highlights when content changes
   useEffect(() => {
     if (!loading && content) {
       const timer = setTimeout(applyHighlights, 100);
@@ -331,7 +313,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }, [loading, content, applyHighlights]);
 
   function openReference() {
-    const url = getWolUrl(bookId, chapter, language);
+    const url = getWolUrl(bookId, chapter);
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
@@ -363,33 +345,32 @@ export default function ChapterReader({ bookId, chapter }: Props) {
             <button
               onClick={openReference}
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title={t('reader.reference', language)}
+              title={t('reader.reference')}
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{t('reader.reference', language)}</span>
             </button>
             <button
               onClick={handleBookmark}
               className={`flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition-colors ${
                 bookmarked
-                  ? 'text-accent bg-accent/10'
+                  ? 'text-primary bg-primary/10'
                   : 'text-muted-foreground hover:bg-muted'
               }`}
-              title={t('bookmarks.saveBookmark', language)}
+              title={t('bookmarks.saveBookmark')}
             >
-              <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-accent' : ''}`} />
+              <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-primary' : ''}`} />
             </button>
             <button
               onClick={() => setJournalOpen(true)}
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title={t('journal.newEntry', language)}
+              title={t('journal.newEntry')}
             >
               <PenLine className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={handleHighlightTrigger}
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title={t('highlights.pickColor', language)}
+              title={t('highlights.pickColor')}
             >
               <Highlighter className="h-3.5 w-3.5" />
             </button>
@@ -402,7 +383,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               }`}
             >
               {read ? <Check className="h-3.5 w-3.5" /> : <BookmarkCheck className="h-3.5 w-3.5" />}
-              {read ? t('reader.read', language) : t('reader.markRead', language)}
+              {read ? t('reader.read') : t('reader.markRead')}
             </button>
           </div>
         }
@@ -413,7 +394,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onTouchEnd={handleTouchEnd}
         className="min-h-[60vh]"
         onClick={(e) => {
-          // Click on empty area clears verse emphasis
           if (!(e.target as HTMLElement).closest('[data-verse]')) {
             setEmphasizedVerse(null);
           }
@@ -463,7 +443,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
       {!loading && (
         <p className="text-center text-[10px] text-muted-foreground/60 px-4 pb-2">
-          {t('reader.verseTip', language)}
+          {t('reader.verseTip')}
         </p>
       )}
 
@@ -475,7 +455,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           disabled={bookId === 1 && chapter === 1}
           className="gap-1 text-xs"
         >
-          <ChevronLeft className="h-4 w-4" /> {t('reader.previous', language)}
+          <ChevronLeft className="h-4 w-4" /> {t('reader.previous')}
         </Button>
         <span className="text-xs text-muted-foreground">
           {chapter} / {book.chapters}
@@ -487,7 +467,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           disabled={bookId === 66 && chapter === book.chapters}
           className="gap-1 text-xs"
         >
-          {t('reader.next', language)} <ChevronRight className="h-4 w-4" />
+          {t('reader.next')} <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
@@ -540,15 +520,12 @@ function addVerseDataAttributes(html: string): string {
   return result;
 }
 
-function placeholderHtml(bookId: number, chapter: number, name: string, language: string): string {
-  const msg = language === 'en'
-    ? 'Could not load chapter content from EPUB.'
-    : 'Hindi ma-load ang nilalaman ng kabanata mula sa EPUB.';
+function placeholderHtml(bookId: number, chapter: number, name: string): string {
   return `
     <div style="text-align:center;padding:2rem 0;">
       <p style="font-size:1.1rem;font-weight:600;">${name} ${chapter}</p>
       <p style="font-size:0.85rem;color:var(--muted-foreground);margin-top:0.5rem;">
-        ${msg}
+        Hindi ma-load ang nilalaman ng kabanata mula sa EPUB.
       </p>
     </div>
   `;

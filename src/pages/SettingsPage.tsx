@@ -1,12 +1,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, Type, Globe, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays, Download, FolderInput } from 'lucide-react';
+import { Moon, Sun, Type, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
 import { exportBackup, importBackup } from '@/lib/backup-service';
 import { t } from '@/lib/i18n';
-import PageHeader from '@/components/PageHeader';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
@@ -25,7 +24,7 @@ import {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { darkMode, setDarkMode, fontSize, setFontSize, language, setLanguage, resetProgress } = useReadingProgress();
+  const { darkMode, setDarkMode, fontSize, setFontSize, language, resetProgress } = useReadingProgress();
   const {
     isSupported,
     permissionState,
@@ -55,7 +54,7 @@ export default function SettingsPage() {
 
     const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
     if (ext !== '.pdf') {
-      toast.error(language === 'en' ? 'Please upload a PDF file' : 'Mag-upload ng PDF file');
+      toast.error('Mag-upload ng PDF file');
       return;
     }
 
@@ -63,10 +62,10 @@ export default function SettingsPage() {
     try {
       const count = await saveUserUploadedFile(file);
       setDailyTextCount(count);
-      toast.success(`${language === 'en' ? 'Daily text uploaded!' : 'Na-upload ang daily text!'} ${count} entries.`);
+      toast.success(`Na-upload ang daily text! ${count} entries.`);
     } catch (err) {
       console.error('[Settings] Upload error:', err);
-      toast.error(language === 'en' ? 'Could not parse the file.' : 'Hindi ma-parse ang file.');
+      toast.error('Hindi ma-parse ang file.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -76,15 +75,15 @@ export default function SettingsPage() {
   const handleClearDailyText = async () => {
     await clearUserUploadedFile();
     setDailyTextCount(0);
-    toast.success(language === 'en' ? 'Custom daily text removed.' : 'Inalis ang custom daily text.');
+    toast.success('Inalis ang custom daily text.');
   };
 
   const handleExportBackup = () => {
     try {
       exportBackup();
-      toast.success(language === 'en' ? 'Backup exported!' : 'Na-export ang backup!');
+      toast.success('Na-export ang backup!');
     } catch (err) {
-      toast.error(language === 'en' ? 'Export failed.' : 'Nabigo ang pag-export.');
+      toast.error('Nabigo ang pag-export.');
     }
   };
 
@@ -93,10 +92,10 @@ export default function SettingsPage() {
     if (!file) return;
     try {
       const count = await importBackup(file);
-      toast.success(`${language === 'en' ? 'Backup restored!' : 'Na-restore ang backup!'} ${count} keys.`);
+      toast.success(`Na-restore ang backup! ${count} keys.`);
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
-      toast.error(language === 'en' ? 'Invalid backup file.' : 'Hindi valid ang backup file.');
+      toast.error('Hindi valid ang backup file.');
     } finally {
       if (backupInputRef.current) backupInputRef.current.value = '';
     }
@@ -104,24 +103,27 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      <PageHeader title={t('settings.title', language)} subtitle={t('settings.subtitle', language)} />
+      <div className="px-5 pt-12 pb-4 safe-top">
+        <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('settings.title', language)}</p>
+        <h1 className="mt-1 text-2xl font-bold text-foreground">{t('settings.subtitle', language)}</h1>
+      </div>
 
-      <div className="space-y-5 px-4 pt-4 max-w-lg mx-auto">
+      <div className="px-5 max-w-lg mx-auto">
         {/* Appearance */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.appearance', language)}</h2>
-          <div className="space-y-0 rounded-2xl border border-border bg-card shadow-sm">
-            <div className="flex items-center justify-between px-4 py-3">
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.appearance', language)}</p>
+          <div className="space-y-0 divide-y divide-border">
+            <div className="flex items-center justify-between py-3.5">
               <div className="flex items-center gap-3">
-                {darkMode ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
-                <span className="text-sm font-medium text-foreground">{t('settings.darkMode', language)}</span>
+                {darkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+                <span className="text-sm text-foreground">{t('settings.darkMode', language)}</span>
               </div>
               <Switch checked={darkMode} onCheckedChange={setDarkMode} />
             </div>
-            <div className="border-t border-border px-4 py-3">
-              <div className="flex items-center gap-3 mb-2">
-                <Type className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">{t('settings.fontSize', language)}</span>
+            <div className="py-3.5">
+              <div className="flex items-center gap-3 mb-3">
+                <Type className="h-5 w-5 text-primary" />
+                <span className="text-sm text-foreground">{t('settings.fontSize', language)}</span>
                 <span className="ml-auto text-xs text-muted-foreground">{fontSize}px</span>
               </div>
               <Slider
@@ -130,50 +132,20 @@ export default function SettingsPage() {
                 min={12}
                 max={24}
                 step={1}
-                className="mt-1"
               />
             </div>
           </div>
-        </section>
-
-        {/* Language */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.language', language)}</h2>
-          <div className="space-y-1 rounded-2xl border border-border bg-card">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <Globe className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-foreground">{t('settings.bibleLanguage', language)}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 px-4 pb-4">
-              {[
-                { code: 'tg', label: 'Tagalog' },
-                { code: 'en', label: 'English' },
-              ].map(lang => (
-                <button
-                  key={lang.code}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                    language === lang.code
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {lang.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
+        </div>
 
         {/* Daily Text Upload */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.dailyText', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card">
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-3 mb-2">
-                <FileText className="h-4 w-4 text-primary" />
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.dailyText', language)}</p>
+          <div className="space-y-0 divide-y divide-border">
+            <div className="py-3.5">
+              <div className="flex items-center gap-3">
+                <FileText className="h-5 w-5 text-primary" />
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-foreground">{t('settings.dailyTextFile', language)}</span>
+                  <span className="text-sm text-foreground">{t('settings.dailyTextFile', language)}</span>
                   <p className="text-[10px] text-muted-foreground">
                     {dailyTextCount > 0
                       ? `${dailyTextCount} ${t('settings.entriesLoaded', language)}`
@@ -181,28 +153,25 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-
-              <div className="flex gap-2 mt-2">
+              <div className="flex gap-2 mt-3 ml-8">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 disabled:opacity-50"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   {uploading ? t('settings.uploading', language) : t('settings.uploadEpub', language)}
                 </button>
-
                 {dailyTextCount > 0 && (
                   <button
                     onClick={handleClearDailyText}
-                    className="flex items-center gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
+                    className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/20"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     {t('settings.remove', language)}
                   </button>
                 )}
               </div>
-
               <input
                 ref={fileInputRef}
                 type="file"
@@ -212,17 +181,17 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-        </section>
+        </div>
 
         {/* Notifications */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.notifications', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card">
-            <div className="flex items-center justify-between px-4 py-3">
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.notifications', language)}</p>
+          <div className="space-y-0 divide-y divide-border">
+            <div className="flex items-center justify-between py-3.5">
               <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4 text-primary" />
+                <Bell className="h-5 w-5 text-primary" />
                 <div>
-                  <span className="text-sm font-medium text-foreground">{t('settings.dailyReminder', language)}</span>
+                  <span className="text-sm text-foreground">{t('settings.dailyReminder', language)}</span>
                   {!isSupported && (
                     <p className="text-[10px] text-muted-foreground">{t('settings.notSupported', language)}</p>
                   )}
@@ -238,32 +207,92 @@ export default function SettingsPage() {
               />
             </div>
             {remindersEnabled && (
-              <div className="border-t border-border px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">{t('settings.reminderTime', language)}</span>
-                  <Input
-                    type="time"
-                    value={reminderTime}
-                    onChange={(e) => setReminderTime(e.target.value)}
-                    className="ml-auto w-28 text-sm h-8 rounded-xl"
-                  />
-                </div>
+              <div className="flex items-center gap-3 py-3.5">
+                <Clock className="h-5 w-5 text-primary" />
+                <span className="text-sm text-foreground">{t('settings.reminderTime', language)}</span>
+                <Input
+                  type="time"
+                  value={reminderTime}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                  className="ml-auto w-28 text-sm h-8 rounded-lg"
+                />
               </div>
             )}
           </div>
-        </section>
+        </div>
+
+        {/* Quick Links */}
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Mga Link</p>
+          <div className="space-y-0 divide-y divide-border">
+            <button
+              onClick={() => navigate('/plans')}
+              className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70"
+            >
+              <CalendarDays className="h-5 w-5 text-primary" />
+              <span className="text-sm text-foreground flex-1">{t('plans.title', language)}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => navigate('/how-to')}
+              className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70"
+            >
+              <HelpCircle className="h-5 w-5 text-primary" />
+              <span className="text-sm text-foreground flex-1">{t('settings.howTo', language)}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* Backup & Restore */}
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.backup', language)}</p>
+          <div className="space-y-0 divide-y divide-border">
+            <div className="py-3.5">
+              <div className="flex items-center gap-3">
+                <Download className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <span className="text-sm text-foreground">{t('settings.backupRestore', language)}</span>
+                  <p className="text-[10px] text-muted-foreground">{t('settings.backupDesc', language)}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3 ml-8">
+                <button
+                  onClick={handleExportBackup}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {t('settings.export', language)}
+                </button>
+                <button
+                  onClick={() => backupInputRef.current?.click()}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                >
+                  <FolderInput className="h-3.5 w-3.5" />
+                  {t('settings.import', language)}
+                </button>
+              </div>
+              <input
+                ref={backupInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportBackup}
+                className="hidden"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Data */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.data', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card">
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.data', language)}</p>
+          <div className="divide-y divide-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <button className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl">
-                  <RotateCcw className="h-4 w-4 text-destructive" />
-                  <div>
-                    <span className="text-sm font-medium text-destructive">{t('settings.resetProgress', language)}</span>
+                <button className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70">
+                  <RotateCcw className="h-5 w-5 text-destructive" />
+                  <div className="flex-1">
+                    <span className="text-sm text-destructive">{t('settings.resetProgress', language)}</span>
                     <p className="text-[10px] text-muted-foreground">{t('settings.resetDesc', language)}</p>
                   </div>
                 </button>
@@ -287,90 +316,22 @@ export default function SettingsPage() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </section>
-
-        {/* Reading Plans */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('plans.title', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card">
-            <button
-              onClick={() => navigate('/plans')}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl"
-            >
-              <CalendarDays className="h-4 w-4 text-primary" />
-              <div>
-                <span className="text-sm font-medium text-foreground">{t('plans.title', language)}</span>
-                <p className="text-[10px] text-muted-foreground">{t('plans.subtitle', language)}</p>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        {/* How-to Guide */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.howTo', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card">
-            <button
-              onClick={() => navigate('/how-to')}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 rounded-2xl"
-            >
-              <HelpCircle className="h-4 w-4 text-primary" />
-              <div>
-                <span className="text-sm font-medium text-foreground">{t('settings.howTo', language)}</span>
-                <p className="text-[10px] text-muted-foreground">{t('settings.howToDesc', language)}</p>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        {/* Backup & Restore */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.backup', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card px-4 py-3">
-            <div className="flex items-center gap-3 mb-2">
-              <Download className="h-4 w-4 text-primary" />
-              <div>
-                <span className="text-sm font-medium text-foreground">{t('settings.backupRestore', language)}</span>
-                <p className="text-[10px] text-muted-foreground">{t('settings.backupDesc', language)}</p>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={handleExportBackup}
-                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t('settings.export', language)}
-              </button>
-              <button
-                onClick={() => backupInputRef.current?.click()}
-                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-              >
-                <FolderInput className="h-3.5 w-3.5" />
-                {t('settings.import', language)}
-              </button>
-            </div>
-            <input
-              ref={backupInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleImportBackup}
-              className="hidden"
-            />
-          </div>
-        </section>
+        </div>
 
         {/* About */}
-        <section>
-          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.about', language)}</h2>
-          <div className="rounded-2xl border border-border bg-card px-4 py-3">
-            <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-            <p className="text-xs text-muted-foreground">Version 1.6.0</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t('settings.aboutDesc', language)}
-            </p>
+        <div className="mb-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.about', language)}</p>
+          <div className="flex items-start gap-3 py-3.5">
+            <Info className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
+              <p className="text-[10px] text-muted-foreground">Version 2.0.0</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t('settings.aboutDesc', language)}
+              </p>
+            </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );
