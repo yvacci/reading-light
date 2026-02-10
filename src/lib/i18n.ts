@@ -158,6 +158,8 @@ const strings: Strings = {
 
   // Highlights
   'highlights.pickColor': { tg: 'Pumili ng kulay ng highlight', en: 'Pick highlight color' },
+  'highlights.changeColor': { tg: 'Palitan ang kulay', en: 'Change color' },
+  'highlights.delete': { tg: 'Alisin ang highlight', en: 'Remove highlight' },
 
   // Pioneer
   'pioneer.title': { tg: 'Regular Pioneer', en: 'Regular Pioneer' },
