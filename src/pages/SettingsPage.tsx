@@ -106,11 +106,11 @@ export default function SettingsPage() {
     <div className="min-h-screen pb-20">
       <PageHeader title={t('settings.title', language)} subtitle={t('settings.subtitle', language)} />
 
-      <div className="space-y-6 px-4 pt-4">
+      <div className="space-y-5 px-4 pt-4 max-w-lg mx-auto">
         {/* Appearance */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.appearance', language)}</h2>
-          <div className="space-y-1 rounded-2xl border border-border bg-card">
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.appearance', language)}</h2>
+          <div className="space-y-0 rounded-2xl border border-border bg-card shadow-sm">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 {darkMode ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
@@ -138,7 +138,7 @@ export default function SettingsPage() {
 
         {/* Language */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.language', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.language', language)}</h2>
           <div className="space-y-1 rounded-2xl border border-border bg-card">
             <div className="flex items-center gap-3 px-4 py-3">
               <Globe className="h-4 w-4 text-primary" />
@@ -167,7 +167,7 @@ export default function SettingsPage() {
 
         {/* Daily Text Upload */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.dailyText', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.dailyText', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <div className="px-4 py-3">
               <div className="flex items-center gap-3 mb-2">
@@ -216,7 +216,7 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.notifications', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.notifications', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
@@ -256,7 +256,7 @@ export default function SettingsPage() {
 
         {/* Data */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.data', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.data', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
 
         {/* Reading Plans */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('plans.title', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('plans.title', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <button
               onClick={() => navigate('/plans')}
@@ -308,7 +308,7 @@ export default function SettingsPage() {
 
         {/* How-to Guide */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.howTo', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.howTo', language)}</h2>
           <div className="rounded-2xl border border-border bg-card">
             <button
               onClick={() => navigate('/how-to')}
@@ -325,7 +325,7 @@ export default function SettingsPage() {
 
         {/* Backup & Restore */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.backup', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.backup', language)}</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <div className="flex items-center gap-3 mb-2">
               <Download className="h-4 w-4 text-primary" />
@@ -362,7 +362,7 @@ export default function SettingsPage() {
 
         {/* About */}
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.about', language)}</h2>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{t('settings.about', language)}</h2>
           <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
             <p className="text-xs text-muted-foreground">Version 1.6.0</p>

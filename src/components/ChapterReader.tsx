@@ -47,6 +47,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [pendingHighlightVerse, setPendingHighlightVerse] = useState(0);
   const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
   const [editingHighlightColor, setEditingHighlightColor] = useState<string | undefined>();
+  const [emphasizedVerse, setEmphasizedVerse] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -85,13 +86,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
     const verseElements = container.querySelectorAll('[data-verse]');
     const handleVerseTap = (e: Event) => {
+      e.stopPropagation();
       const el = e.currentTarget as HTMLElement;
       const verseNum = parseInt(el.getAttribute('data-verse') || '0');
       if (verseNum > 0) {
-        const text = el.textContent?.trim() || '';
-        setSelectedVerse(verseNum);
-        setSelectedText(text.slice(0, 300));
-        setBookmarkOpen(true);
+        setEmphasizedVerse(prev => prev === verseNum ? null : verseNum);
       }
     };
 
@@ -123,6 +122,20 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       });
     };
   }, [loading, content]);
+
+  // Apply verse emphasis class
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const container = contentRef.current;
+    container.querySelectorAll('[data-verse]').forEach(el => {
+      const v = parseInt(el.getAttribute('data-verse') || '0');
+      if (emphasizedVerse !== null && v === emphasizedVerse) {
+        el.classList.add('verse-emphasized');
+      } else {
+        el.classList.remove('verse-emphasized');
+      }
+    });
+  }, [emphasizedVerse, loading, content]);
 
   async function doLoad() {
     setLoading(true);
@@ -399,6 +412,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         className="min-h-[60vh]"
+        onClick={(e) => {
+          // Click on empty area clears verse emphasis
+          if (!(e.target as HTMLElement).closest('[data-verse]')) {
+            setEmphasizedVerse(null);
+          }
+        }}
       >
         <AnimatePresence mode="wait" custom={slideDirection}>
           <motion.div
@@ -425,7 +444,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               </div>
             ) : (
               <div
-                className="bible-content"
+                className={`bible-content ${emphasizedVerse !== null ? 'verse-emphasis-active' : ''}`}
+                data-emphasized-verse={emphasizedVerse ?? undefined}
                 dangerouslySetInnerHTML={{ __html: content }}
               />
             )}
