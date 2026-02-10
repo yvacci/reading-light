@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp, ArrowRight } from 'lucide-react';
 import { usePioneer, PioneerEntry } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -79,6 +80,7 @@ function ServiceYearCard({ entries, language }: { entries: Record<string, Pionee
 }
 
 export default function PioneerPage() {
+  const navigate = useNavigate();
   const { language } = useReadingProgress();
   const { entries, getEntry, saveEntry } = usePioneer();
   const { getStudyCount } = useStudies();
@@ -236,6 +238,24 @@ export default function PioneerPage() {
 
         {/* Service Year Summary */}
         <ServiceYearCard entries={entries} language={language} />
+
+        {/* Studies & Visits link */}
+        <motion.button
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          onClick={() => navigate('/studies')}
+          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <BookOpen className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-semibold text-foreground">{t('studies.title', language)}</span>
+            <p className="text-[10px] text-muted-foreground">{t('studies.subtitle', language)}</p>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </motion.button>
       </div>
 
       {/* Entry Dialog */}
