@@ -21,6 +21,7 @@ import JournalPage from "./pages/JournalPage";
 import HowToPage from "./pages/HowToPage";
 import PioneerPage from "./pages/PioneerPage";
 import StudiesPage from "./pages/StudiesPage";
+import DailyTextPage from "./pages/DailyTextPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
                     <Route path="/how-to" element={<HowToPage />} />
                     <Route path="/pioneer" element={<PioneerPage />} />
                     <Route path="/studies" element={<StudiesPage />} />
+                    <Route path="/daily-text" element={<DailyTextPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <BottomNav />

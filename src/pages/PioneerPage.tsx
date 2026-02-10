@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, Clock, BookOpen, Users, Megaphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp } from 'lucide-react';
 import { usePioneer, PioneerEntry } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -12,6 +12,71 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 const TARGET_HOURS = 50;
+const SERVICE_YEAR_TARGET = 600;
+
+function getServiceYear(refDate: Date): { start: Date; end: Date; label: string } {
+  const year = refDate.getFullYear();
+  const month = refDate.getMonth();
+  const startYear = month >= 8 ? year : year - 1;
+  const endYear = startYear + 1;
+  return {
+    start: new Date(startYear, 8, 1),
+    end: new Date(endYear, 7, 31),
+    label: `${startYear}–${endYear}`,
+  };
+}
+
+function ServiceYearCard({ entries, language }: { entries: Record<string, PioneerEntry>; language: string }) {
+  const sy = getServiceYear(new Date());
+  let totalHours = 0;
+
+  // Iterate all entries within the service year range
+  Object.entries(entries).forEach(([dateKey, entry]) => {
+    const d = new Date(dateKey + 'T12:00:00');
+    if (d >= sy.start && d <= sy.end) {
+      totalHours += entry.ministryHours + entry.witnessingHours;
+    }
+  });
+
+  const percent = Math.min(100, Math.round((totalHours / SERVICE_YEAR_TARGET) * 100));
+  const now = new Date();
+  const totalDays = Math.ceil((sy.end.getTime() - sy.start.getTime()) / 86400000);
+  const elapsedDays = Math.max(1, Math.ceil((now.getTime() - sy.start.getTime()) / 86400000));
+  const expectedHours = Math.round((elapsedDays / totalDays) * SERVICE_YEAR_TARGET);
+  const onTrack = totalHours >= expectedHours;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="rounded-2xl border border-border bg-card p-4 space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <h3 className="text-xs font-semibold text-foreground">{t('pioneer.serviceYear', language)}</h3>
+        <span className="ml-auto text-[10px] text-muted-foreground">{sy.label}</span>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs text-muted-foreground">{t('pioneer.serviceYearHours', language)}</span>
+          <span className={`text-sm font-bold ${onTrack ? 'text-[hsl(145,65%,42%)]' : 'text-destructive'}`}>
+            {totalHours} / {SERVICE_YEAR_TARGET}
+          </span>
+        </div>
+        <Progress value={percent} className="h-2" />
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <span>{t('pioneer.expectedPace', language)}: {expectedHours}h</span>
+        <span className={`font-semibold ${onTrack ? 'text-[hsl(145,65%,42%)]' : 'text-destructive'}`}>
+          {onTrack ? (language === 'en' ? 'On track' : 'Nasa tamang bilis') : (language === 'en' ? 'Behind pace' : 'Nahuhuli')}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function PioneerPage() {
   const { language } = useReadingProgress();
@@ -24,14 +89,13 @@ export default function PioneerPage() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
   const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDayOfWeek = new Date(year, month - 1, 1).getDay(); // 0=Sun
+  const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
 
   const monthName = currentDate.toLocaleDateString(language === 'en' ? 'en-US' : 'fil-PH', { month: 'long', year: 'numeric' });
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 2, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month, 1));
 
-  // Build calendar grid
   const calendarDays: (number | null)[] = [];
   for (let i = 0; i < firstDayOfWeek; i++) calendarDays.push(null);
   for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
@@ -56,7 +120,6 @@ export default function PioneerPage() {
     setSelectedDate(null);
   };
 
-  // Monthly summary
   let totalHours = 0, totalBS = 0, totalRV = 0, totalPW = 0, daysWithData = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const e = entries[getDateKey(d)];
@@ -170,10 +233,13 @@ export default function PioneerPage() {
             {daysWithData} / {daysInMonth} {t('pioneer.daysLogged', language)}
           </div>
         </motion.div>
+
+        {/* Service Year Summary */}
+        <ServiceYearCard entries={entries} language={language} />
       </div>
 
       {/* Entry Dialog */}
-      <Dialog open={!!selectedDate} onOpenChange={(open) => !open && setSelectedDate(null)}>
+      <Dialog open={!!selectedDate} onOpenChange={(open: boolean) => !open && setSelectedDate(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm">

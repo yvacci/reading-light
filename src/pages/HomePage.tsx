@@ -9,7 +9,6 @@ import { t } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
 import ReadingStatsCard from '@/components/ReadingStatsCard';
-import DailyTextCard from '@/components/DailyTextCard';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -38,9 +37,6 @@ export default function HomePage() {
       </div>
 
       <div className="space-y-4 px-4 pt-5">
-        {/* Daily Text */}
-        <DailyTextCard />
-
         {/* Overall Progress Card */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
