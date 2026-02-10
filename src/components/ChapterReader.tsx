@@ -31,7 +31,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const book = getBookById(bookId);
   const { isChapterRead, toggleChapterRead, setLastRead, fontSize, language, addReadingTime } = useReadingProgress();
   const { isBookmarked } = useBookmarks();
-  const { addHighlight, getChapterHighlights } = useHighlights();
+  const { addHighlight, getChapterHighlights, removeHighlight, updateHighlightColor } = useHighlights();
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -45,6 +45,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [pendingHighlightText, setPendingHighlightText] = useState('');
   const [pendingHighlightVerse, setPendingHighlightVerse] = useState(0);
+  const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
+  const [editingHighlightColor, setEditingHighlightColor] = useState<string | undefined>();
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -229,7 +231,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }, []);
 
   const handleColorSelect = useCallback((color: string) => {
-    if (pendingHighlightText) {
+    if (editingHighlightId) {
+      updateHighlightColor(editingHighlightId, color);
+      setEditingHighlightId(null);
+      setEditingHighlightColor(undefined);
+    } else if (pendingHighlightText) {
       addHighlight({
         bookId,
         chapter,
@@ -240,10 +246,16 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       });
       window.getSelection()?.removeAllRanges();
       setPendingHighlightText('');
-      // Re-apply highlights
-      applyHighlights();
     }
-  }, [pendingHighlightText, pendingHighlightVerse, bookId, chapter, addHighlight]);
+  }, [editingHighlightId, pendingHighlightText, pendingHighlightVerse, bookId, chapter, addHighlight, updateHighlightColor]);
+
+  const handleHighlightDelete = useCallback(() => {
+    if (editingHighlightId) {
+      removeHighlight(editingHighlightId);
+      setEditingHighlightId(null);
+      setEditingHighlightColor(undefined);
+    }
+  }, [editingHighlightId, removeHighlight]);
 
   // Apply saved highlights to the content
   const applyHighlights = useCallback(() => {
@@ -279,6 +291,17 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           mark.style.backgroundColor = hl.color;
           mark.style.borderRadius = '2px';
           mark.style.padding = '0 1px';
+          mark.style.cursor = 'pointer';
+          mark.setAttribute('data-highlight-id', hl.id);
+          mark.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = mark.getBoundingClientRect();
+            setColorPickerPos({ x: rect.left + rect.width / 2, y: rect.top });
+            setEditingHighlightId(hl.id);
+            setEditingHighlightColor(hl.color);
+            setPendingHighlightText('');
+            setColorPickerOpen(true);
+          });
           range.surroundContents(mark);
           break;
         }
@@ -466,9 +489,15 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
       <HighlightColorPicker
         open={colorPickerOpen}
-        onClose={() => setColorPickerOpen(false)}
+        onClose={() => {
+          setColorPickerOpen(false);
+          setEditingHighlightId(null);
+          setEditingHighlightColor(undefined);
+        }}
         onSelectColor={handleColorSelect}
+        onDelete={editingHighlightId ? handleHighlightDelete : undefined}
         position={colorPickerPos}
+        activeColor={editingHighlightColor}
       />
     </div>
   );
