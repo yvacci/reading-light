@@ -8,18 +8,29 @@ import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const VIEW_PREF_KEY = 'nwt-book-view';
+
+const BIBLE_SUB_TABS = [
+  { id: 'introduksiyon', label: 'INTRODUKSIYON' },
+  { id: 'aklat', label: 'AKLAT' },
+  { id: 'indise', label: 'INDISE' },
+  { id: 'apendise-a', label: 'APENDISE A' },
+  { id: 'apendise-b', label: 'APENDISE B' },
+] as const;
+
+type SubTab = typeof BIBLE_SUB_TABS[number]['id'];
 
 export default function ReaderPage() {
   const { bookId, chapter } = useParams();
   const navigate = useNavigate();
   const { getBookProgress } = useReadingProgress();
-  const [testamentFilter, setTestamentFilter] = useState<'OT' | 'NT'>('OT');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
-    return (localStorage.getItem(VIEW_PREF_KEY) as 'list' | 'grid') || 'list';
+    return (localStorage.getItem(VIEW_PREF_KEY) as 'list' | 'grid') || 'grid';
   });
   const [tappedBook, setTappedBook] = useState<number | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<SubTab>('aklat');
 
   useEffect(() => {
     localStorage.setItem(VIEW_PREF_KEY, viewMode);
@@ -35,7 +46,8 @@ export default function ReaderPage() {
     return <ChapterSelector book={book} />;
   }
 
-  const filteredBooks = BIBLE_BOOKS.filter(b => b.testament === testamentFilter);
+  const otBooks = BIBLE_BOOKS.filter(b => b.testament === 'OT');
+  const ntBooks = BIBLE_BOOKS.filter(b => b.testament === 'NT');
 
   const handleBookTap = (id: number) => {
     setTappedBook(id);
@@ -45,8 +57,8 @@ export default function ReaderPage() {
   return (
     <div className="min-h-screen pb-20">
       <PageHeader
-        title={t('reader.title')}
-        subtitle={t('reader.subtitle')}
+        title="Bibliya Para sa Pag-aaral"
+        subtitle="Tagalog"
         actions={
           <div className="flex items-center gap-1">
             <button
@@ -65,88 +77,176 @@ export default function ReaderPage() {
         }
       />
 
-      <div className="flex gap-1 px-4 py-3">
-        {(['OT', 'NT'] as const).map(tt => (
-          <button
-            key={tt}
-            onClick={() => setTestamentFilter(tt)}
-            className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-all ${
-              testamentFilter === tt
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {tt === 'OT' ? t('reader.hebrewScriptures') : t('reader.greekScriptures')}
-          </button>
-        ))}
+      {/* Sub-tabs */}
+      <div className="border-b border-border">
+        <ScrollArea className="w-full">
+          <div className="flex px-2">
+            {BIBLE_SUB_TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSubTab(tab.id)}
+                className={`shrink-0 px-4 py-3 text-xs font-bold tracking-wide transition-colors relative ${
+                  activeSubTab === tab.id
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+                {activeSubTab === tab.id && (
+                  <motion.div
+                    layoutId="subtab-underline"
+                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${testamentFilter}-${viewMode}`}
-          initial={{ opacity: 0, x: testamentFilter === 'NT' ? 20 : -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: testamentFilter === 'NT' ? -20 : 20 }}
-          transition={{ duration: 0.2 }}
-          className={viewMode === 'grid' ? 'grid grid-cols-3 gap-2.5 px-4' : 'space-y-1 px-4'}
-        >
-          {filteredBooks.map(book => {
-            const prog = getBookProgress(book.id);
-            const isTapped = tappedBook === book.id;
+      {activeSubTab === 'aklat' ? (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="aklat"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* OT Section Header */}
+            <div className="bg-foreground px-4 py-2.5 mt-0">
+              <h2 className="text-xs font-extrabold tracking-wider text-background uppercase">
+                KASULATANG HEBREO-ARAMAIKO
+              </h2>
+            </div>
 
-            if (viewMode === 'grid') {
-              return (
-                <motion.button
-                  key={book.id}
-                  onClick={() => handleBookTap(book.id)}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={isTapped
-                    ? { opacity: 1, scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.3)', '0 0 0 0 hsl(var(--primary) / 0)'] }
-                    : { opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:bg-muted/60"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                    {book.id}
-                  </div>
-                  <p className="text-[11px] font-medium text-foreground text-center leading-tight truncate w-full">
-                    {getLocalizedBookName(book.id)}
-                  </p>
-                  {prog.percent > 0 && (
-                    <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${prog.percent}%` }} />
-                    </div>
-                  )}
-                </motion.button>
-              );
-            }
+            {/* OT Grid */}
+            <div className="px-2 py-2">
+              <BookGrid
+                books={otBooks}
+                viewMode={viewMode}
+                tappedBook={tappedBook}
+                onBookTap={handleBookTap}
+                getBookProgress={getBookProgress}
+              />
+            </div>
 
-            return (
-              <motion.button
-                key={book.id}
-                onClick={() => handleBookTap(book.id)}
-                animate={isTapped ? { scale: [0.95, 1.02, 1], backgroundColor: ['hsl(var(--muted) / 0)', 'hsl(var(--primary) / 0.08)', 'hsl(var(--muted) / 0)'] } : {}}
-                transition={{ duration: 0.3 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                  {book.id}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{getLocalizedBookName(book.id)}</p>
-                  <p className="text-[10px] text-muted-foreground">{book.chapters} {t('reader.chapters')}</p>
-                </div>
-                {prog.percent > 0 && (
-                  <span className="text-[10px] font-semibold text-primary">{prog.percent}%</span>
-                )}
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </motion.button>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+            {/* NT Section Header */}
+            <div className="bg-foreground px-4 py-2.5">
+              <h2 className="text-xs font-extrabold tracking-wider text-background uppercase">
+                KRISTIYANONG GRIEGONG KASULATAN
+              </h2>
+            </div>
+
+            {/* NT Grid */}
+            <div className="px-2 py-2">
+              <BookGrid
+                books={ntBooks}
+                viewMode={viewMode}
+                tappedBook={tappedBook}
+                onBookTap={handleBookTap}
+                getBookProgress={getBookProgress}
+              />
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        <div className="px-5 py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Ang seksyong "{BIBLE_SUB_TABS.find(t => t.id === activeSubTab)?.label}" ay malapit nang maging available.
+          </p>
+          <p className="text-xs text-muted-foreground/60 mt-2">
+            Ang nilalaman ay maaaring kunin mula sa EPUB.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BookGrid({
+  books,
+  viewMode,
+  tappedBook,
+  onBookTap,
+  getBookProgress,
+}: {
+  books: typeof BIBLE_BOOKS;
+  viewMode: 'list' | 'grid';
+  tappedBook: number | null;
+  onBookTap: (id: number) => void;
+  getBookProgress: (id: number) => { read: number; total: number; percent: number };
+}) {
+  if (viewMode === 'grid') {
+    return (
+      <div className="grid grid-cols-5 gap-[3px]">
+        {books.map((book, index) => {
+          const isTapped = tappedBook === book.id;
+          const prog = getBookProgress(book.id);
+          // Alternating row colors matching JW Library style
+          const rowIndex = Math.floor(index / 5);
+          const isAltRow = rowIndex % 2 === 1;
+
+          return (
+            <motion.button
+              key={book.id}
+              onClick={() => onBookTap(book.id)}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={isTapped
+                ? { opacity: 1, scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.4)', '0 0 0 0 hsl(var(--primary) / 0)'] }
+                : { opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.01 }}
+              whileTap={{ scale: 0.92 }}
+              className={`relative flex items-center justify-start px-2.5 py-3.5 text-left transition-colors ${
+                isAltRow
+                  ? 'bg-primary/25 hover:bg-primary/35'
+                  : 'bg-primary/15 hover:bg-primary/25'
+              }`}
+              style={{ borderRadius: 2 }}
+            >
+              <span className="text-[13px] font-medium text-foreground leading-tight">
+                {book.shortName}
+              </span>
+              {prog.percent === 100 && (
+                <div className="absolute top-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // List view
+  return (
+    <div className="space-y-0.5 px-2">
+      {books.map(book => {
+        const prog = getBookProgress(book.id);
+        const isTapped = tappedBook === book.id;
+        return (
+          <motion.button
+            key={book.id}
+            onClick={() => onBookTap(book.id)}
+            animate={isTapped ? { scale: [0.95, 1.02, 1], backgroundColor: ['hsl(var(--muted) / 0)', 'hsl(var(--primary) / 0.08)', 'hsl(var(--muted) / 0)'] } : {}}
+            transition={{ duration: 0.3 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+              {book.id}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{getLocalizedBookName(book.id)}</p>
+              <p className="text-[10px] text-muted-foreground">{book.chapters} {t('reader.chapters')}</p>
+            </div>
+            {prog.percent > 0 && (
+              <span className="text-[10px] font-semibold text-primary">{prog.percent}%</span>
+            )}
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </motion.button>
+        );
+      })}
     </div>
   );
 }
