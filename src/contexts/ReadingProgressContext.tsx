@@ -93,7 +93,6 @@ export function ReadingProgressProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     saveState(state);
-    document.documentElement.classList.toggle('dark', state.darkMode);
   }, [state]);
 
   const markChapterRead = useCallback((bookId: number, chapter: number) => {

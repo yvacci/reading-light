@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Sun, Type, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, BookOpen } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, Upload, FileText, Trash2, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, BookOpen } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { saveUserUploadedFile, clearUserUploadedFile, getDailyTextEntryCount } from '@/lib/daily-text-service';
@@ -25,7 +25,7 @@ import {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { darkMode, setDarkMode, fontSize, setFontSize, language, resetProgress } = useReadingProgress();
+  const { fontSize, setFontSize, language, resetProgress } = useReadingProgress();
   const {
     isSupported,
     permissionState,
@@ -159,13 +159,6 @@ export default function SettingsPage() {
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.appearance', language)}</p>
           <div className="space-y-0 divide-y divide-border">
-            <div className="flex items-center justify-between py-3.5">
-              <div className="flex items-center gap-3">
-                {darkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
-                <span className="text-sm text-foreground">{t('settings.darkMode', language)}</span>
-              </div>
-              <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-            </div>
             <div className="py-3.5">
               <div className="flex items-center gap-3 mb-3">
                 <Type className="h-5 w-5 text-primary" />

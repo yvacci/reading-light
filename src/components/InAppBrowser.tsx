@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, RefreshCw, Globe, Search } from 'lucide-react';
+import { X, RefreshCw, Globe, Search } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -116,14 +116,13 @@ export default function InAppBrowser({ open, initialUrl, onClose }: Props) {
                 <button onClick={handleRefresh} className="p-1.5 rounded text-muted-foreground hover:bg-muted transition-colors">
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <button
+                  onClick={handleRefresh}
                   className="p-1.5 rounded text-muted-foreground hover:bg-muted transition-colors"
+                  title="I-refresh"
                 >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
+                  <RefreshCw className="h-4 w-4" />
+                </button>
                 <span className="flex-1 text-xs text-muted-foreground truncate ml-2">{url}</span>
               </div>
             )}
@@ -172,21 +171,17 @@ export default function InAppBrowser({ open, initialUrl, onClose }: Props) {
                       <p className="text-center text-sm text-muted-foreground">
                         Hindi ma-load ang site na ito sa loob ng app dahil sa mga security restriction ng website.
                       </p>
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Buksan sa Bagong Tab
-                      </a>
-                      <button
-                        onClick={() => { setUrl(''); setIframeError(false); }}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        ← Bumalik sa Quick Links
-                      </button>
+                      <p className="text-center text-xs text-muted-foreground/70">
+                        {url}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setUrl(''); setIframeError(false); }}
+                          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                          ← Bumalik sa Quick Links
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <iframe
