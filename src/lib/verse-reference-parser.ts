@@ -131,28 +131,29 @@ export function parseVerseReferences(text: string): ParsedReference[] {
 export function makeReferencesClickable(text: string): string {
   const refs = parseVerseReferences(text);
   if (refs.length === 0) return escapeHtml(text);
-  
-  let result = text;
-  // Process references in reverse order to not mess up indices
+
+  // Escape the entire text first, then replace escaped references with HTML spans
+  const escaped = escapeHtml(text);
+
+  // Sort by position in the escaped string (reverse order to preserve indices)
   const sortedRefs = [...refs].sort((a, b) => {
-    const idxA = result.indexOf(a.originalText);
-    const idxB = result.indexOf(b.originalText);
+    const idxA = escaped.indexOf(escapeHtml(a.originalText));
+    const idxB = escaped.indexOf(escapeHtml(b.originalText));
     return idxB - idxA;
   });
-  
+
+  let result = escaped;
   for (const ref of sortedRefs) {
-    const idx = result.indexOf(ref.originalText);
+    const escapedOriginal = escapeHtml(ref.originalText);
+    const idx = result.indexOf(escapedOriginal);
     if (idx === -1) continue;
-    
+
     const before = result.slice(0, idx);
-    const after = result.slice(idx + ref.originalText.length);
-    const replacement = `<span class="verse-ref-link" data-book="${ref.bookId}" data-chapter="${ref.chapter}" data-verse="${ref.verse || ''}">${escapeHtml(ref.originalText)}</span>`;
+    const after = result.slice(idx + escapedOriginal.length);
+    const replacement = `<span class="verse-ref-link" data-book="${ref.bookId}" data-chapter="${ref.chapter}" data-verse="${ref.verse || ''}">${escapedOriginal}</span>`;
     result = before + replacement + after;
   }
-  
-  // Escape the non-reference parts
-  // Since we've already inserted HTML spans, we need to be careful
-  // The spans are already in place, just return as-is
+
   return result;
 }
 
