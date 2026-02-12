@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, LayoutGrid, List, Loader2 } from 'lucide-react';
+import { ChevronRight, LayoutGrid, List, Loader2, ExternalLink } from 'lucide-react';
 import { BIBLE_BOOKS, type BibleBook } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
-import { loadSection } from '@/lib/epub-sections';
-import { sanitizeHtml } from '@/lib/sanitize';
+import { BIBLE_SECTIONS } from '@/lib/bible-sections-data';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
+import ReferencePane from '@/components/ReferencePane';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const VIEW_PREF_KEY = 'nwt-book-view';
@@ -162,48 +162,70 @@ export default function ReaderPage() {
 }
 
 function SubTabContent({ tabId }: { tabId: string }) {
-  const [html, setHtml] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [paneOpen, setPaneOpen] = useState(false);
+  const [paneUrl, setPaneUrl] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    loadSection(tabId).then(section => {
-      if (!cancelled) {
-        setHtml(section?.html || null);
-        setLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [tabId]);
+  const section = BIBLE_SECTIONS[tabId];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!html) {
+  if (!section) {
     return (
       <div className="px-5 py-8 text-center">
         <p className="text-sm text-muted-foreground">
-          Ang seksyong "{BIBLE_SUB_TABS.find(t => t.id === tabId)?.label}" ay hindi pa available sa EPUB.
-        </p>
-        <p className="text-xs text-muted-foreground/60 mt-2">
-          Maaaring i-browse ito sa wol.jw.org.
+          Ang seksyong "{BIBLE_SUB_TABS.find(t => t.id === tabId)?.label}" ay hindi pa available.
         </p>
       </div>
     );
   }
 
+  const handleArticleClick = (url: string) => {
+    setPaneUrl(url);
+    setPaneOpen(true);
+  };
+
   return (
     <div className="px-5 py-4">
-      <div
-        className="bible-content prose prose-sm max-w-none text-foreground"
-        style={{ lineHeight: 1.8 }}
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
+      {/* Section header */}
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
+        {section.description && (
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{section.description}</p>
+        )}
+      </div>
+
+      {/* Articles list */}
+      <div className="space-y-1">
+        {section.articles.map((article, i) => (
+          <motion.button
+            key={i}
+            initial={false}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleArticleClick(article.url)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-muted/60"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary shrink-0">
+              {i + 1}
+            </div>
+            <span className="text-sm text-foreground leading-snug flex-1">{article.title}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          </motion.button>
+        ))}
+      </div>
+
+      {/* Source link */}
+      <div className="mt-4 pt-3 border-t border-border">
+        <button
+          onClick={() => handleArticleClick(section.sourceUrl)}
+          className="flex items-center gap-2 text-xs text-primary font-medium hover:opacity-70 transition-opacity"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Buksan sa jw.org
+        </button>
+      </div>
+
+      <ReferencePane
+        open={paneOpen}
+        onClose={() => setPaneOpen(false)}
+        quickLinkUrl={paneUrl}
       />
     </div>
   );
@@ -228,7 +250,6 @@ function BookGrid({
         {books.map((book, index) => {
           const isTapped = tappedBook === book.id;
           const prog = getBookProgress(book.id);
-          // Alternating row colors matching JW Library style
           const rowIndex = Math.floor(index / 5);
           const isAltRow = rowIndex % 2 === 1;
 
@@ -236,11 +257,11 @@ function BookGrid({
             <motion.button
               key={book.id}
               onClick={() => onBookTap(book.id)}
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={false}
               animate={isTapped
-                ? { opacity: 1, scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.4)', '0 0 0 0 hsl(var(--primary) / 0)'] }
-                : { opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.01 }}
+                ? { scale: [0.9, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 20px 4px hsl(var(--primary) / 0.4)', '0 0 0 0 hsl(var(--primary) / 0)'] }
+                : { scale: 1 }}
+              transition={{ duration: 0.3 }}
               whileTap={{ scale: 0.92 }}
               className={`relative flex items-center justify-start px-2.5 py-3.5 text-left transition-colors ${
                 isAltRow

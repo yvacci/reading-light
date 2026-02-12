@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine, Highlighter, PanelLeftOpen } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, Bookmark, PenLine, Highlighter, PanelLeftOpen } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
@@ -18,7 +18,7 @@ import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
 import HighlightColorPicker from '@/components/HighlightColorPicker';
 import { Button } from '@/components/ui/button';
-import InAppBrowser from '@/components/InAppBrowser';
+import ReferencePane from '@/components/ReferencePane';
 import ReaderBottomToolbar from '@/components/ReaderBottomToolbar';
 
 interface Props {
@@ -53,6 +53,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [emphasizedVerse, setEmphasizedVerse] = useState<number | null>(null);
   const [refPaneOpen, setRefPaneOpen] = useState(false);
   const [refPaneUrl, setRefPaneUrl] = useState('');
+  const [refPaneVerse, setRefPaneVerse] = useState<{ bookId: number; chapter: number; verse?: number; text?: string } | undefined>();
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -93,6 +94,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       const el = e.currentTarget as HTMLElement;
       const verseNum = parseInt(el.getAttribute('data-verse') || '0');
       if (verseNum > 0) {
+        // Open reference pane for this verse
+        const url = getWolUrl(bookId, chapter) + `#v${verseNum}`;
+        setRefPaneUrl(url);
+        setRefPaneVerse({ bookId, chapter, verse: verseNum });
+        setRefPaneOpen(true);
         setEmphasizedVerse(prev => prev === verseNum ? null : verseNum);
       }
     };
@@ -320,6 +326,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   function openReference() {
     const url = getWolUrl(bookId, chapter);
     setRefPaneUrl(url);
+    setRefPaneVerse(undefined);
     setRefPaneOpen(true);
   }
 
@@ -353,7 +360,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
               title={t('reader.reference')}
             >
-              <ExternalLink className="h-3.5 w-3.5" />
+              <PanelLeftOpen className="h-3.5 w-3.5" />
             </button>
             <button
               onClick={handleBookmark}
@@ -506,10 +513,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         activeColor={editingHighlightColor}
       />
 
-      <InAppBrowser
+      <ReferencePane
         open={refPaneOpen}
-        initialUrl={refPaneUrl}
         onClose={() => setRefPaneOpen(false)}
+        verseRef={refPaneVerse}
+        quickLinkUrl={refPaneUrl}
       />
 
       {/* Bottom quick toolbar */}
