@@ -17,7 +17,7 @@ import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
 import HighlightColorPicker from '@/components/HighlightColorPicker';
 import { Button } from '@/components/ui/button';
-import ReferencePane from '@/components/ReferencePane';
+import InAppBrowser from '@/components/InAppBrowser';
 import ReaderBottomToolbar from '@/components/ReaderBottomToolbar';
 
 interface Props {
@@ -505,10 +505,9 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         activeColor={editingHighlightColor}
       />
 
-      <ReferencePane
+      <InAppBrowser
         open={refPaneOpen}
-        url={refPaneUrl}
-        title={`${localizedName} ${chapter} — Sanggunian`}
+        initialUrl={refPaneUrl}
         onClose={() => setRefPaneOpen(false)}
       />
 
