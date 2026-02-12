@@ -48,13 +48,16 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
   // Remove any remaining loose text lines containing ^
   cleanHtml = cleanHtml.replace(/\^[^<\n]*/g, '');
   
-  // Also remove duplicate footnote-like content that appears above the footnotes panel
-  // These are typically rendered as plain text references before the collapsible section
-  cleanHtml = cleanHtml.replace(/<p[^>]*>\s*(?:Gen|Exo|Lev|Bil|Deu|Jos|Huk|Rut|[\d]\s*\w+)\.\s*\d+:\d+.*?<\/p>/gi, (match) => {
-    // Only remove if it looks like a standalone footnote reference line (not verse content)
+  // Remove standalone footnote reference paragraphs (e.g., "Gen. 1:16 Lit., 'para maghari.'")
+  // These appear as separate paragraphs with a book abbreviation + chapter:verse pattern
+  cleanHtml = cleanHtml.replace(/<p[^>]*>[\s\S]*?<\/p>/gi, (match) => {
     const stripped = match.replace(/<[^>]+>/g, '').trim();
-    if (/^[\w.]+\s+\d+:\d+\s+/i.test(stripped) && stripped.length < 200) {
-      return '';
+    // Match patterns like "Gen. 1:16 ..." or "1Co. 3:5 ..." — standalone footnote lines
+    if (/^(?:\d?\s*)?[A-Z][a-z]{1,5}\.?\s+\d+:\d+[a-z]?\s+/i.test(stripped) && stripped.length < 300) {
+      // Ensure it's not a real verse paragraph by checking it doesn't start with a verse number only
+      if (!/^\d+\s+[A-Z]/.test(stripped)) {
+        return '';
+      }
     }
     return match;
   });

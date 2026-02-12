@@ -83,61 +83,74 @@ export async function loadEpubSections(): Promise<Record<string, SectionContent>
 
       const sections: Record<string, SectionContent> = {};
 
-      // Find sections by matching spine hrefs against patterns
+      // Log all spine hrefs for debugging
+      const allHrefs = spineEntries.map(e => e.href);
+      console.log('[EPUB Sections] All spine hrefs:', allHrefs);
+
+      // Identify chapter content entries (they follow biblechapternav patterns)
+      const chapterHrefs = new Set<string>();
       for (const entry of spineEntries) {
-        const href = entry.href.toLowerCase();
-        
-        for (const [sectionId, patterns] of Object.entries(SECTION_PATTERNS)) {
-          if (sections[sectionId]) continue; // Already found
-          
-          for (const pattern of patterns) {
-            if (pattern.test(href)) {
-              const filePath = contentPrefix + entry.href;
-              const file = zip.file(filePath);
-              if (file) {
-                const xhtml = await file.async('string');
-                const html = extractBody(xhtml);
-                if (html && html.trim().length > 50) {
-                  // Extract title from first heading
-                  const titleMatch = html.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
-                  const title = titleMatch
-                    ? titleMatch[1].replace(/<[^>]+>/g, '').trim()
-                    : sectionId.toUpperCase();
-                  
-                  sections[sectionId] = { title, html };
-                }
-              }
-              break;
-            }
-          }
+        if (/biblechapter|chapter\d/i.test(entry.href)) {
+          chapterHrefs.add(entry.href);
         }
       }
 
-      // Also try to collect multiple pages for appendices (they may span multiple spine entries)
-      for (const entry of spineEntries) {
+      // Non-chapter entries are candidates for sections
+      const nonChapterEntries = spineEntries.filter(e => !chapterHrefs.has(e.href));
+      console.log('[EPUB Sections] Non-chapter entries:', nonChapterEntries.map(e => e.href));
+
+      // Try to identify sections by content if href patterns don't match
+      for (const entry of nonChapterEntries) {
         const href = entry.href.toLowerCase();
         
-        // Check for appendix sub-pages not yet captured
-        if (/app[a-c]|apendise/i.test(href) && !Object.values(SECTION_PATTERNS).flat().some(p => p.test(href))) {
-          // This is an additional appendix page
-          const filePath = contentPrefix + entry.href;
-          const file = zip.file(filePath);
-          if (file) {
-            const xhtml = await file.async('string');
-            const html = extractBody(xhtml);
-            if (html && html.trim().length > 50) {
-              // Determine which appendix this belongs to
-              let targetSection = '';
-              if (/appa|appendix.*a/i.test(href)) targetSection = 'apendise-a';
-              else if (/appb|appendix.*b/i.test(href)) targetSection = 'apendise-b';
-              
-              if (targetSection && sections[targetSection]) {
-                sections[targetSection].html += html;
-              }
+        // First try pattern matching on href
+        let matchedSection: string | null = null;
+        for (const [sectionId, patterns] of Object.entries(SECTION_PATTERNS)) {
+          if (sections[sectionId]) continue;
+          for (const pattern of patterns) {
+            if (pattern.test(href)) {
+              matchedSection = sectionId;
+              break;
             }
           }
+          if (matchedSection) break;
+        }
+
+        // Load the file and try content-based matching if href didn't match
+        const filePath = contentPrefix + entry.href;
+        const file = zip.file(filePath);
+        if (!file) continue;
+        
+        const xhtml = await file.async('string');
+        const html = extractBody(xhtml);
+        if (!html || html.trim().length < 50) continue;
+
+        const plainContent = html.replace(/<[^>]+>/g, ' ').toLowerCase();
+        const titleMatch = html.match(/<h[12][^>]*>(.*?)<\/h[12]>/i);
+        const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+        if (!matchedSection) {
+          // Content-based matching
+          if (/introduk|paunang\s*salita|preface|foreword/i.test(plainContent.slice(0, 500)) || /introduk/i.test(title)) {
+            matchedSection = 'introduksiyon';
+          } else if (/indise|index|talaan.*paksa/i.test(plainContent.slice(0, 500)) || /indise|index/i.test(title)) {
+            matchedSection = 'indise';
+          } else if (/apendise.*a|appendix.*a/i.test(title) || (/apendise|appendix/i.test(title) && !sections['apendise-a'])) {
+            matchedSection = 'apendise-a';
+          } else if (/apendise.*b|appendix.*b/i.test(title)) {
+            matchedSection = 'apendise-b';
+          }
+        }
+
+        if (matchedSection && !sections[matchedSection]) {
+          sections[matchedSection] = { title: title || matchedSection.toUpperCase(), html };
+        } else if (matchedSection && sections[matchedSection]) {
+          // Append to existing section
+          sections[matchedSection].html += html;
         }
       }
+
+      // Old appendix sub-page collector removed — handled in main loop above
 
       sectionsCache = sections;
       console.log(`[EPUB Sections] Found ${Object.keys(sections).length} sections:`, Object.keys(sections));
