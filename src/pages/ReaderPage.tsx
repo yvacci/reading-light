@@ -19,6 +19,7 @@ const BIBLE_SUB_TABS = [
   { id: 'indise', label: 'INDISE' },
   { id: 'apendise-a', label: 'APENDISE A' },
   { id: 'apendise-b', label: 'APENDISE B' },
+  { id: 'apendise-c', label: 'APENDISE C' },
 ] as const;
 
 type SubTab = typeof BIBLE_SUB_TABS[number]['id'];
