@@ -153,7 +153,7 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
-          className="grid grid-cols-2 gap-3"
+          className="space-y-1"
         >
           {[
             { to: '/reader', icon: BookOpen, label: t('home.openBible') },
@@ -165,10 +165,11 @@ export default function HomePage() {
             <button
               key={to}
               onClick={() => navigate(to)}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/50"
+              className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50"
             >
-              <Icon className="h-6 w-6 text-primary" />
-              <span className="text-xs font-medium text-foreground">{label}</span>
+              <Icon className="h-5 w-5 text-primary shrink-0" />
+              <span className="text-sm font-medium text-foreground">{label}</span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
             </button>
           ))}
         </motion.div>

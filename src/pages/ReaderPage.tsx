@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { ChevronRight, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { BIBLE_BOOKS, type BibleBook } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { loadSection } from '@/lib/epub-sections';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -152,15 +153,56 @@ export default function ReaderPage() {
           </motion.div>
         </AnimatePresence>
       ) : (
-        <div className="px-5 py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Ang seksyong "{BIBLE_SUB_TABS.find(t => t.id === activeSubTab)?.label}" ay malapit nang maging available.
-          </p>
-          <p className="text-xs text-muted-foreground/60 mt-2">
-            Ang nilalaman ay maaaring kunin mula sa EPUB.
-          </p>
-        </div>
+        <SubTabContent tabId={activeSubTab} />
       )}
+    </div>
+  );
+}
+
+function SubTabContent({ tabId }: { tabId: string }) {
+  const [html, setHtml] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    loadSection(tabId).then(section => {
+      if (!cancelled) {
+        setHtml(section?.html || null);
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [tabId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!html) {
+    return (
+      <div className="px-5 py-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          Ang seksyong "{BIBLE_SUB_TABS.find(t => t.id === tabId)?.label}" ay hindi pa available sa EPUB.
+        </p>
+        <p className="text-xs text-muted-foreground/60 mt-2">
+          Maaaring i-browse ito sa wol.jw.org.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 py-4">
+      <div
+        className="bible-content prose prose-sm max-w-none text-foreground"
+        style={{ lineHeight: 1.8 }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   );
 }
