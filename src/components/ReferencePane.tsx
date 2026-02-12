@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ExternalLink } from 'lucide-react';
+import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -33,14 +33,6 @@ export default function ReferencePane({ open, url, title, onClose }: Props) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <h3 className="text-sm font-semibold text-foreground truncate flex-1">{title}</h3>
               <div className="flex items-center gap-1">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
                 <button
                   onClick={onClose}
                   className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
