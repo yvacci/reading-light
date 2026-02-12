@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine, Highlighter } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, BookmarkCheck, ExternalLink, Bookmark, PenLine, Highlighter, PanelLeftOpen } from 'lucide-react';
 import { getBookById, getWolUrl, BIBLE_BOOKS } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
@@ -17,6 +17,8 @@ import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
 import HighlightColorPicker from '@/components/HighlightColorPicker';
 import { Button } from '@/components/ui/button';
+import ReferencePane from '@/components/ReferencePane';
+import ReaderBottomToolbar from '@/components/ReaderBottomToolbar';
 
 interface Props {
   bookId: number;
@@ -48,6 +50,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
   const [editingHighlightColor, setEditingHighlightColor] = useState<string | undefined>();
   const [emphasizedVerse, setEmphasizedVerse] = useState<number | null>(null);
+  const [refPaneOpen, setRefPaneOpen] = useState(false);
+  const [refPaneUrl, setRefPaneUrl] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -314,7 +318,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
 
   function openReference() {
     const url = getWolUrl(bookId, chapter);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    setRefPaneUrl(url);
+    setRefPaneOpen(true);
   }
 
   const handleClearHighlight = useCallback(() => {
@@ -499,6 +504,18 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         position={colorPickerPos}
         activeColor={editingHighlightColor}
       />
+
+      <ReferencePane
+        open={refPaneOpen}
+        url={refPaneUrl}
+        title={`${localizedName} ${chapter} — Sanggunian`}
+        onClose={() => setRefPaneOpen(false)}
+      />
+
+      {/* Bottom quick toolbar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
+        <ReaderBottomToolbar />
+      </div>
     </div>
   );
 }
