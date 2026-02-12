@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
-import { loadDailyText, getTodaysDailyText } from '@/lib/daily-text-service';
+import { BookOpen, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { fetchAndGetDailyText, getTodaysDailyText } from '@/lib/daily-text-service';
 import { makeReferencesClickable } from '@/lib/verse-reference-parser';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
@@ -21,11 +21,15 @@ export default function DailyTextCard() {
     (async () => {
       setLoading(true);
       try {
-        await loadDailyText(language);
-        if (!cancelled) {
-          const today = getTodaysDailyText();
-          setDailyText(today);
+        // Check cache first
+        const cached = getTodaysDailyText();
+        if (cached) {
+          if (!cancelled) { setDailyText(cached); setLoading(false); }
+          return;
         }
+        // Fetch from server
+        const entry = await fetchAndGetDailyText(new Date());
+        if (!cancelled) setDailyText(entry);
       } catch (err) {
         console.error('[DailyText] Load error:', err);
       } finally {
@@ -64,9 +68,9 @@ export default function DailyTextCard() {
           <BookOpen className="h-4 w-4 text-primary" />
           <span className="text-xs font-semibold text-foreground">{t('dailyText.title', language)}</span>
         </div>
-        <div className="space-y-2">
-          <div className="h-3 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-3 w-full animate-pulse rounded bg-muted" />
+        <div className="flex items-center gap-2 py-2">
+          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+          <span className="text-xs text-muted-foreground">Kinukuha ang teksto...</span>
         </div>
       </div>
     );
