@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Globe } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { getBookById } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
@@ -9,10 +10,12 @@ import { t } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
 import ReadingStatsCard from '@/components/ReadingStatsCard';
+import InAppBrowser from '@/components/InAppBrowser';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { getOverallProgress, lastRead, getTodaysReading } = useReadingProgress();
+  const [browserOpen, setBrowserOpen] = useState(false);
   const overall = getOverallProgress();
   const lastBook = lastRead ? getBookById(lastRead.bookId) : null;
   const todaysReading = getTodaysReading();
@@ -172,8 +175,19 @@ export default function HomePage() {
               <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
             </button>
           ))}
+          {/* In-app browser button */}
+          <button
+            onClick={() => setBrowserOpen(true)}
+            className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50"
+          >
+            <Globe className="h-5 w-5 text-primary shrink-0" />
+            <span className="text-sm font-medium text-foreground">Maghanap sa JW.org</span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
+          </button>
         </motion.div>
       </div>
+
+      <InAppBrowser open={browserOpen} onClose={() => setBrowserOpen(false)} />
     </div>
   );
 }
