@@ -338,16 +338,19 @@ function ChapterSelector({ book }: { book: BibleBook }) {
           return (
             <motion.button
               key={ch}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.9 }}
               animate={isTapped
-                ? { scale: [0.95, 1.05, 1], boxShadow: ['0 0 0 0 hsl(var(--primary) / 0)', '0 0 16px 3px hsl(var(--primary) / 0.25)', '0 0 0 0 hsl(var(--primary) / 0)'] }
+                ? {
+                    scale: [0.85, 1.1, 1],
+                    backgroundColor: ['hsl(var(--primary) / 0.15)', 'hsl(var(--primary) / 0.5)', read ? 'hsl(var(--primary))' : 'hsl(var(--muted))'],
+                  }
                 : {}}
-              transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
+              transition={{ duration: 0.4, type: 'spring', stiffness: 400, damping: 15 }}
               onClick={() => handleChapterTap(ch)}
               className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold transition-all ${
                 read
                   ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-muted text-foreground hover:bg-muted/80'
+                  : 'bg-primary/10 text-primary hover:bg-primary/20'
               }`}
             >
               {ch}
