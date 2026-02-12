@@ -5,6 +5,7 @@ import { loadDailyText, getTodaysDailyText } from '@/lib/daily-text-service';
 import { makeReferencesClickable } from '@/lib/verse-reference-parser';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
+import { sanitizeHtml } from '@/lib/sanitize';
 import VersePopup from '@/components/VersePopup';
 
 export default function DailyTextCard() {
@@ -102,7 +103,7 @@ export default function DailyTextCard() {
               className="text-sm font-semibold text-foreground mt-2 italic text-center daily-text-content"
               style={{ fontFamily: "'Playfair Display', serif" }}
               onClick={handleContentClick}
-              dangerouslySetInnerHTML={{ __html: `\u201C${makeReferencesClickable(dailyText.title)}\u201D` }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(`\u201C${makeReferencesClickable(dailyText.title)}\u201D`) }}
             />
           )}
 
@@ -110,7 +111,7 @@ export default function DailyTextCard() {
             className="text-xs text-muted-foreground mt-2 leading-relaxed daily-text-content"
             style={{ textAlign: 'justify' }}
             onClick={handleContentClick}
-            dangerouslySetInnerHTML={{ __html: expanded ? fullHtml : truncatedHtml }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(expanded ? fullHtml : truncatedHtml) }}
           />
 
           {dailyText.content.length > truncLen && (

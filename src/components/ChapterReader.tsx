@@ -9,6 +9,7 @@ import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useBookmarks } from '@/contexts/BookmarksContext';
 import { useHighlights, HIGHLIGHT_COLORS } from '@/hooks/useHighlights';
 import { loadChapter, initEpub } from '@/lib/epub-service';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { parseFootnotes } from '@/lib/footnote-parser';
 import type { Footnote } from '@/components/FootnotesPanel';
 import FootnotesPanel from '@/components/FootnotesPanel';
@@ -431,7 +432,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               <div
                 className={`bible-content ${emphasizedVerse !== null ? 'verse-emphasis-active' : ''}`}
                 data-emphasized-verse={emphasizedVerse ?? undefined}
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
               />
             )}
           </motion.div>

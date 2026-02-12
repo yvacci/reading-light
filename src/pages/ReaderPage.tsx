@@ -7,6 +7,7 @@ import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { loadSection } from '@/lib/epub-sections';
+import { sanitizeHtml } from '@/lib/sanitize';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -202,7 +203,7 @@ function SubTabContent({ tabId }: { tabId: string }) {
       <div
         className="bible-content prose prose-sm max-w-none text-foreground"
         style={{ lineHeight: 1.8 }}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
       />
     </div>
   );
