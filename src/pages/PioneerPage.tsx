@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp, ArrowRight, Minus, Plus } from 'lucide-react';
 import { usePioneer, PioneerEntry } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -9,8 +9,40 @@ import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+
+function StepperField({ label, value, onChange, step = 1, max = 99, icon }: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+  max?: number;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5">
+      <div className="flex items-center gap-2">
+        {icon}
+        <span className="text-xs font-medium text-foreground">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onChange(Math.max(0, +(value - step).toFixed(1)))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-foreground transition-colors hover:bg-muted"
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </button>
+        <span className="w-10 text-center text-sm font-bold text-foreground">{value}</span>
+        <button
+          onClick={() => onChange(Math.min(max, +(value + step).toFixed(1)))}
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-foreground transition-colors hover:bg-muted"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const TARGET_HOURS = 50;
 const SERVICE_YEAR_TARGET = 600;
@@ -213,6 +245,12 @@ export default function PioneerPage() {
             <Progress value={hoursPercent} className="h-2" />
           </div>
 
+          {/* Field Service total */}
+          <div className="flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3">
+            <span className="text-sm font-semibold text-foreground">Field Service</span>
+            <span className="text-lg font-bold text-primary">{totalHours}</span>
+          </div>
+
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-3">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -267,49 +305,39 @@ export default function PioneerPage() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{t('pioneer.ministryHours', language)}</label>
-              <Input
-                type="number"
-                min={0}
-                step={0.5}
-                value={formData.ministryHours}
-                onChange={e => setFormData(p => ({ ...p, ministryHours: parseFloat(e.target.value) || 0 }))}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{t('pioneer.bibleStudies', language)}</label>
-              <Input
-                type="number"
-                min={0}
-                value={formData.bibleStudies}
-                onChange={e => setFormData(p => ({ ...p, bibleStudies: parseInt(e.target.value) || 0 }))}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{t('pioneer.returnVisits', language)}</label>
-              <Input
-                type="number"
-                min={0}
-                value={formData.returnVisits}
-                onChange={e => setFormData(p => ({ ...p, returnVisits: parseInt(e.target.value) || 0 }))}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">{t('pioneer.witnessingHours', language)}</label>
-              <Input
-                type="number"
-                min={0}
-                step={0.5}
-                value={formData.witnessingHours}
-                onChange={e => setFormData(p => ({ ...p, witnessingHours: parseFloat(e.target.value) || 0 }))}
-                className="h-9"
-              />
-            </div>
+          <div className="space-y-4">
+            <StepperField
+              label={t('pioneer.ministryHours', language)}
+              value={formData.ministryHours}
+              onChange={v => setFormData(p => ({ ...p, ministryHours: v }))}
+              step={0.5}
+              max={24}
+              icon={<Clock className="h-4 w-4 text-primary" />}
+            />
+            <StepperField
+              label={t('pioneer.bibleStudies', language)}
+              value={formData.bibleStudies}
+              onChange={v => setFormData(p => ({ ...p, bibleStudies: v }))}
+              step={1}
+              max={99}
+              icon={<BookOpen className="h-4 w-4 text-primary" />}
+            />
+            <StepperField
+              label={t('pioneer.returnVisits', language)}
+              value={formData.returnVisits}
+              onChange={v => setFormData(p => ({ ...p, returnVisits: v }))}
+              step={1}
+              max={99}
+              icon={<Users className="h-4 w-4 text-primary" />}
+            />
+            <StepperField
+              label={t('pioneer.witnessingHours', language)}
+              value={formData.witnessingHours}
+              onChange={v => setFormData(p => ({ ...p, witnessingHours: v }))}
+              step={0.5}
+              max={24}
+              icon={<Megaphone className="h-4 w-4 text-primary" />}
+            />
           </div>
 
           <div className="flex gap-2 mt-2">

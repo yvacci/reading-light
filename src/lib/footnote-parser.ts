@@ -17,16 +17,23 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
   let fnMatch;
   let fnIndex = 0;
 
+  // Use a Set to deduplicate footnotes by reference+content
+  const seenFootnotes = new Set<string>();
+
   while ((fnMatch = fnRegex.exec(plainText)) !== null) {
     const reference = fnMatch[1].trim();
     const content = fnMatch[2].trim();
     if (reference && content) {
-      footnotes.push({
-        id: `fn_${fnIndex}`,
-        reference,
-        content,
-      });
-      fnIndex++;
+      const key = `${reference}|${content}`;
+      if (!seenFootnotes.has(key)) {
+        seenFootnotes.add(key);
+        footnotes.push({
+          id: `fn_${fnIndex}`,
+          reference,
+          content,
+        });
+        fnIndex++;
+      }
     }
   }
 
@@ -40,6 +47,17 @@ export function parseFootnotes(html: string): { cleanHtml: string; footnotes: Fo
   
   // Remove any remaining loose text lines containing ^
   cleanHtml = cleanHtml.replace(/\^[^<\n]*/g, '');
+  
+  // Also remove duplicate footnote-like content that appears above the footnotes panel
+  // These are typically rendered as plain text references before the collapsible section
+  cleanHtml = cleanHtml.replace(/<p[^>]*>\s*(?:Gen|Exo|Lev|Bil|Deu|Jos|Huk|Rut|[\d]\s*\w+)\.\s*\d+:\d+.*?<\/p>/gi, (match) => {
+    // Only remove if it looks like a standalone footnote reference line (not verse content)
+    const stripped = match.replace(/<[^>]+>/g, '').trim();
+    if (/^[\w.]+\s+\d+:\d+\s+/i.test(stripped) && stripped.length < 200) {
+      return '';
+    }
+    return match;
+  });
   
   // Remove empty paragraphs and divs left behind
   cleanHtml = cleanHtml.replace(/<p[^>]*>\s*<\/p>/gi, '');
