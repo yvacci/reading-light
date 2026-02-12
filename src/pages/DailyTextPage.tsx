@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
-import { loadDailyText, getDailyTextByDate } from '@/lib/daily-text-service';
+import { BookOpen, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { fetchAndGetDailyText, getDailyTextByDate } from '@/lib/daily-text-service';
 import { t } from '@/lib/i18n';
 
 export default function DailyTextPage() {
@@ -14,11 +14,15 @@ export default function DailyTextPage() {
     (async () => {
       setLoading(true);
       try {
-        await loadDailyText();
-        if (!cancelled) {
-          const entry = getDailyTextByDate(currentDate.getMonth() + 1, currentDate.getDate());
-          setDailyText(entry);
+        // Check cache first
+        const cached = getDailyTextByDate(currentDate.getMonth() + 1, currentDate.getDate());
+        if (cached) {
+          if (!cancelled) { setDailyText(cached); setLoading(false); }
+          return;
         }
+        // Fetch from server
+        const entry = await fetchAndGetDailyText(currentDate);
+        if (!cancelled) setDailyText(entry);
       } catch (err) {
         console.error('[DailyText] Load error:', err);
       } finally {
@@ -76,11 +80,9 @@ export default function DailyTextPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="py-8 space-y-3">
-            <div className="h-4 w-48 mx-auto animate-pulse rounded bg-muted" />
-            <div className="h-3 w-full animate-pulse rounded bg-muted" />
-            <div className="h-3 w-full animate-pulse rounded bg-muted" />
-            <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+          <div className="py-12 flex flex-col items-center gap-3">
+            <Loader2 className="h-6 w-6 text-primary animate-spin" />
+            <p className="text-xs text-muted-foreground">Kinukuha ang teksto...</p>
           </div>
         ) : dailyText ? (
           <motion.div
@@ -111,6 +113,7 @@ export default function DailyTextPage() {
           <div className="py-12 text-center">
             <BookOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{t('dailyText.noEntry')}</p>
+            <p className="text-xs text-muted-foreground mt-1">Kailangan ng internet connection para makuha ang teksto.</p>
           </div>
         )}
       </div>
@@ -119,12 +122,18 @@ export default function DailyTextPage() {
 }
 
 function renderPlainText(content: string) {
-  const parts = content.split(/((?:—|\()\s*(?:[1-3]\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\.?\s+\d+:\d+[^)—]*(?:\)|\.?))/g);
-  
-  return parts.map((part, i) => {
-    if (/^(?:—|\()/.test(part)) {
-      return <span key={i} className="italic">{part}</span>;
-    }
-    return <span key={i}>{part}</span>;
+  const paragraphs = content.split('\n\n');
+  return paragraphs.map((para, i) => {
+    const parts = para.split(/((?:—|\()\s*(?:[1-3]\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\.?\s+\d+:\d+[^)—]*(?:\)|\.?))/g);
+    return (
+      <p key={i} className="mb-3">
+        {parts.map((part, j) => {
+          if (/^(?:—|\()/.test(part)) {
+            return <span key={j} className="italic">{part}</span>;
+          }
+          return <span key={j}>{part}</span>;
+        })}
+      </p>
+    );
   });
 }
