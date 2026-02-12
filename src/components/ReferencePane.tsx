@@ -160,16 +160,16 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
 
                 {/* Quick link URL if provided */}
                 {quickLinkUrl && (
-                  <div className="rounded-xl border border-border overflow-hidden">
-                    <div className="px-3 py-2 bg-muted/30 border-b border-border">
-                      <p className="text-[10px] text-muted-foreground truncate">{quickLinkUrl}</p>
-                    </div>
-                    <iframe
-                      src={quickLinkUrl}
-                      className="w-full h-64 border-0"
-                      title="Reference"
-                      sandbox="allow-scripts allow-same-origin"
-                    />
+                  <div className="rounded-xl bg-muted/50 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Verse Link</p>
+                    <button
+                      onClick={() => window.open(quickLinkUrl, '_blank')}
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/60 bg-background border border-border"
+                    >
+                      <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-xs font-medium text-foreground flex-1 truncate">Buksan sa WOL</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
                   </div>
                 )}
               </div>

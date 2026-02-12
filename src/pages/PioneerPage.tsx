@@ -245,27 +245,37 @@ export default function PioneerPage() {
             <Progress value={hoursPercent} className="h-2" />
           </div>
 
-          {/* Field Service total */}
-          <div className="flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3">
-            <span className="text-sm font-semibold text-foreground">Field Service</span>
-            <span className="text-lg font-bold text-primary">{totalHours}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
+              <Megaphone className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <span className="text-lg font-bold text-primary">{totalHours}</span>
+                <p className="text-[10px] text-muted-foreground">Field Service</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+              <BookOpen className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <span className="text-lg font-bold text-foreground">{totalBS}</span>
+                <p className="text-[10px] text-muted-foreground">{t('pioneer.bibleStudies', language)}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-3">
-              <BookOpen className="h-4 w-4 text-primary" />
-              <span className="text-lg font-bold text-foreground">{totalBS}</span>
-              <span className="text-[10px] text-muted-foreground text-center">{t('pioneer.bibleStudies', language)}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+              <Users className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <span className="text-lg font-bold text-foreground">{totalRV}</span>
+                <p className="text-[10px] text-muted-foreground">{t('pioneer.returnVisits', language)}</p>
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-3">
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-lg font-bold text-foreground">{totalRV}</span>
-              <span className="text-[10px] text-muted-foreground text-center">{t('pioneer.returnVisits', language)}</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-3">
-              <Megaphone className="h-4 w-4 text-primary" />
-              <span className="text-lg font-bold text-foreground">{totalPW}</span>
-              <span className="text-[10px] text-muted-foreground text-center">{t('pioneer.witnessing', language)}</span>
+            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+              <Megaphone className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <span className="text-lg font-bold text-foreground">{totalPW}</span>
+                <p className="text-[10px] text-muted-foreground">{t('pioneer.witnessing', language)}</p>
+              </div>
             </div>
           </div>
 
