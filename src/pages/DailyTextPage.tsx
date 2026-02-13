@@ -1,26 +1,30 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
 import { fetchAndGetDailyText, getDailyTextByDate } from '@/lib/daily-text-service';
+import { makeReferencesClickable } from '@/lib/verse-reference-parser';
+import { sanitizeHtml } from '@/lib/sanitize';
+import VersePopup from '@/components/VersePopup';
 import { t } from '@/lib/i18n';
+import { useCallback } from 'react';
 
 export default function DailyTextPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dailyText, setDailyText] = useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupRef, setPopupRef] = useState<{ bookId: number; chapter: number; verse?: number }>({ bookId: 1, chapter: 1 });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        // Check cache first
         const cached = getDailyTextByDate(currentDate.getMonth() + 1, currentDate.getDate());
         if (cached) {
           if (!cancelled) { setDailyText(cached); setLoading(false); }
           return;
         }
-        // Fetch from server
         const entry = await fetchAndGetDailyText(currentDate);
         if (!cancelled) setDailyText(entry);
       } catch (err) {
@@ -40,6 +44,21 @@ export default function DailyTextPage() {
     });
   };
 
+  const handleContentClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const refEl = target.closest('.verse-ref-link');
+    if (refEl) {
+      e.preventDefault();
+      const bookId = parseInt(refEl.getAttribute('data-book') || '0');
+      const chapter = parseInt(refEl.getAttribute('data-chapter') || '0');
+      const verse = parseInt(refEl.getAttribute('data-verse') || '0') || undefined;
+      if (bookId && chapter) {
+        setPopupRef({ bookId, chapter, verse });
+        setPopupOpen(true);
+      }
+    }
+  }, []);
+
   const dateStr = currentDate.toLocaleDateString('fil-PH', {
     weekday: 'long',
     month: 'long',
@@ -50,90 +69,98 @@ export default function DailyTextPage() {
   const isToday = currentDate.toDateString() === new Date().toDateString();
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="px-5 pt-12 pb-4 safe-top">
-        <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('dailyText.title')}</p>
-        <h1 className="mt-1 text-2xl font-bold text-foreground">{t('dailyText.pageSubtitle')}</h1>
+    <div className="min-h-screen pb-20 bg-background">
+      {/* Header */}
+      <div className="px-5 pt-12 pb-2 safe-top">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">{t('dailyText.title')}</p>
+        </div>
+        <h1 className="mt-1 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+          {t('dailyText.pageSubtitle')}
+        </h1>
       </div>
 
-      <div className="px-5 pt-2 space-y-4">
-        {/* Date navigation */}
-        <div className="flex items-center justify-between">
-          <button onClick={() => goDay(-1)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-            <ChevronLeft className="h-5 w-5 text-foreground" />
+      {/* Date navigation */}
+      <div className="px-5 py-3">
+        <div className="flex items-center justify-between rounded-2xl bg-card border border-border px-2 py-2">
+          <button onClick={() => goDay(-1)} className="p-2.5 rounded-xl hover:bg-muted active:scale-95 transition-all">
+            <ChevronLeft className="h-4 w-4 text-foreground" />
           </button>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-foreground">{dateStr}</p>
+          <div className="text-center flex-1">
+            <p className="text-xs font-semibold text-foreground tracking-tight">{dateStr}</p>
             {!isToday && (
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="text-[10px] text-primary font-medium mt-0.5"
+                className="text-[10px] text-primary font-semibold mt-0.5 hover:opacity-70 transition-opacity"
               >
                 {t('dailyText.goToToday')}
               </button>
             )}
           </div>
-          <button onClick={() => goDay(1)} className="p-2 rounded-xl hover:bg-muted transition-colors">
-            <ChevronRight className="h-5 w-5 text-foreground" />
+          <button onClick={() => goDay(1)} className="p-2.5 rounded-xl hover:bg-muted active:scale-95 transition-all">
+            <ChevronRight className="h-4 w-4 text-foreground" />
           </button>
         </div>
+      </div>
 
-        {/* Content */}
+      {/* Content */}
+      <div className="px-5">
         {loading ? (
-          <div className="py-12 flex flex-col items-center gap-3">
-            <Loader2 className="h-6 w-6 text-primary animate-spin" />
-            <p className="text-xs text-muted-foreground">Kinukuha ang teksto...</p>
+          <div className="py-16 flex flex-col items-center gap-3">
+            <Loader2 className="h-5 w-5 text-primary animate-spin" />
+            <p className="text-[11px] text-muted-foreground font-medium">Kinukuha ang teksto...</p>
           </div>
         ) : dailyText ? (
           <motion.div
             key={currentDate.toISOString().slice(0, 10)}
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-2xl border border-border bg-card overflow-hidden"
           >
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <BookOpen className="h-4 w-4 text-primary" />
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider">{t('dailyText.title')}</span>
+            {/* Title card */}
+            <div className="px-5 pt-5 pb-4 border-b border-border/50 bg-primary/[0.03]">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <BookOpen className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-bold text-primary uppercase tracking-[0.12em]">{t('dailyText.title')}</span>
+              </div>
+              {dailyText.title && (
+                <p
+                  className="text-[15px] font-semibold text-foreground text-center leading-relaxed daily-text-content"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  onClick={handleContentClick}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(`\u201C${makeReferencesClickable(dailyText.title)}\u201D`) }}
+                />
+              )}
             </div>
 
-            {dailyText.title && (
-              <p className="text-sm font-medium text-foreground text-center mb-5 italic leading-relaxed">
-                &ldquo;{dailyText.title}&rdquo;
-              </p>
-            )}
-
-            <div
-              className="text-sm text-muted-foreground leading-relaxed"
-              style={{ textAlign: 'justify' }}
-            >
-              {renderPlainText(dailyText.content)}
+            {/* Body content */}
+            <div className="px-5 py-5">
+              <div
+                className="text-[13px] text-muted-foreground leading-[1.85] daily-text-content"
+                style={{ textAlign: 'justify', fontFamily: "'Inter', sans-serif" }}
+                onClick={handleContentClick}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
+              />
             </div>
           </motion.div>
         ) : (
-          <div className="py-12 text-center">
-            <BookOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">{t('dailyText.noEntry')}</p>
-            <p className="text-xs text-muted-foreground mt-1">Kailangan ng internet connection para makuha ang teksto.</p>
+          <div className="py-16 text-center rounded-2xl border border-border bg-card">
+            <BookOpen className="h-7 w-7 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm font-medium text-muted-foreground">{t('dailyText.noEntry')}</p>
+            <p className="text-[11px] text-muted-foreground/70 mt-1">Kailangan ng internet connection para makuha ang teksto.</p>
           </div>
         )}
       </div>
+
+      <VersePopup
+        open={popupOpen}
+        onOpenChange={setPopupOpen}
+        bookId={popupRef.bookId}
+        chapter={popupRef.chapter}
+        verse={popupRef.verse}
+      />
     </div>
   );
-}
-
-function renderPlainText(content: string) {
-  const paragraphs = content.split('\n\n');
-  return paragraphs.map((para, i) => {
-    const parts = para.split(/((?:—|\()\s*(?:[1-3]\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\.?\s+\d+:\d+[^)—]*(?:\)|\.?))/g);
-    return (
-      <p key={i} className="mb-3">
-        {parts.map((part, j) => {
-          if (/^(?:—|\()/.test(part)) {
-            return <span key={j} className="italic">{part}</span>;
-          }
-          return <span key={j}>{part}</span>;
-        })}
-      </p>
-    );
-  });
 }
