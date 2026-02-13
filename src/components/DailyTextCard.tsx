@@ -21,13 +21,11 @@ export default function DailyTextCard() {
     (async () => {
       setLoading(true);
       try {
-        // Check cache first
         const cached = getTodaysDailyText();
         if (cached) {
           if (!cancelled) { setDailyText(cached); setLoading(false); }
           return;
         }
-        // Fetch from server
         const entry = await fetchAndGetDailyText(new Date());
         if (!cancelled) setDailyText(entry);
       } catch (err) {
@@ -55,7 +53,7 @@ export default function DailyTextCard() {
   }, []);
 
   const today = new Date();
-  const dateStr = today.toLocaleDateString(language === 'en' ? 'en-US' : 'fil-PH', {
+  const dateStr = today.toLocaleDateString('fil-PH', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -66,11 +64,11 @@ export default function DailyTextCard() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-center gap-2 mb-2">
           <BookOpen className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">{t('dailyText.title', language)}</span>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.12em]">{t('dailyText.title', language)}</span>
         </div>
-        <div className="flex items-center gap-2 py-2">
+        <div className="flex items-center gap-2 py-3">
           <Loader2 className="h-4 w-4 text-primary animate-spin" />
-          <span className="text-xs text-muted-foreground">Kinukuha ang teksto...</span>
+          <span className="text-[11px] text-muted-foreground font-medium">Kinukuha ang teksto...</span>
         </div>
       </div>
     );
@@ -79,7 +77,7 @@ export default function DailyTextCard() {
   if (!dailyText) return null;
 
   const fullHtml = makeReferencesClickable(dailyText.content);
-  const truncLen = 300;
+  const truncLen = 280;
   const truncatedContent = dailyText.content.length > truncLen
     ? dailyText.content.slice(0, truncLen) + '…'
     : dailyText.content;
@@ -90,30 +88,34 @@ export default function DailyTextCard() {
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, duration: 0.4 }}
+        transition={{ delay: 0.05, duration: 0.35 }}
         className="rounded-2xl border border-border bg-card overflow-hidden"
       >
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold text-foreground">{t('dailyText.title', language)}</span>
-            <span className="ml-auto text-[10px] text-muted-foreground">{dateStr}</span>
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3 border-b border-border/50 bg-primary/[0.03]">
+          <div className="flex items-center gap-2 mb-0.5">
+            <BookOpen className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.12em]">{t('dailyText.title', language)}</span>
+            <span className="ml-auto text-[10px] text-muted-foreground font-medium">{dateStr}</span>
           </div>
 
           {dailyText.title && (
             <p
-              className="text-sm font-semibold text-foreground mt-2 italic text-center daily-text-content"
+              className="text-[14px] font-semibold text-foreground mt-2.5 leading-relaxed text-center daily-text-content"
               style={{ fontFamily: "'Playfair Display', serif" }}
               onClick={handleContentClick}
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(`\u201C${makeReferencesClickable(dailyText.title)}\u201D`) }}
             />
           )}
+        </div>
 
+        {/* Body */}
+        <div className="px-4 py-3.5">
           <div
-            className="text-xs text-muted-foreground mt-2 leading-relaxed daily-text-content"
-            style={{ textAlign: 'justify' }}
+            className="text-[12px] text-muted-foreground leading-[1.8] daily-text-content"
+            style={{ textAlign: 'justify', fontFamily: "'Inter', sans-serif" }}
             onClick={handleContentClick}
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(expanded ? fullHtml : truncatedHtml) }}
           />
@@ -121,7 +123,7 @@ export default function DailyTextCard() {
           {dailyText.content.length > truncLen && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="mt-2 flex items-center gap-1 text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
+              className="mt-2.5 flex items-center gap-1 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wide"
             >
               {expanded ? (
                 <>{t('dailyText.showLess', language)} <ChevronUp className="h-3 w-3" /></>

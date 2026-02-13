@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, LayoutGrid, List, Loader2, ExternalLink } from 'lucide-react';
+import { ChevronRight, LayoutGrid, List, Loader2, ExternalLink, BookOpen, FileText, ChevronLeft } from 'lucide-react';
 import { BIBLE_BOOKS, type BibleBook } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { BIBLE_SECTIONS } from '@/lib/bible-sections-data';
+import { fetchBookSummary, fetchChapterOutline, getCachedBookSummary, getCachedChapterOutline } from '@/lib/bible-summary-service';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
 import ReferencePane from '@/components/ReferencePane';
@@ -321,43 +322,265 @@ function ChapterSelector({ book }: { book: BibleBook }) {
   const { isChapterRead } = useReadingProgress();
   const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1);
   const [tappedCh, setTappedCh] = useState<number | null>(null);
+  const [selectedCh, setSelectedCh] = useState<number | null>(null);
+  const [bookSummary, setBookSummary] = useState<{ title: string; summary: string } | null>(null);
+  const [chapterOutline, setChapterOutline] = useState<{ heading: string; verses: string }[]>([]);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingOutline, setLoadingOutline] = useState(false);
+  const [paneOpen, setPaneOpen] = useState(false);
+  const [paneUrl, setPaneUrl] = useState('');
+
+  const localizedName = getLocalizedBookName(book.id);
+
+  // Load book summary on mount
+  useEffect(() => {
+    const cached = getCachedBookSummary(book.wolBookNum);
+    if (cached) {
+      setBookSummary(cached);
+    } else {
+      setLoadingSummary(true);
+      fetchBookSummary(book.wolBookNum).then(s => {
+        if (s) setBookSummary(s);
+        setLoadingSummary(false);
+      });
+    }
+  }, [book.wolBookNum]);
+
+  // Load chapter outline when a chapter is selected
+  useEffect(() => {
+    if (selectedCh === null) return;
+    const cached = getCachedChapterOutline(book.wolBookNum, selectedCh);
+    if (cached) {
+      setChapterOutline(cached);
+    } else {
+      setLoadingOutline(true);
+      fetchChapterOutline(book.wolBookNum, selectedCh).then(o => {
+        setChapterOutline(o);
+        setLoadingOutline(false);
+      });
+    }
+  }, [selectedCh, book.wolBookNum]);
 
   const handleChapterTap = (ch: number) => {
     setTappedCh(ch);
     setTimeout(() => navigate(`/reader/${book.id}/${ch}`), 200);
   };
 
-  return (
-    <div className="min-h-screen pb-20">
-      <PageHeader title={getLocalizedBookName(book.id)} subtitle={`${book.chapters} ${t('reader.chapters')}`} showBack />
+  const handleIntroClick = () => {
+    const url = `https://wol.jw.org/tl/wol/b/r27/lp-tg/nwtsty/${book.wolBookNum}/0`;
+    setPaneUrl(url);
+    setPaneOpen(true);
+  };
 
-      <div className="grid grid-cols-5 gap-2.5 p-4">
-        {chapters.map(ch => {
-          const read = isChapterRead(book.id, ch);
-          const isTapped = tappedCh === ch;
-          return (
-            <motion.button
-              key={ch}
-              whileTap={{ scale: 0.9 }}
-              animate={isTapped
-                ? {
-                    scale: [0.85, 1.1, 1],
-                    backgroundColor: ['hsl(var(--primary) / 0.15)', 'hsl(var(--primary) / 0.5)', read ? 'hsl(var(--primary))' : 'hsl(var(--muted))'],
-                  }
-                : {}}
-              transition={{ duration: 0.4, type: 'spring', stiffness: 400, damping: 15 }}
-              onClick={() => handleChapterTap(ch)}
-              className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold transition-all ${
-                read
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-primary/10 text-primary hover:bg-primary/20'
-              }`}
-            >
-              {ch}
-            </motion.button>
-          );
-        })}
+  return (
+    <div className="min-h-screen pb-20 bg-background">
+      {/* Header */}
+      <div className="px-5 pt-12 pb-3 safe-top">
+        <div className="flex items-center gap-2 mb-1">
+          <button onClick={() => navigate('/reader')} className="p-1 -ml-1 rounded-lg hover:bg-muted transition-colors">
+            <ChevronLeft className="h-5 w-5 text-foreground" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {localizedName}
+            </h1>
+            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+              Bibliya Para sa Pag-aaral · {book.chapters} {t('reader.chapters')}
+            </p>
+          </div>
+        </div>
       </div>
+
+      {/* Horizontal chapter tabs */}
+      <div className="border-b border-border">
+        <ScrollArea className="w-full">
+          <div className="flex px-3 py-2 gap-1.5">
+            {chapters.map(ch => {
+              const read = isChapterRead(book.id, ch);
+              const isSelected = selectedCh === ch;
+              return (
+                <button
+                  key={ch}
+                  onClick={() => setSelectedCh(prev => prev === ch ? null : ch)}
+                  onDoubleClick={() => handleChapterTap(ch)}
+                  className={`shrink-0 flex items-center justify-center h-9 w-9 rounded-xl text-xs font-semibold transition-all ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground shadow-md scale-110'
+                      : read
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-muted/60 text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {ch}
+                </button>
+              );
+            })}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+
+      <div className="px-4 py-4 space-y-4">
+        {/* Split layout: Intro card + Chapter outline */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Book Introduction Card */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleIntroClick}
+            className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left hover:bg-muted/40 transition-colors"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground">Introduksiyon</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                Basahin ang introduksiyon ng {localizedName}
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+          </motion.button>
+
+          {/* Chapter grid for quick access */}
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-bold text-foreground mb-3">Mga Kabanata</p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {chapters.slice(0, 15).map(ch => {
+                const read = isChapterRead(book.id, ch);
+                const isTapped = tappedCh === ch;
+                return (
+                  <motion.button
+                    key={ch}
+                    whileTap={{ scale: 0.85 }}
+                    animate={isTapped ? { scale: [0.85, 1.1, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => handleChapterTap(ch)}
+                    className={`flex h-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all ${
+                      read
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    }`}
+                  >
+                    {ch}
+                  </motion.button>
+                );
+              })}
+              {book.chapters > 15 && (
+                <div className="flex h-8 items-center justify-center text-[10px] text-muted-foreground font-medium col-span-5">
+                  ↑ I-scroll ang mga kabanata sa itaas
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Book summary */}
+        {loadingSummary ? (
+          <div className="flex items-center gap-2 py-4 justify-center">
+            <Loader2 className="h-4 w-4 text-primary animate-spin" />
+            <span className="text-[11px] text-muted-foreground font-medium">Kinukuha ang buod...</span>
+          </div>
+        ) : bookSummary?.summary ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-border bg-card p-4"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="h-3.5 w-3.5 text-primary" />
+              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.12em]">Buod ng Aklat</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground leading-[1.75]" style={{ textAlign: 'justify' }}>
+              {bookSummary.summary.slice(0, 400)}{bookSummary.summary.length > 400 ? '…' : ''}
+            </p>
+          </motion.div>
+        ) : null}
+
+        {/* Chapter outline when selected */}
+        <AnimatePresence mode="wait">
+          {selectedCh !== null && (
+            <motion.div
+              key={selectedCh}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-2xl border border-border bg-card overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-primary/[0.03]">
+                <div>
+                  <p className="text-xs font-bold text-foreground">{localizedName} {selectedCh}</p>
+                  <p className="text-[10px] text-muted-foreground">Nilalaman</p>
+                </div>
+                <button
+                  onClick={() => handleChapterTap(selectedCh)}
+                  className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-[11px] font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  Basahin
+                </button>
+              </div>
+              <div className="p-4">
+                {loadingOutline ? (
+                  <div className="flex items-center gap-2 py-3 justify-center">
+                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    <span className="text-[11px] text-muted-foreground">Kinukuha ang outline...</span>
+                  </div>
+                ) : chapterOutline.length > 0 ? (
+                  <div className="space-y-2">
+                    {chapterOutline.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-[9px] font-bold text-primary shrink-0 mt-0.5">
+                          {i + 1}
+                        </div>
+                        <p className="text-[12px] text-foreground leading-snug">{item.heading}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground text-center py-2">
+                    I-tap ang "Basahin" para buksan ang kabanata
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Full chapter grid */}
+        {!selectedCh && book.chapters > 15 && (
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <p className="text-xs font-bold text-foreground mb-3">Lahat ng Kabanata</p>
+            <div className="grid grid-cols-5 gap-2">
+              {chapters.map(ch => {
+                const read = isChapterRead(book.id, ch);
+                const isTapped = tappedCh === ch;
+                return (
+                  <motion.button
+                    key={ch}
+                    whileTap={{ scale: 0.9 }}
+                    animate={isTapped ? { scale: [0.85, 1.1, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => handleChapterTap(ch)}
+                    className={`flex h-10 items-center justify-center rounded-xl text-xs font-semibold transition-all ${
+                      read
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    }`}
+                  >
+                    {ch}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <ReferencePane
+        open={paneOpen}
+        onClose={() => setPaneOpen(false)}
+        quickLinkUrl={paneUrl}
+      />
     </div>
   );
 }
