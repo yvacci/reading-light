@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
     if (titleMatch) {
       title = titleMatch[1]
         .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\u00A0/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -79,9 +81,10 @@ Deno.serve(async (req) => {
       while ((pMatch = pRegex.exec(firstBodyTxt)) !== null) {
         const text = pMatch[1]
           .replace(/<[^>]+>/g, '')
-          .replace(/\s+/g, ' ')
           .replace(/&nbsp;/g, ' ')
+          .replace(/\u00A0/g, ' ')
           .replace(/\u200B/g, '')
+          .replace(/\s+/g, ' ')
           .trim();
         if (text) paragraphs.push(text);
       }
