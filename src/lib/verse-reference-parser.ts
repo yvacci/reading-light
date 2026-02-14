@@ -1,22 +1,22 @@
 import { BIBLE_BOOKS } from './bible-data';
 
-interface ParsedReference {
+export interface ParsedReference {
   bookId: number;
   chapter: number;
   verse?: number;
+  verseEnd?: number;
+  verseList?: number[];
   originalText: string;
 }
 
 // Build lookup maps for book name → bookId
 const bookNameMap: Map<string, number> = new Map();
 
-// Tagalog names
 BIBLE_BOOKS.forEach(b => {
   bookNameMap.set(b.name.toLowerCase(), b.id);
   bookNameMap.set(b.shortName.toLowerCase(), b.id);
 });
 
-// Additional common abbreviations
 const EXTRA_ABBREVIATIONS: Record<string, number> = {
   'gen': 1, 'ex': 2, 'exod': 2, 'lev': 3, 'num': 4, 'deut': 5, 'dt': 5,
   'josh': 6, 'judg': 7, 'jdg': 7, 'ru': 8, '1 sam': 9, '2 sam': 10,
@@ -45,7 +45,6 @@ function resolveBookId(name: string): number | null {
   const lower = name.toLowerCase().trim();
   if (bookNameMap.has(lower)) return bookNameMap.get(lower)!;
   
-  // Try prefix matching for longer names
   for (const [key, id] of bookNameMap.entries()) {
     if (key.startsWith(lower) && lower.length >= 3) return id;
   }
@@ -53,41 +52,100 @@ function resolveBookId(name: string): number | null {
 }
 
 /**
+ * Parse comma/range verse lists like "1-5", "1,2", "1, 2, 5-8"
+ * Returns array of individual verse numbers.
+ */
+function parseVerseList(verseStr: string): number[] {
+  const verses: number[] = [];
+  const parts = verseStr.split(/\s*,\s*/);
+  for (const part of parts) {
+    const rangeMatch = part.match(/^(\d+)\s*[-–]\s*(\d+)$/);
+    if (rangeMatch) {
+      const start = parseInt(rangeMatch[1]);
+      const end = parseInt(rangeMatch[2]);
+      for (let v = start; v <= end && v < start + 200; v++) {
+        verses.push(v);
+      }
+    } else {
+      const num = parseInt(part.trim());
+      if (!isNaN(num)) verses.push(num);
+    }
+  }
+  return verses;
+}
+
+/**
  * Parse Bible verse references from text content.
- * Handles patterns like "Genesis 1:1", "Gen. 1:1", "1 Cor. 3:16", "Mga Awit 23:1",
- * "Juan 3:16, 17", "Roma 5:12; 6:23", "Genesis 1:1-4", "1 Cronica 1:1-4", etc.
+ * Handles: "Genesis 1:1", "Mat 3:1-5", "Mat 3:1,2", "Mat 3:1, 2",
+ * "1 Cor. 3:16", "Mga Awit 23:1", "Roma 5:12; 6:23", etc.
  */
 export function parseVerseReferences(text: string): ParsedReference[] {
   const references: ParsedReference[] = [];
+  const seen = new Set<string>();
   
-  // Pattern: (optional number prefix) BookName (optional dot) Chapter:Verse(s) with ranges/lists
-  // Also match references without verse (just chapter) like "Genesis 6" or "Genesis 4, 5"
-  const refPattern = /(?:(\d)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]+(?:\s+(?:ng|ni)\s+[A-Za-zÀ-ÿ]+)?(?:\s+[A-Za-zÀ-ÿ]+)?)\s*\.?\s+(\d{1,3})(?:\s*:\s*(\d{1,3}))?(?:\s*[-–]\s*(\d{1,3}))?(?:\s*,\s*(\d{1,3}))*(?:\s*;\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?)*/g;
+  // Pattern: (optional number prefix) BookName (optional dot) Chapter:Verse(s)
+  // Verse part can be: single (3), range (3-5), list (3,5,7), combo (1-3, 5, 7-9)
+  const refPattern = /(?:(\d)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]+(?:\s+(?:ng|ni)\s+[A-Za-zÀ-ÿ]+)?(?:\s+[A-Za-zÀ-ÿ]+)?)\s*\.?\s+(\d{1,3})\s*:\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*)/g;
   
   let match;
   while ((match = refPattern.exec(text)) !== null) {
     const numPrefix = match[1] || '';
     const bookName = (numPrefix ? numPrefix + ' ' : '') + match[2].replace(/\.$/, '').trim();
     const chapter = parseInt(match[3]);
-    const verse = match[4] ? parseInt(match[4]) : undefined;
+    const verseStr = match[4];
     
     const bookId = resolveBookId(bookName);
-    if (bookId) {
-      const book = BIBLE_BOOKS.find(b => b.id === bookId);
-      if (book && chapter >= 1 && chapter <= book.chapters) {
-        references.push({
-          bookId,
-          chapter,
-          verse,
-          originalText: match[0].trim(),
-        });
-      }
-    }
+    if (!bookId) continue;
+    
+    const book = BIBLE_BOOKS.find(b => b.id === bookId);
+    if (!book || chapter < 1 || chapter > book.chapters) continue;
+    
+    const verseList = parseVerseList(verseStr);
+    const firstVerse = verseList[0];
+    const lastVerse = verseList[verseList.length - 1];
+    
+    const key = `${bookId}:${chapter}:${verseStr.replace(/\s/g, '')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    
+    references.push({
+      bookId,
+      chapter,
+      verse: firstVerse,
+      verseEnd: lastVerse !== firstVerse ? lastVerse : undefined,
+      verseList: verseList.length > 1 ? verseList : undefined,
+      originalText: match[0].trim(),
+    });
   }
   
-  // Also catch semicolon-separated follow-up references in the same text
-  // e.g. after "Roma 5:12" there might be "; 6:23" which gets missed
-  const semiPattern = /([A-Za-zÀ-ÿ][\w\s.]+?)\s+(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*\d{1,3})?(?:\s*;\s*(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*\d{1,3})?)+/g;
+  // Also handle chapter-only references like "Genesis 6"
+  const chapterOnlyPattern = /(?:(\d)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.]+(?:\s+(?:ng|ni)\s+[A-Za-zÀ-ÿ]+)?(?:\s+[A-Za-zÀ-ÿ]+)?)\s*\.?\s+(\d{1,3})(?!\s*[:\d,])/g;
+  
+  while ((match = chapterOnlyPattern.exec(text)) !== null) {
+    const numPrefix = match[1] || '';
+    const bookName = (numPrefix ? numPrefix + ' ' : '') + match[2].replace(/\.$/, '').trim();
+    const chapter = parseInt(match[3]);
+    
+    const bookId = resolveBookId(bookName);
+    if (!bookId) continue;
+    
+    const book = BIBLE_BOOKS.find(b => b.id === bookId);
+    if (!book || chapter < 1 || chapter > book.chapters) continue;
+    
+    const key = `${bookId}:${chapter}:`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    
+    references.push({
+      bookId,
+      chapter,
+      originalText: match[0].trim(),
+    });
+  }
+  
+  // Handle semicolon-separated follow-up refs like "; 6:23" after "Roma 5:12"
+  const semiPattern = /([A-Za-zÀ-ÿ][\w\s.]+?)\s+(\d{1,3})\s*:\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*)(?:\s*;\s*(\d{1,3})\s*:\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*))+/g;
+  
   let semiMatch;
   while ((semiMatch = semiPattern.exec(text)) !== null) {
     const numPrefixMatch = semiMatch[1].match(/^(\d)\s+(.*)/);
@@ -99,24 +157,27 @@ export function parseVerseReferences(text: string): ParsedReference[] {
     const book = BIBLE_BOOKS.find(b => b.id === bookId);
     if (!book) continue;
     
-    // Extract all ch:v pairs after semicolons
     const fullText = semiMatch[0];
     const semiParts = fullText.split(/;\s*/);
     for (let i = 1; i < semiParts.length; i++) {
-      const cvMatch = semiParts[i].match(/(\d{1,3})\s*:\s*(\d{1,3})/);
+      const cvMatch = semiParts[i].match(/(\d{1,3})\s*:\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3})?(?:\s*,\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?)*)/);
       if (cvMatch) {
         const ch = parseInt(cvMatch[1]);
-        const v = parseInt(cvMatch[2]);
-        if (ch >= 1 && ch <= book.chapters) {
-          // Check not already found
-          const alreadyFound = references.some(r => r.bookId === bookId && r.chapter === ch && r.verse === v);
-          if (!alreadyFound) {
-            references.push({
-              bookId, chapter: ch, verse: v,
-              originalText: semiParts[i].trim(),
-            });
-          }
-        }
+        const verseStr = cvMatch[2];
+        if (ch < 1 || ch > book.chapters) continue;
+        
+        const key = `${bookId}:${ch}:${verseStr.replace(/\s/g, '')}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        
+        const verseList = parseVerseList(verseStr);
+        references.push({
+          bookId, chapter: ch,
+          verse: verseList[0],
+          verseEnd: verseList[verseList.length - 1] !== verseList[0] ? verseList[verseList.length - 1] : undefined,
+          verseList: verseList.length > 1 ? verseList : undefined,
+          originalText: semiParts[i].trim(),
+        });
       }
     }
   }
@@ -126,16 +187,13 @@ export function parseVerseReferences(text: string): ParsedReference[] {
 
 /**
  * Convert plain text with verse references into HTML with clickable links.
- * Returns HTML string with <span class="verse-ref" data-book="X" data-chapter="Y" data-verse="Z"> wrappers.
  */
 export function makeReferencesClickable(text: string): string {
   const refs = parseVerseReferences(text);
   if (refs.length === 0) return escapeHtml(text);
 
-  // Escape the entire text first, then replace escaped references with HTML spans
   const escaped = escapeHtml(text);
 
-  // Sort by position in the escaped string (reverse order to preserve indices)
   const sortedRefs = [...refs].sort((a, b) => {
     const idxA = escaped.indexOf(escapeHtml(a.originalText));
     const idxB = escaped.indexOf(escapeHtml(b.originalText));
@@ -150,7 +208,9 @@ export function makeReferencesClickable(text: string): string {
 
     const before = result.slice(0, idx);
     const after = result.slice(idx + escapedOriginal.length);
-    const replacement = `<span class="verse-ref-link" data-book="${ref.bookId}" data-chapter="${ref.chapter}" data-verse="${ref.verse || ''}">${escapedOriginal}</span>`;
+    const verseEnd = ref.verseEnd || '';
+    const verseListStr = ref.verseList ? ref.verseList.join(',') : '';
+    const replacement = `<span class="verse-ref-link" data-book="${ref.bookId}" data-chapter="${ref.chapter}" data-verse="${ref.verse || ''}" data-verse-end="${verseEnd}" data-verse-list="${verseListStr}">${escapedOriginal}</span>`;
     result = before + replacement + after;
   }
 

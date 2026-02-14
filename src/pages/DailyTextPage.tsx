@@ -1,24 +1,41 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, ChevronLeft, ChevronRight, Loader2, Calendar } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, ChevronLeft, ChevronRight, Loader2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchAndGetDailyText, getDailyTextByDate } from '@/lib/daily-text-service';
-import { makeReferencesClickable } from '@/lib/verse-reference-parser';
+import { makeReferencesClickable, parseVerseReferences, type ParsedReference } from '@/lib/verse-reference-parser';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { getLocalizedBookName } from '@/lib/localization';
+import { loadChapter, initEpub } from '@/lib/epub-service';
+import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import VersePopup from '@/components/VersePopup';
 import { t } from '@/lib/i18n';
-import { useCallback } from 'react';
+
+interface InlineVerse {
+  ref: ParsedReference;
+  label: string;
+  text: string;
+  loading: boolean;
+  error: boolean;
+}
 
 export default function DailyTextPage() {
+  const { language } = useReadingProgress();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dailyText, setDailyText] = useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [popupOpen, setPopupOpen] = useState(false);
-  const [popupRef, setPopupRef] = useState<{ bookId: number; chapter: number; verse?: number }>({ bookId: 1, chapter: 1 });
+  const [popupRef, setPopupRef] = useState<{ bookId: number; chapter: number; verse?: number; verseEnd?: number; verseList?: number[] }>({ bookId: 1, chapter: 1 });
+  const [inlineVerses, setInlineVerses] = useState<InlineVerse[]>([]);
+  const [expandedRefs, setExpandedRefs] = useState<Set<string>>(new Set());
+  const [autoDisplayed, setAutoDisplayed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setInlineVerses([]);
+      setExpandedRefs(new Set());
+      setAutoDisplayed(false);
       try {
         const cached = getDailyTextByDate(currentDate.getMonth() + 1, currentDate.getDate());
         if (cached) {
@@ -36,6 +53,54 @@ export default function DailyTextPage() {
     return () => { cancelled = true; };
   }, [currentDate]);
 
+  // Auto-fetch all verse references once daily text loads
+  useEffect(() => {
+    if (!dailyText || autoDisplayed) return;
+    setAutoDisplayed(true);
+
+    const fullText = (dailyText.title || '') + ' ' + (dailyText.content || '');
+    const refs = parseVerseReferences(fullText);
+    if (refs.length === 0) return;
+
+    const initialVerses: InlineVerse[] = refs.map(ref => {
+      const bookName = getLocalizedBookName(ref.bookId, language);
+      let label = `${bookName} ${ref.chapter}`;
+      if (ref.verse) {
+        label += `:${ref.verse}`;
+        if (ref.verseEnd) label += `-${ref.verseEnd}`;
+        else if (ref.verseList && ref.verseList.length > 1) label += `, ${ref.verseList.slice(1).join(', ')}`;
+      }
+      return { ref, label, text: '', loading: true, error: false };
+    });
+
+    setInlineVerses(initialVerses);
+
+    // Fetch all in background
+    (async () => {
+      try {
+        await initEpub(language);
+      } catch { return; }
+
+      for (let i = 0; i < refs.length; i++) {
+        const ref = refs[i];
+        try {
+          const html = await loadChapter(ref.bookId, ref.chapter, language);
+          if (html) {
+            const targetVerses = ref.verseList || (ref.verse && ref.verseEnd
+              ? Array.from({ length: ref.verseEnd - ref.verse + 1 }, (_, j) => ref.verse! + j)
+              : ref.verse ? [ref.verse] : undefined);
+            const text = extractVerseTextSimple(html, targetVerses);
+            setInlineVerses(prev => prev.map((v, idx) => idx === i ? { ...v, text, loading: false } : v));
+          } else {
+            setInlineVerses(prev => prev.map((v, idx) => idx === i ? { ...v, loading: false, error: true } : v));
+          }
+        } catch {
+          setInlineVerses(prev => prev.map((v, idx) => idx === i ? { ...v, loading: false, error: true } : v));
+        }
+      }
+    })();
+  }, [dailyText, autoDisplayed, language]);
+
   const goDay = (delta: number) => {
     setCurrentDate(prev => {
       const d = new Date(prev);
@@ -52,12 +117,24 @@ export default function DailyTextPage() {
       const bookId = parseInt(refEl.getAttribute('data-book') || '0');
       const chapter = parseInt(refEl.getAttribute('data-chapter') || '0');
       const verse = parseInt(refEl.getAttribute('data-verse') || '0') || undefined;
+      const verseEnd = parseInt(refEl.getAttribute('data-verse-end') || '0') || undefined;
+      const verseListStr = refEl.getAttribute('data-verse-list') || '';
+      const verseList = verseListStr ? verseListStr.split(',').map(Number).filter(Boolean) : undefined;
       if (bookId && chapter) {
-        setPopupRef({ bookId, chapter, verse });
+        setPopupRef({ bookId, chapter, verse, verseEnd, verseList });
         setPopupOpen(true);
       }
     }
   }, []);
+
+  const toggleExpanded = (key: string) => {
+    setExpandedRefs(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const dateStr = currentDate.toLocaleDateString('fil-PH', {
     weekday: 'long',
@@ -144,6 +221,63 @@ export default function DailyTextPage() {
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
               />
             </div>
+
+            {/* Inline verse references */}
+            {inlineVerses.length > 0 && (
+              <div className="border-t border-border/50">
+                <div className="px-5 py-3">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-2">
+                    Mga Sanggunian ({inlineVerses.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {inlineVerses.map((iv, i) => {
+                      const key = `${iv.ref.bookId}-${iv.ref.chapter}-${iv.ref.verse}`;
+                      const isExpanded = expandedRefs.has(key);
+                      return (
+                        <div key={i} className="rounded-xl border border-border/60 bg-background overflow-hidden">
+                          <button
+                            onClick={() => toggleExpanded(key)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/40 transition-colors"
+                          >
+                            <BookOpen className="h-3 w-3 text-primary shrink-0" />
+                            <span className="text-[11px] font-semibold text-foreground flex-1">{iv.label}</span>
+                            {iv.loading ? (
+                              <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
+                            ) : isExpanded ? (
+                              <ChevronUp className="h-3 w-3 text-muted-foreground shrink-0" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
+                            )}
+                          </button>
+                          <AnimatePresence>
+                            {isExpanded && !iv.loading && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-3 pb-3 pt-0">
+                                  {iv.error ? (
+                                    <p className="text-[11px] text-destructive italic">Hindi ma-load ang talata.</p>
+                                  ) : (
+                                    <p className="text-[12px] text-muted-foreground leading-[1.8] whitespace-pre-line"
+                                       style={{ fontFamily: "'Inter', sans-serif" }}>
+                                      {iv.text || 'Walang nahanap na teksto.'}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         ) : (
           <div className="py-16 text-center rounded-2xl border border-border bg-card">
@@ -160,7 +294,49 @@ export default function DailyTextPage() {
         bookId={popupRef.bookId}
         chapter={popupRef.chapter}
         verse={popupRef.verse}
+        verseEnd={popupRef.verseEnd}
+        verseList={popupRef.verseList}
       />
     </div>
   );
+}
+
+function extractVerseTextSimple(html: string, verses?: number[]): string {
+  const text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!verses || verses.length === 0) {
+    return text.slice(0, 500) + (text.length > 500 ? '…' : '');
+  }
+
+  const collected: string[] = [];
+  for (const v of verses) {
+    const vStr = String(v);
+    const nextStr = String(v + 1);
+    const regex = new RegExp(`(?:^|\\s)${vStr}\\s+(.*?)(?=\\s+${nextStr}\\s|$)`, 's');
+    const match = text.match(regex);
+    if (match) {
+      const t = match[1].trim().replace(/\s+/g, ' ');
+      if (t.length > 5) { collected.push(`${vStr} ${t}`); continue; }
+    }
+    // Fallback
+    const segs = text.split(/\b(\d{1,3})\b/);
+    for (let i = 0; i < segs.length; i++) {
+      if (segs[i] === vStr && i + 1 < segs.length) {
+        let s = segs[i + 1];
+        for (let j = i + 2; j < segs.length; j++) {
+          if (/^\d{1,3}$/.test(segs[j])) break;
+          s += segs[j];
+        }
+        const c = s.trim().replace(/\s+/g, ' ');
+        if (c.length > 5) { collected.push(`${vStr} ${c}`); break; }
+      }
+    }
+  }
+
+  return collected.length > 0 ? collected.join('\n\n').slice(0, 2000) : text.slice(0, 400);
 }

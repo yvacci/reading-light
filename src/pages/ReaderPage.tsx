@@ -7,7 +7,7 @@ import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { BIBLE_SECTIONS } from '@/lib/bible-sections-data';
-import { fetchBookSummary, fetchChapterOutline, getCachedBookSummary, getCachedChapterOutline } from '@/lib/bible-summary-service';
+import { fetchChapterOutline, getCachedChapterOutline } from '@/lib/bible-summary-service';
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
 import ReferencePane from '@/components/ReferencePane';
@@ -185,7 +185,6 @@ function SubTabContent({ tabId }: { tabId: string }) {
 
   return (
     <div className="px-5 py-4">
-      {/* Section header */}
       <div className="mb-4">
         <h2 className="text-lg font-bold text-foreground">{section.title}</h2>
         {section.description && (
@@ -193,7 +192,6 @@ function SubTabContent({ tabId }: { tabId: string }) {
         )}
       </div>
 
-      {/* Articles list */}
       <div className="space-y-1">
         {section.articles.map((article, i) => (
           <motion.button
@@ -212,7 +210,6 @@ function SubTabContent({ tabId }: { tabId: string }) {
         ))}
       </div>
 
-      {/* Source link */}
       <div className="mt-4 pt-3 border-t border-border">
         <button
           onClick={() => handleArticleClick(section.sourceUrl)}
@@ -284,7 +281,6 @@ function BookGrid({
     );
   }
 
-  // List view
   return (
     <div className="space-y-0.5 px-2">
       {books.map(book => {
@@ -323,28 +319,12 @@ function ChapterSelector({ book }: { book: BibleBook }) {
   const chapters = Array.from({ length: book.chapters }, (_, i) => i + 1);
   const [tappedCh, setTappedCh] = useState<number | null>(null);
   const [selectedCh, setSelectedCh] = useState<number | null>(null);
-  const [bookSummary, setBookSummary] = useState<{ title: string; summary: string } | null>(null);
   const [chapterOutline, setChapterOutline] = useState<{ heading: string; verses: string }[]>([]);
-  const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingOutline, setLoadingOutline] = useState(false);
   const [paneOpen, setPaneOpen] = useState(false);
   const [paneUrl, setPaneUrl] = useState('');
 
   const localizedName = getLocalizedBookName(book.id);
-
-  // Load book summary on mount
-  useEffect(() => {
-    const cached = getCachedBookSummary(book.wolBookNum);
-    if (cached) {
-      setBookSummary(cached);
-    } else {
-      setLoadingSummary(true);
-      fetchBookSummary(book.wolBookNum).then(s => {
-        if (s) setBookSummary(s);
-        setLoadingSummary(false);
-      });
-    }
-  }, [book.wolBookNum]);
 
   // Load chapter outline when a chapter is selected
   useEffect(() => {
@@ -421,80 +401,23 @@ function ChapterSelector({ book }: { book: BibleBook }) {
       </div>
 
       <div className="px-4 py-4 space-y-4">
-        {/* Split layout: Intro card + Chapter outline */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Book Introduction Card */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={handleIntroClick}
-            className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left hover:bg-muted/40 transition-colors"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-foreground">Introduksiyon</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
-                Basahin ang introduksiyon ng {localizedName}
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-          </motion.button>
-
-          {/* Chapter grid for quick access */}
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-bold text-foreground mb-3">Mga Kabanata</p>
-            <div className="grid grid-cols-5 gap-1.5">
-              {chapters.slice(0, 15).map(ch => {
-                const read = isChapterRead(book.id, ch);
-                const isTapped = tappedCh === ch;
-                return (
-                  <motion.button
-                    key={ch}
-                    whileTap={{ scale: 0.85 }}
-                    animate={isTapped ? { scale: [0.85, 1.1, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                    onClick={() => handleChapterTap(ch)}
-                    className={`flex h-8 items-center justify-center rounded-lg text-[11px] font-semibold transition-all ${
-                      read
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-primary/10 text-primary hover:bg-primary/20'
-                    }`}
-                  >
-                    {ch}
-                  </motion.button>
-                );
-              })}
-              {book.chapters > 15 && (
-                <div className="flex h-8 items-center justify-center text-[10px] text-muted-foreground font-medium col-span-5">
-                  ↑ I-scroll ang mga kabanata sa itaas
-                </div>
-              )}
-            </div>
+        {/* Introduction card */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={handleIntroClick}
+          className="flex w-full items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left hover:bg-muted/40 transition-colors"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
           </div>
-        </div>
-
-        {/* Book summary */}
-        {loadingSummary ? (
-          <div className="flex items-center gap-2 py-4 justify-center">
-            <Loader2 className="h-4 w-4 text-primary animate-spin" />
-            <span className="text-[11px] text-muted-foreground font-medium">Kinukuha ang buod...</span>
-          </div>
-        ) : bookSummary?.summary ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border bg-card p-4"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="h-3.5 w-3.5 text-primary" />
-              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.12em]">Buod ng Aklat</p>
-            </div>
-            <p className="text-[12px] text-muted-foreground leading-[1.75]" style={{ textAlign: 'justify' }}>
-              {bookSummary.summary.slice(0, 400)}{bookSummary.summary.length > 400 ? '…' : ''}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-foreground">Introduksiyon</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+              Basahin ang introduksiyon ng {localizedName}
             </p>
-          </motion.div>
-        ) : null}
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+        </motion.button>
 
         {/* Chapter outline when selected */}
         <AnimatePresence mode="wait">
@@ -547,33 +470,31 @@ function ChapterSelector({ book }: { book: BibleBook }) {
         </AnimatePresence>
 
         {/* Full chapter grid */}
-        {!selectedCh && book.chapters > 15 && (
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-xs font-bold text-foreground mb-3">Lahat ng Kabanata</p>
-            <div className="grid grid-cols-5 gap-2">
-              {chapters.map(ch => {
-                const read = isChapterRead(book.id, ch);
-                const isTapped = tappedCh === ch;
-                return (
-                  <motion.button
-                    key={ch}
-                    whileTap={{ scale: 0.9 }}
-                    animate={isTapped ? { scale: [0.85, 1.1, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                    onClick={() => handleChapterTap(ch)}
-                    className={`flex h-10 items-center justify-center rounded-xl text-xs font-semibold transition-all ${
-                      read
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'bg-primary/10 text-primary hover:bg-primary/20'
-                    }`}
-                  >
-                    {ch}
-                  </motion.button>
-                );
-              })}
-            </div>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-xs font-bold text-foreground mb-3">Lahat ng Kabanata</p>
+          <div className="grid grid-cols-5 gap-2">
+            {chapters.map(ch => {
+              const read = isChapterRead(book.id, ch);
+              const isTapped = tappedCh === ch;
+              return (
+                <motion.button
+                  key={ch}
+                  whileTap={{ scale: 0.9 }}
+                  animate={isTapped ? { scale: [0.85, 1.1, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => handleChapterTap(ch)}
+                  className={`flex h-10 items-center justify-center rounded-xl text-xs font-semibold transition-all ${
+                    read
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  }`}
+                >
+                  {ch}
+                </motion.button>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
 
       <ReferencePane

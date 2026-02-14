@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText } from 'lucide-react';
+import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink } from 'lucide-react';
 import { useStudies, StudyEntry } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
@@ -22,18 +22,18 @@ export default function StudiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'bible-study' | 'return-visit'>('all');
   const [form, setForm] = useState({
-    name: '', contactInfo: '', lastVisitDate: '', notes: '', type: 'bible-study' as 'bible-study' | 'return-visit',
+    name: '', contactInfo: '', address: '', lastVisitDate: '', notes: '', type: 'bible-study' as 'bible-study' | 'return-visit',
   });
 
   const openNew = () => {
     setEditingId(null);
-    setForm({ name: '', contactInfo: '', lastVisitDate: new Date().toISOString().slice(0, 10), notes: '', type: 'bible-study' });
+    setForm({ name: '', contactInfo: '', address: '', lastVisitDate: new Date().toISOString().slice(0, 10), notes: '', type: 'bible-study' });
     setDialogOpen(true);
   };
 
   const openEdit = (s: StudyEntry) => {
     setEditingId(s.id);
-    setForm({ name: s.name, contactInfo: s.contactInfo, lastVisitDate: s.lastVisitDate, notes: s.notes, type: s.type });
+    setForm({ name: s.name, contactInfo: s.contactInfo, address: s.address || '', lastVisitDate: s.lastVisitDate, notes: s.notes, type: s.type });
     setDialogOpen(true);
   };
 
@@ -47,11 +47,16 @@ export default function StudiesPage() {
     setDialogOpen(false);
   };
 
+  const openInMaps = (address: string) => {
+    const encoded = encodeURIComponent(address);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
+  };
+
   const filtered = studies.filter(s => {
     if (filterType !== 'all' && s.type !== filterType) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      return s.name.toLowerCase().includes(q) || s.notes.toLowerCase().includes(q);
+      return s.name.toLowerCase().includes(q) || s.notes.toLowerCase().includes(q) || (s.address || '').toLowerCase().includes(q);
     }
     return true;
   });
@@ -116,70 +121,92 @@ export default function StudiesPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((s, i) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="rounded-2xl border border-border bg-card p-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        s.type === 'bible-study' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
-                      }`}>
-                        {s.type === 'bible-study' ? t('studies.bibleStudy', language) : t('studies.returnVisit', language)}
-                      </span>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground mt-1">{s.name}</p>
-                    {s.contactInfo && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[11px] text-muted-foreground">{s.contactInfo}</span>
+            {filtered.map((s, i) => {
+              const daysSince = s.lastVisitDate
+                ? Math.floor((Date.now() - new Date(s.lastVisitDate + 'T12:00:00').getTime()) / 86400000)
+                : null;
+              const needsFollowUp = daysSince !== null && daysSince >= 7;
+
+              return (
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className={`rounded-2xl border bg-card p-3 ${needsFollowUp ? 'border-destructive/30' : 'border-border'}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                          s.type === 'bible-study' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
+                        }`}>
+                          {s.type === 'bible-study' ? t('studies.bibleStudy', language) : t('studies.returnVisit', language)}
+                        </span>
+                        {needsFollowUp && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                            {daysSince}d ago
+                          </span>
+                        )}
                       </div>
-                    )}
-                    {s.lastVisitDate && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-[11px] text-muted-foreground">{new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {s.notes && (
-                      <div className="flex items-start gap-1 mt-1">
-                        <FileText className="h-3 w-3 text-muted-foreground mt-0.5" />
-                        <span className="text-[11px] text-muted-foreground line-clamp-2">{s.notes}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-1 ml-2">
-                    <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                      <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <button className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <p className="text-sm font-semibold text-foreground mt-1">{s.name}</p>
+                      {s.contactInfo && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[11px] text-muted-foreground">{s.contactInfo}</span>
+                        </div>
+                      )}
+                      {s.address && (
+                        <button
+                          onClick={() => openInMaps(s.address)}
+                          className="flex items-center gap-1 mt-0.5 group"
+                        >
+                          <MapPin className="h-3 w-3 text-primary" />
+                          <span className="text-[11px] text-primary group-hover:underline">{s.address}</span>
+                          <ExternalLink className="h-2.5 w-2.5 text-primary/60" />
                         </button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t('common.delete', language)}?</AlertDialogTitle>
-                          <AlertDialogDescription>{t('studies.deleteConfirm', language)}</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t('common.cancel', language)}</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteStudy(s.id)} className="bg-destructive text-destructive-foreground">
-                            {t('common.delete', language)}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      )}
+                      {s.lastVisitDate && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[11px] text-muted-foreground">{new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      {s.notes && (
+                        <div className="flex items-start gap-1 mt-1">
+                          <FileText className="h-3 w-3 text-muted-foreground mt-0.5" />
+                          <span className="text-[11px] text-muted-foreground line-clamp-2">{s.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-1 ml-2">
+                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                        <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t('common.delete', language)}?</AlertDialogTitle>
+                            <AlertDialogDescription>{t('studies.deleteConfirm', language)}</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel', language)}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteStudy(s.id)} className="bg-destructive text-destructive-foreground">
+                              {t('common.delete', language)}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -220,6 +247,15 @@ export default function StudiesPage() {
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('studies.contact', language)}</label>
               <Input value={form.contactInfo} onChange={e => setForm(p => ({ ...p, contactInfo: e.target.value }))} className="h-9" />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Address</label>
+              <Input
+                value={form.address}
+                onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                className="h-9"
+                placeholder="e.g. 123 Main St, City"
+              />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('studies.lastVisit', language)}</label>

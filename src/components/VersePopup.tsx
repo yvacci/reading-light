@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen } from 'lucide-react';
 import { loadChapter, initEpub } from '@/lib/epub-service';
 import { getLocalizedBookName } from '@/lib/localization';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -17,9 +16,11 @@ interface Props {
   bookId: number;
   chapter: number;
   verse?: number;
+  verseEnd?: number;
+  verseList?: number[];
 }
 
-export default function VersePopup({ open, onOpenChange, bookId, chapter, verse }: Props) {
+export default function VersePopup({ open, onOpenChange, bookId, chapter, verse, verseEnd, verseList }: Props) {
   const { language } = useReadingProgress();
   const [verseText, setVerseText] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,11 @@ export default function VersePopup({ open, onOpenChange, bookId, chapter, verse 
         if (cancelled) return;
 
         if (html) {
-          const extracted = extractVerseText(html, verse);
+          const targetVerses = verseList || (verse && verseEnd 
+            ? Array.from({ length: verseEnd - verse + 1 }, (_, i) => verse + i)
+            : verse ? [verse] : undefined);
+          
+          const extracted = extractVerseText(html, targetVerses);
           setVerseText(extracted || (language === 'en' ? 'Verse not found.' : 'Hindi nahanap ang talata.'));
         } else {
           setVerseText(language === 'en' ? 'Could not load chapter.' : 'Hindi ma-load ang kabanata.');
@@ -52,10 +57,14 @@ export default function VersePopup({ open, onOpenChange, bookId, chapter, verse 
     })();
 
     return () => { cancelled = true; };
-  }, [open, bookId, chapter, verse, language]);
+  }, [open, bookId, chapter, verse, verseEnd, verseList, language]);
 
   const label = verse
-    ? `${bookName} ${chapter}:${verse}`
+    ? verseEnd
+      ? `${bookName} ${chapter}:${verse}-${verseEnd}`
+      : verseList && verseList.length > 1
+        ? `${bookName} ${chapter}:${verseList.join(', ')}`
+        : `${bookName} ${chapter}:${verse}`
     : `${bookName} ${chapter}`;
 
   return (
@@ -86,12 +95,12 @@ export default function VersePopup({ open, onOpenChange, bookId, chapter, verse 
 }
 
 /**
- * Extract specific verse text from chapter HTML.
- * Looks for verse numbers in bold/sup tags and extracts surrounding text.
+ * Extract specific verse texts from chapter HTML.
+ * If verses is undefined, return first few paragraphs.
+ * If verses is an array, extract all specified verses.
  */
-function extractVerseText(html: string, verse?: number): string {
-  if (!verse) {
-    // Return first few paragraphs as summary
+function extractVerseText(html: string, verses?: number[]): string {
+  if (!verses || verses.length === 0) {
     const text = html
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -101,43 +110,50 @@ function extractVerseText(html: string, verse?: number): string {
     return text.slice(0, 500) + (text.length > 500 ? '…' : '');
   }
 
-  // Try to find verse text by looking for verse number patterns
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
-  const body = doc.body;
+  const allText = doc.body.textContent || '';
+  
+  const collectedTexts: string[] = [];
+  
+  for (const targetVerse of verses) {
+    const verseStr = String(targetVerse);
+    const nextVerseStr = String(targetVerse + 1);
+    
+    const verseRegex = new RegExp(
+      `(?:^|\\s)${verseStr}\\s+(.*?)(?=\\s+${nextVerseStr}\\s|$)`,
+      's'
+    );
+    
+    const match = allText.match(verseRegex);
+    if (match) {
+      const text = match[1].trim().replace(/\s+/g, ' ');
+      if (text.length > 5) {
+        collectedTexts.push(`${verseStr} ${text}`);
+        continue;
+      }
+    }
 
-  // Method 1: Look for elements with verse number
-  const allText = body.textContent || '';
-  
-  // Find the verse number and extract text until next verse
-  const verseStr = String(verse);
-  const nextVerseStr = String(verse + 1);
-  
-  // Pattern: verse number followed by text until next verse number
-  const verseRegex = new RegExp(
-    `(?:^|\\s)${verseStr}\\s+(.*?)(?=\\s+${nextVerseStr}\\s|$)`,
-    's'
-  );
-  
-  const match = allText.match(verseRegex);
-  if (match) {
-    const text = match[1].trim().replace(/\s+/g, ' ');
-    if (text.length > 10) return text.slice(0, 600);
+    // Fallback: segment-based search
+    const segments = allText.split(/\b(\d{1,3})\b/);
+    for (let i = 0; i < segments.length; i++) {
+      if (segments[i] === verseStr && i + 1 < segments.length) {
+        let text = segments[i + 1];
+        for (let j = i + 2; j < segments.length; j++) {
+          if (/^\d{1,3}$/.test(segments[j])) break;
+          text += segments[j];
+        }
+        const cleaned = text.trim().replace(/\s+/g, ' ');
+        if (cleaned.length > 5) {
+          collectedTexts.push(`${verseStr} ${cleaned}`);
+          break;
+        }
+      }
+    }
   }
 
-  // Method 2: broader search
-  const segments = allText.split(/\b(\d{1,3})\b/);
-  for (let i = 0; i < segments.length; i++) {
-    if (segments[i] === verseStr && i + 1 < segments.length) {
-      let text = segments[i + 1];
-      // Collect until next number that could be a verse
-      for (let j = i + 2; j < segments.length; j++) {
-        if (/^\d{1,3}$/.test(segments[j])) break;
-        text += segments[j];
-      }
-      const cleaned = text.trim().replace(/\s+/g, ' ');
-      if (cleaned.length > 10) return cleaned.slice(0, 600);
-    }
+  if (collectedTexts.length > 0) {
+    return collectedTexts.join('\n\n').slice(0, 2000);
   }
 
   return allText.slice(0, 400).trim();
