@@ -4,6 +4,7 @@ export interface StudyEntry {
   id: string;
   name: string;
   contactInfo: string;
+  address: string;
   lastVisitDate: string;
   notes: string;
   type: 'bible-study' | 'return-visit';
@@ -16,6 +17,7 @@ interface StudiesContextType {
   updateStudy: (id: string, entry: Partial<StudyEntry>) => void;
   deleteStudy: (id: string) => void;
   getStudyCount: (type: 'bible-study' | 'return-visit') => number;
+  getUpcomingVisits: () => StudyEntry[];
 }
 
 const STORAGE_KEY = 'nwt-studies-data';
@@ -23,7 +25,11 @@ const STORAGE_KEY = 'nwt-studies-data';
 function loadStudies(): StudyEntry[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Migrate old entries without address field
+      return parsed.map((s: any) => ({ address: '', ...s }));
+    }
   } catch {}
   return [];
 }
@@ -58,8 +64,22 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
     return studies.filter(s => s.type === type).length;
   }, [studies]);
 
+  const getUpcomingVisits = useCallback(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    // Return studies with lastVisitDate older than 7 days (needs follow-up)
+    return studies.filter(s => {
+      if (!s.lastVisitDate) return true;
+      const daysSince = Math.floor((Date.now() - new Date(s.lastVisitDate + 'T12:00:00').getTime()) / 86400000);
+      return daysSince >= 7;
+    }).sort((a, b) => {
+      if (!a.lastVisitDate) return -1;
+      if (!b.lastVisitDate) return 1;
+      return a.lastVisitDate.localeCompare(b.lastVisitDate);
+    }).slice(0, 5);
+  }, [studies]);
+
   return (
-    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount }}>
+    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount, getUpcomingVisits }}>
       {children}
     </StudiesContext.Provider>
   );

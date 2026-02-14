@@ -1,17 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { X, BookOpen, Clock, Link2, Star, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, BookOpen, Clock, Link2, Star, ChevronRight, MapPin, Users, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePioneer } from '@/contexts/PioneerContext';
+import { useStudies } from '@/contexts/StudiesContext';
 import { Progress } from '@/components/ui/progress';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Optional: show specific verse content */
   verseRef?: { bookId: number; chapter: number; verse?: number; text?: string };
-  /** Optional: footnotes/cross-refs for the verse */
   footnotes?: string[];
-  /** Optional: URL for quick link */
   quickLinkUrl?: string;
 }
 
@@ -35,6 +33,7 @@ const QUICK_LINKS = [
 
 export default function ReferencePane({ open, onClose, verseRef, footnotes, quickLinkUrl }: Props) {
   const { entries } = usePioneer();
+  const { getUpcomingVisits } = useStudies();
   const [randomVerse, setRandomVerse] = useState(PIONEER_VERSES[0]);
 
   useEffect(() => {
@@ -42,6 +41,8 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
       setRandomVerse(PIONEER_VERSES[Math.floor(Math.random() * PIONEER_VERSES.length)]);
     }
   }, [open]);
+
+  const upcomingVisits = open ? getUpcomingVisits() : [];
 
   // Calculate current month hours
   const now = new Date();
@@ -118,6 +119,44 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                       {footnotes.map((fn, i) => (
                         <p key={i} className="text-xs text-foreground leading-relaxed">{fn}</p>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Visit Reminders */}
+                {upcomingVisits.length > 0 && (
+                  <div className="rounded-xl bg-destructive/5 p-4 border border-destructive/10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Bell className="h-4 w-4 text-destructive" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-destructive">Kailangang Dalawin</p>
+                    </div>
+                    <div className="space-y-2">
+                      {upcomingVisits.map(visit => {
+                        const daysSince = visit.lastVisitDate
+                          ? Math.floor((Date.now() - new Date(visit.lastVisitDate + 'T12:00:00').getTime()) / 86400000)
+                          : null;
+                        return (
+                          <div key={visit.id} className="flex items-start gap-2.5 rounded-lg bg-background/80 p-2.5">
+                            <Users className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {visit.type === 'bible-study' ? 'Bible Study' : 'Return Visit'}
+                                {daysSince !== null && ` · ${daysSince} araw na ang nakakaraan`}
+                              </p>
+                              {visit.address && (
+                                <button
+                                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
+                                  className="flex items-center gap-1 mt-0.5"
+                                >
+                                  <MapPin className="h-2.5 w-2.5 text-primary" />
+                                  <span className="text-[10px] text-primary hover:underline truncate">{visit.address}</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
