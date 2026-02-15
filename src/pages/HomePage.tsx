@@ -29,7 +29,7 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('app.title')}</p>
-          <h1 className="mt-1 text-3xl font-bold text-foreground whitespace-pre-line" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="mt-1 text-3xl font-bold text-foreground whitespace-pre-line">
             {t('home.subtitle')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">

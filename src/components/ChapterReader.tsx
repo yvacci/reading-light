@@ -405,7 +405,33 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="min-h-[60vh]"
+        onContextMenu={(e) => e.preventDefault()}
+        className="min-h-[60vh] bible-reader-container"
+        onMouseUp={() => {
+          const sel = window.getSelection();
+          const text = sel?.toString().trim();
+          if (text && text.length >= 3) {
+            const range = sel?.getRangeAt(0);
+            const rect = range?.getBoundingClientRect();
+            if (rect) {
+              let verse = 0;
+              const anchorNode = sel?.anchorNode;
+              if (anchorNode) {
+                let el: HTMLElement | null = anchorNode.nodeType === Node.TEXT_NODE
+                  ? (anchorNode.parentElement as HTMLElement)
+                  : (anchorNode as HTMLElement);
+                while (el && !el.getAttribute?.('data-verse')) el = el.parentElement;
+                if (el) verse = parseInt(el.getAttribute('data-verse') || '0');
+              }
+              setColorPickerPos({ x: rect.left + rect.width / 2, y: rect.top });
+              setPendingHighlightText(text);
+              setPendingHighlightVerse(verse || 1);
+              setEditingHighlightId(null);
+              setEditingHighlightColor(undefined);
+              setColorPickerOpen(true);
+            }
+          }
+        }}
         onClick={(e) => {
           if (!(e.target as HTMLElement).closest('[data-verse]')) {
             setEmphasizedVerse(null);
@@ -509,8 +535,17 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         }}
         onSelectColor={handleColorSelect}
         onDelete={editingHighlightId ? handleHighlightDelete : undefined}
+        onBookmark={() => {
+          const text = pendingHighlightText || window.getSelection()?.toString().trim() || '';
+          if (text) {
+            setSelectedText(text);
+            setBookmarkOpen(true);
+          }
+        }}
+        onJournal={() => setJournalOpen(true)}
         position={colorPickerPos}
         activeColor={editingHighlightColor}
+        selectedText={pendingHighlightText}
       />
 
       <ReferencePane

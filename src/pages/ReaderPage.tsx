@@ -361,7 +361,7 @@ function ChapterSelector({ book }: { book: BibleBook }) {
             <ChevronLeft className="h-5 w-5 text-foreground" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">
               {localizedName}
             </h1>
             <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
