@@ -16,7 +16,7 @@ import FootnotesPanel from '@/components/FootnotesPanel';
 import PageHeader from '@/components/PageHeader';
 import BookmarkDialog from '@/components/BookmarkDialog';
 import JournalEntryDialog from '@/components/JournalEntryDialog';
-import HighlightColorPicker from '@/components/HighlightColorPicker';
+import VerseActionPopup from '@/components/VerseActionPopup';
 import { Button } from '@/components/ui/button';
 import ReferencePane from '@/components/ReferencePane';
 import ReaderBottomToolbar from '@/components/ReaderBottomToolbar';
@@ -44,8 +44,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   const [selectedVerse, setSelectedVerse] = useState<number | undefined>();
   const [footnotes, setFootnotes] = useState<Footnote[]>([]);
   const [highlightedFootnote, setHighlightedFootnote] = useState<string | null>(null);
-  const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [actionPopupOpen, setActionPopupOpen] = useState(false);
+  const [actionPopupPos, setActionPopupPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [pendingHighlightText, setPendingHighlightText] = useState('');
   const [pendingHighlightVerse, setPendingHighlightVerse] = useState(0);
   const [editingHighlightId, setEditingHighlightId] = useState<string | null>(null);
@@ -84,6 +84,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     doLoad();
   }, [bookId, chapter]);
 
+  // Verse tap handler
   useEffect(() => {
     if (loading || !contentRef.current) return;
     const container = contentRef.current;
@@ -91,14 +92,19 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     const verseElements = container.querySelectorAll('[data-verse]');
     const handleVerseTap = (e: Event) => {
       e.stopPropagation();
+      e.preventDefault();
       const el = e.currentTarget as HTMLElement;
       const verseNum = parseInt(el.getAttribute('data-verse') || '0');
       if (verseNum > 0) {
-        // Open reference pane for this verse
-        const url = getWolUrl(bookId, chapter) + `#v${verseNum}`;
-        setRefPaneUrl(url);
-        setRefPaneVerse({ bookId, chapter, verse: verseNum });
-        setRefPaneOpen(true);
+        const rect = el.getBoundingClientRect();
+        setActionPopupPos({ x: rect.left + rect.width / 2, y: rect.top });
+        setPendingHighlightVerse(verseNum);
+        setPendingHighlightText(el.textContent?.replace(/^\d+\s*/, '') || '');
+        setSelectedText(el.textContent || '');
+        setSelectedVerse(verseNum);
+        setEditingHighlightId(null);
+        setEditingHighlightColor(undefined);
+        setActionPopupOpen(true);
         setEmphasizedVerse(prev => prev === verseNum ? null : verseNum);
       }
     };
@@ -201,44 +207,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }, [goToChapter]);
 
   const handleBookmark = useCallback(() => {
-    const selection = window.getSelection()?.toString().trim();
-    if (selection && selection.length > 5) {
-      setSelectedText(selection);
-      setSelectedVerse(undefined);
-    } else {
-      const plainText = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      setSelectedText(plainText.slice(0, 200));
-      setSelectedVerse(undefined);
-    }
+    const text = selectedText || content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
+    setSelectedText(text);
     setBookmarkOpen(true);
-  }, [content]);
-
-  const handleHighlightTrigger = useCallback(() => {
-    const selection = window.getSelection();
-    const text = selection?.toString().trim() || '';
-    if (text.length < 3) return;
-
-    const anchorNode = selection?.anchorNode;
-    let verse = 0;
-    if (anchorNode) {
-      let el: HTMLElement | null = anchorNode.nodeType === Node.TEXT_NODE
-        ? (anchorNode.parentElement as HTMLElement)
-        : (anchorNode as HTMLElement);
-      while (el && !el.getAttribute?.('data-verse')) {
-        el = el.parentElement;
-      }
-      if (el) verse = parseInt(el.getAttribute('data-verse') || '0');
-    }
-
-    const range = selection?.getRangeAt(0);
-    const rect = range?.getBoundingClientRect();
-    if (rect) {
-      setColorPickerPos({ x: rect.left + rect.width / 2, y: rect.top });
-    }
-    setPendingHighlightText(text);
-    setPendingHighlightVerse(verse || 1);
-    setColorPickerOpen(true);
-  }, []);
+  }, [content, selectedText]);
 
   const handleColorSelect = useCallback((color: string) => {
     if (editingHighlightId) {
@@ -254,7 +226,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         color,
         text: pendingHighlightText.slice(0, 500),
       });
-      window.getSelection()?.removeAllRanges();
       setPendingHighlightText('');
     }
   }, [editingHighlightId, pendingHighlightText, pendingHighlightVerse, bookId, chapter, addHighlight, updateHighlightColor]);
@@ -266,6 +237,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       setEditingHighlightColor(undefined);
     }
   }, [editingHighlightId, removeHighlight]);
+
+  const handleCopyText = useCallback(() => {
+    // selectedText is set when verse is tapped
+  }, []);
 
   const applyHighlights = useCallback(() => {
     if (!contentRef.current || loading) return;
@@ -303,11 +278,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
           mark.addEventListener('click', (e) => {
             e.stopPropagation();
             const rect = mark.getBoundingClientRect();
-            setColorPickerPos({ x: rect.left + rect.width / 2, y: rect.top });
+            setActionPopupPos({ x: rect.left + rect.width / 2, y: rect.top });
             setEditingHighlightId(hl.id);
             setEditingHighlightColor(hl.color);
             setPendingHighlightText('');
-            setColorPickerOpen(true);
+            setSelectedText(mark.textContent || '');
+            setActionPopupOpen(true);
           });
           range.surroundContents(mark);
           break;
@@ -363,31 +339,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
               <PanelLeftOpen className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={handleBookmark}
-              className={`flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition-colors ${
-                bookmarked
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:bg-muted'
-              }`}
-              title={t('bookmarks.saveBookmark')}
-            >
-              <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-primary' : ''}`} />
-            </button>
-            <button
-              onClick={() => setJournalOpen(true)}
-              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title={t('journal.newEntry')}
-            >
-              <PenLine className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={handleHighlightTrigger}
-              className="flex h-8 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-              title={t('highlights.pickColor')}
-            >
-              <Highlighter className="h-3.5 w-3.5" />
-            </button>
-            <button
               onClick={() => toggleChapterRead(bookId, chapter)}
               className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
                 read
@@ -407,7 +358,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onTouchEnd={handleTouchEnd}
         className="min-h-[60vh]"
         onClick={(e) => {
-          if (!(e.target as HTMLElement).closest('[data-verse]')) {
+          if (!(e.target as HTMLElement).closest('[data-verse]') && !(e.target as HTMLElement).closest('mark')) {
             setEmphasizedVerse(null);
           }
         }}
@@ -500,17 +451,21 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         prefillChapter={chapter}
       />
 
-      <HighlightColorPicker
-        open={colorPickerOpen}
+      <VerseActionPopup
+        open={actionPopupOpen}
         onClose={() => {
-          setColorPickerOpen(false);
+          setActionPopupOpen(false);
           setEditingHighlightId(null);
           setEditingHighlightColor(undefined);
         }}
+        position={actionPopupPos}
         onSelectColor={handleColorSelect}
+        onBookmark={handleBookmark}
+        onJournal={() => setJournalOpen(true)}
         onDelete={editingHighlightId ? handleHighlightDelete : undefined}
-        position={colorPickerPos}
+        onCopy={handleCopyText}
         activeColor={editingHighlightColor}
+        selectedText={selectedText}
       />
 
       <ReferencePane
@@ -520,7 +475,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         quickLinkUrl={refPaneUrl}
       />
 
-      {/* Bottom quick toolbar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
         <ReaderBottomToolbar />
       </div>

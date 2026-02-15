@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpen, Clock, Link2, Star, ChevronRight, MapPin, Users, Bell } from 'lucide-react';
+import { X, BookOpen, Clock, Link2, Star, ChevronRight, MapPin, Users, Bell, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePioneer } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
@@ -33,7 +33,7 @@ const QUICK_LINKS = [
 
 export default function ReferencePane({ open, onClose, verseRef, footnotes, quickLinkUrl }: Props) {
   const { entries } = usePioneer();
-  const { getUpcomingVisits } = useStudies();
+  const { getUpcomingVisits, studies } = useStudies();
   const [randomVerse, setRandomVerse] = useState(PIONEER_VERSES[0]);
 
   useEffect(() => {
@@ -43,6 +43,11 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
   }, [open]);
 
   const upcomingVisits = open ? getUpcomingVisits() : [];
+  
+  // Get all studies with scheduled next visits
+  const scheduledVisits = open ? studies.filter(s => s.nextVisitDate).sort((a, b) => 
+    (a.nextVisitDate || '').localeCompare(b.nextVisitDate || '')
+  ).slice(0, 5) : [];
 
   // Calculate current month hours
   const now = new Date();
@@ -82,10 +87,7 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                 <Star className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold text-foreground">Regular Pioneer</h3>
               </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              >
+              <button onClick={onClose} className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -123,7 +125,7 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                   </div>
                 )}
 
-                {/* Visit Reminders */}
+                {/* Visit Reminders - Needs Visit */}
                 {upcomingVisits.length > 0 && (
                   <div className="rounded-xl bg-destructive/5 p-4 border border-destructive/10">
                     <div className="flex items-center gap-2 mb-3">
@@ -144,6 +146,12 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                                 {visit.type === 'bible-study' ? 'Bible Study' : 'Return Visit'}
                                 {daysSince !== null && ` · ${daysSince} araw na ang nakakaraan`}
                               </p>
+                              {visit.nextVisitDate && (
+                                <p className="text-[10px] text-primary font-medium mt-0.5">
+                                  Susunod: {new Date(visit.nextVisitDate + 'T12:00:00').toLocaleDateString()}
+                                  {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
+                                </p>
+                              )}
                               {visit.address && (
                                 <button
                                   onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
@@ -157,6 +165,39 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Scheduled Visits */}
+                {scheduledVisits.length > 0 && (
+                  <div className="rounded-xl bg-primary/5 p-4 border border-primary/10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Naka-iskedyul na Bisita</p>
+                    </div>
+                    <div className="space-y-2">
+                      {scheduledVisits.map(visit => (
+                        <div key={visit.id} className="flex items-start gap-2.5 rounded-lg bg-background/80 p-2.5">
+                          <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {visit.type === 'bible-study' ? 'BS' : 'RV'} · {new Date(visit.nextVisitDate! + 'T12:00:00').toLocaleDateString()}
+                              {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
+                            </p>
+                            {visit.address && (
+                              <button
+                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
+                                className="flex items-center gap-1 mt-0.5"
+                              >
+                                <MapPin className="h-2.5 w-2.5 text-primary" />
+                                <span className="text-[10px] text-primary hover:underline truncate">{visit.address}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

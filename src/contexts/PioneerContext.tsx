@@ -15,6 +15,7 @@ interface PioneerContextType {
   getEntry: (date: string) => PioneerEntry | null;
   saveEntry: (entry: PioneerEntry) => void;
   deleteEntry: (date: string) => void;
+  resetEntries: () => void;
   getMonthSummary: (year: number, month: number) => {
     totalHours: number;
     bibleStudies: number;
@@ -58,6 +59,10 @@ export function PioneerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const resetEntries = useCallback(() => {
+    setEntries({});
+  }, []);
+
   const getMonthSummary = useCallback((year: number, month: number) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     let totalHours = 0, bibleStudies = 0, returnVisits = 0, witnessingHours = 0, daysWithData = 0;
@@ -78,7 +83,7 @@ export function PioneerProvider({ children }: { children: React.ReactNode }) {
   }, [entries]);
 
   return (
-    <PioneerContext.Provider value={{ entries, getEntry, saveEntry, deleteEntry, getMonthSummary }}>
+    <PioneerContext.Provider value={{ entries, getEntry, saveEntry, deleteEntry, resetEntries, getMonthSummary }}>
       {children}
     </PioneerContext.Provider>
   );
