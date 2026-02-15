@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +27,21 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function DarkModeInit() {
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('nwt-reading-progress');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.darkMode) {
+          document.documentElement.classList.add('dark');
+        }
+      }
+    } catch {}
+  }, []);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -34,6 +50,7 @@ const App = () => (
           <JournalProvider>
             <PioneerProvider>
               <StudiesProvider>
+                <DarkModeInit />
                 <Toaster />
                 <Sonner />
                 <OfflineIndicator />

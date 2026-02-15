@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
+export interface VisitHistoryEntry {
+  id: string;
+  date: string;
+  notes: string;
+}
+
 export interface StudyEntry {
   id: string;
   name: string;
@@ -9,6 +15,9 @@ export interface StudyEntry {
   notes: string;
   type: 'bible-study' | 'return-visit';
   createdAt: string;
+  nextVisitDate?: string;
+  nextVisitTime?: string;
+  visitHistory?: VisitHistoryEntry[];
 }
 
 interface StudiesContextType {
@@ -18,6 +27,7 @@ interface StudiesContextType {
   deleteStudy: (id: string) => void;
   getStudyCount: (type: 'bible-study' | 'return-visit') => number;
   getUpcomingVisits: () => StudyEntry[];
+  addVisitHistory: (studyId: string, notes: string) => void;
 }
 
 const STORAGE_KEY = 'nwt-studies-data';
@@ -27,8 +37,7 @@ function loadStudies(): StudyEntry[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Migrate old entries without address field
-      return parsed.map((s: any) => ({ address: '', ...s }));
+      return parsed.map((s: any) => ({ address: '', nextVisitDate: '', nextVisitTime: '', visitHistory: [], ...s }));
     }
   } catch {}
   return [];
@@ -64,9 +73,23 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
     return studies.filter(s => s.type === type).length;
   }, [studies]);
 
+  const addVisitHistory = useCallback((studyId: string, notes: string) => {
+    setStudies(prev => prev.map(s => {
+      if (s.id !== studyId) return s;
+      const entry: VisitHistoryEntry = {
+        id: Date.now().toString(36),
+        date: new Date().toISOString().slice(0, 10),
+        notes,
+      };
+      return {
+        ...s,
+        lastVisitDate: entry.date,
+        visitHistory: [...(s.visitHistory || []), entry],
+      };
+    }));
+  }, []);
+
   const getUpcomingVisits = useCallback(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    // Return studies with lastVisitDate older than 7 days (needs follow-up)
     return studies.filter(s => {
       if (!s.lastVisitDate) return true;
       const daysSince = Math.floor((Date.now() - new Date(s.lastVisitDate + 'T12:00:00').getTime()) / 86400000);
@@ -79,7 +102,7 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
   }, [studies]);
 
   return (
-    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount, getUpcomingVisits }}>
+    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount, getUpcomingVisits, addVisitHistory }}>
       {children}
     </StudiesContext.Provider>
   );

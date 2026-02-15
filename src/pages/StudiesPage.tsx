@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink } from 'lucide-react';
+import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History } from 'lucide-react';
 import { useStudies, StudyEntry } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -16,24 +17,33 @@ import {
 
 export default function StudiesPage() {
   const { language } = useReadingProgress();
-  const { studies, addStudy, updateStudy, deleteStudy } = useStudies();
+  const { studies, addStudy, updateStudy, deleteStudy, addVisitHistory } = useStudies();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'bible-study' | 'return-visit'>('all');
+  const [visitHistoryDialogOpen, setVisitHistoryDialogOpen] = useState(false);
+  const [visitHistoryStudyId, setVisitHistoryStudyId] = useState<string | null>(null);
+  const [visitHistoryNotes, setVisitHistoryNotes] = useState('');
   const [form, setForm] = useState({
-    name: '', contactInfo: '', address: '', lastVisitDate: '', notes: '', type: 'bible-study' as 'bible-study' | 'return-visit',
+    name: '', contactInfo: '', address: '', lastVisitDate: '', notes: '',
+    type: 'bible-study' as 'bible-study' | 'return-visit',
+    nextVisitDate: '', nextVisitTime: '',
   });
 
   const openNew = () => {
     setEditingId(null);
-    setForm({ name: '', contactInfo: '', address: '', lastVisitDate: new Date().toISOString().slice(0, 10), notes: '', type: 'bible-study' });
+    setForm({ name: '', contactInfo: '', address: '', lastVisitDate: new Date().toISOString().slice(0, 10), notes: '', type: 'bible-study', nextVisitDate: '', nextVisitTime: '' });
     setDialogOpen(true);
   };
 
   const openEdit = (s: StudyEntry) => {
     setEditingId(s.id);
-    setForm({ name: s.name, contactInfo: s.contactInfo, address: s.address || '', lastVisitDate: s.lastVisitDate, notes: s.notes, type: s.type });
+    setForm({
+      name: s.name, contactInfo: s.contactInfo, address: s.address || '',
+      lastVisitDate: s.lastVisitDate, notes: s.notes, type: s.type,
+      nextVisitDate: s.nextVisitDate || '', nextVisitTime: s.nextVisitTime || '',
+    });
     setDialogOpen(true);
   };
 
@@ -48,8 +58,16 @@ export default function StudiesPage() {
   };
 
   const openInMaps = (address: string) => {
-    const encoded = encodeURIComponent(address);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encoded}`, '_blank');
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+  };
+
+  const handleAddVisitHistory = () => {
+    if (!visitHistoryStudyId) return;
+    addVisitHistory(visitHistoryStudyId, visitHistoryNotes);
+    toast.success('Naidagdag ang visit history');
+    setVisitHistoryDialogOpen(false);
+    setVisitHistoryNotes('');
+    setVisitHistoryStudyId(null);
   };
 
   const filtered = studies.filter(s => {
@@ -85,12 +103,7 @@ export default function StudiesPage() {
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('studies.searchPlaceholder', language)}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 h-9 rounded-xl"
-            />
+            <Input placeholder={t('studies.searchPlaceholder', language)} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-9 rounded-xl" />
           </div>
           <Button onClick={openNew} size="sm" className="rounded-xl gap-1.5">
             <Plus className="h-4 w-4" />
@@ -137,7 +150,7 @@ export default function StudiesPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
                           s.type === 'bible-study' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'
                         }`}>
@@ -157,10 +170,7 @@ export default function StudiesPage() {
                         </div>
                       )}
                       {s.address && (
-                        <button
-                          onClick={() => openInMaps(s.address)}
-                          className="flex items-center gap-1 mt-0.5 group"
-                        >
+                        <button onClick={() => openInMaps(s.address)} className="flex items-center gap-1 mt-0.5 group">
                           <MapPin className="h-3 w-3 text-primary" />
                           <span className="text-[11px] text-primary group-hover:underline">{s.address}</span>
                           <ExternalLink className="h-2.5 w-2.5 text-primary/60" />
@@ -169,7 +179,16 @@ export default function StudiesPage() {
                       {s.lastVisitDate && (
                         <div className="flex items-center gap-1 mt-0.5">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[11px] text-muted-foreground">{new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}</span>
+                          <span className="text-[11px] text-muted-foreground">Huling Bisita: {new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      {s.nextVisitDate && (
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <Clock className="h-3 w-3 text-primary" />
+                          <span className="text-[11px] text-primary font-medium">
+                            Susunod: {new Date(s.nextVisitDate + 'T12:00:00').toLocaleDateString()}
+                            {s.nextVisitTime && ` ${s.nextVisitTime}`}
+                          </span>
                         </div>
                       )}
                       {s.notes && (
@@ -178,8 +197,22 @@ export default function StudiesPage() {
                           <span className="text-[11px] text-muted-foreground line-clamp-2">{s.notes}</span>
                         </div>
                       )}
+                      {/* Visit history count */}
+                      {(s.visitHistory?.length || 0) > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <History className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">{s.visitHistory!.length} visit(s) recorded</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-1 ml-2">
+                      <button
+                        onClick={() => { setVisitHistoryStudyId(s.id); setVisitHistoryDialogOpen(true); }}
+                        className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                        title="Add visit"
+                      >
+                        <Plus className="h-3.5 w-3.5 text-primary" />
+                      </button>
                       <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
                         <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
@@ -250,16 +283,21 @@ export default function StudiesPage() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Address</label>
-              <Input
-                value={form.address}
-                onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
-                className="h-9"
-                placeholder="e.g. 123 Main St, City"
-              />
+              <Input value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} className="h-9" placeholder="e.g. 123 Main St, City" />
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('studies.lastVisit', language)}</label>
               <Input type="date" value={form.lastVisitDate} onChange={e => setForm(p => ({ ...p, lastVisitDate: e.target.value }))} className="h-9" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Susunod na Bisita</label>
+                <Input type="date" value={form.nextVisitDate} onChange={e => setForm(p => ({ ...p, nextVisitDate: e.target.value }))} className="h-9" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Oras</label>
+                <Input type="time" value={form.nextVisitTime} onChange={e => setForm(p => ({ ...p, nextVisitTime: e.target.value }))} className="h-9" />
+              </div>
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('studies.notes', language)}</label>
@@ -273,6 +311,37 @@ export default function StudiesPage() {
             </Button>
             <Button className="flex-1" onClick={handleSave} disabled={!form.name.trim()}>
               {t('common.save', language)}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Visit History Dialog */}
+      <Dialog open={visitHistoryDialogOpen} onOpenChange={setVisitHistoryDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Idagdag ang Visit</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Ire-record ito bilang bagong bisita at ia-update ang huling bisita date.
+            </p>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Notes sa Bisita</label>
+              <Textarea
+                value={visitHistoryNotes}
+                onChange={e => setVisitHistoryNotes(e.target.value)}
+                className="min-h-[60px]"
+                placeholder="Ano ang pinag-aralan..."
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setVisitHistoryDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="flex-1" onClick={handleAddVisitHistory}>
+              I-save
             </Button>
           </div>
         </DialogContent>

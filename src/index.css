@@ -6,44 +6,44 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 210 20% 98%;
+    --foreground: 215 25% 20%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 0 0% 0%;
+    --card: 210 25% 97%;
+    --card-foreground: 215 25% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 215 25% 20%;
 
-    --primary: 300 100% 25%;
+    --primary: 210 90% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 94%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 210 15% 93%;
+    --secondary-foreground: 215 20% 25%;
 
-    --muted: 0 0% 92%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 210 15% 92%;
+    --muted-foreground: 215 10% 46%;
 
-    --accent: 300 60% 70%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 195 70% 55%;
+    --accent-foreground: 215 25% 15%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
-    --ring: 300 100% 25%;
+    --border: 210 15% 89%;
+    --input: 210 15% 89%;
+    --ring: 210 90% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 300 100% 25%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 215 20% 25%;
+    --sidebar-primary: 210 90% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 10%;
-    --sidebar-border: 0 0% 91%;
-    --sidebar-ring: 300 100% 25%;
+    --sidebar-accent: 210 15% 94%;
+    --sidebar-accent-foreground: 215 20% 15%;
+    --sidebar-border: 210 15% 90%;
+    --sidebar-ring: 210 90% 50%;
 
     --success: 145 65% 42%;
     --success-foreground: 0 0% 100%;
@@ -51,7 +51,49 @@
     --warning-foreground: 0 0% 100%;
   }
 
-  /* Dark mode removed per design spec - white/black/purple only */
+  .dark {
+    --background: 220 20% 10%;
+    --foreground: 210 20% 90%;
+
+    --card: 220 18% 13%;
+    --card-foreground: 210 20% 90%;
+
+    --popover: 220 18% 13%;
+    --popover-foreground: 210 20% 90%;
+
+    --primary: 210 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 210 15% 80%;
+
+    --muted: 220 15% 18%;
+    --muted-foreground: 210 10% 55%;
+
+    --accent: 195 65% 50%;
+    --accent-foreground: 210 20% 95%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 210 85% 55%;
+
+    --sidebar-background: 220 18% 12%;
+    --sidebar-foreground: 210 15% 80%;
+    --sidebar-primary: 210 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 16%;
+    --sidebar-accent-foreground: 210 15% 85%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 210 85% 55%;
+
+    --success: 145 55% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 80% 50%;
+    --warning-foreground: 0 0% 100%;
+  }
 }
 
 @layer base {
@@ -90,6 +132,8 @@
 .bible-content {
   color: hsl(var(--foreground));
   word-wrap: break-word;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .bible-content h1,
@@ -166,11 +210,13 @@
   background-color: hsl(var(--primary) / 0.15);
 }
 
-/* User highlights */
+/* User highlights - allow selection on highlighted text */
 .bible-content mark.user-highlight {
   color: inherit;
   padding: 0 1px;
   border-radius: 2px;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Verse emphasis effect */

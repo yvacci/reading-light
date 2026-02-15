@@ -1,8 +1,9 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
+import { usePioneer } from '@/contexts/PioneerContext';
 import { exportBackup, importBackup } from '@/lib/backup-service';
 import { t } from '@/lib/i18n';
 import { Switch } from '@/components/ui/switch';
@@ -23,7 +24,8 @@ import {
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { fontSize, setFontSize, language, resetProgress } = useReadingProgress();
+  const { fontSize, setFontSize, language, darkMode, setDarkMode, resetProgress } = useReadingProgress();
+  const { resetEntries } = usePioneer();
   const {
     isSupported,
     permissionState,
@@ -41,6 +43,15 @@ export default function SettingsPage() {
       await enableReminders();
     } else {
       disableReminders();
+    }
+  };
+
+  const handleDarkModeToggle = (checked: boolean) => {
+    setDarkMode(checked);
+    if (checked) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   };
 
@@ -67,6 +78,12 @@ export default function SettingsPage() {
     }
   };
 
+  const handleFullReset = () => {
+    resetProgress();
+    resetEntries();
+    toast.success('Na-reset ang lahat ng data.');
+  };
+
   return (
     <div className="min-h-screen pb-20">
       <div className="px-5 pt-12 pb-4 safe-top">
@@ -91,6 +108,16 @@ export default function SettingsPage() {
                 min={12}
                 max={24}
                 step={1}
+              />
+            </div>
+            <div className="flex items-center justify-between py-3.5">
+              <div className="flex items-center gap-3">
+                {darkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+                <span className="text-sm text-foreground">Dark Mode</span>
+              </div>
+              <Switch
+                checked={darkMode}
+                onCheckedChange={handleDarkModeToggle}
               />
             </div>
           </div>
@@ -206,7 +233,7 @@ export default function SettingsPage() {
                   <RotateCcw className="h-5 w-5 text-destructive" />
                   <div className="flex-1">
                     <span className="text-sm text-destructive">{t('settings.resetProgress', language)}</span>
-                    <p className="text-[10px] text-muted-foreground">{t('settings.resetDesc', language)}</p>
+                    <p className="text-[10px] text-muted-foreground">I-reset ang Home, Bible, at Pioneer data</p>
                   </div>
                 </button>
               </AlertDialogTrigger>
@@ -214,13 +241,13 @@ export default function SettingsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t('settings.resetConfirm', language)}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('settings.resetConfirmDesc', language)}
+                    Ire-reset nito ang reading progress, pioneer entries, at iba pang data. Hindi na ito maibabalik.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t('common.cancel', language)}</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={resetProgress}
+                    onClick={handleFullReset}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {t('settings.resetProgress', language)}
@@ -238,7 +265,7 @@ export default function SettingsPage() {
             <Info className="h-5 w-5 text-primary mt-0.5" />
             <div>
               <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-              <p className="text-[10px] text-muted-foreground">Version 2.1.0</p>
+              <p className="text-[10px] text-muted-foreground">Version 2.2.0</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {t('settings.aboutDesc', language)}
               </p>
