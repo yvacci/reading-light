@@ -144,6 +144,11 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                                 {visit.type === 'bible-study' ? 'Bible Study' : 'Return Visit'}
                                 {daysSince !== null && ` · ${daysSince} araw na ang nakakaraan`}
                               </p>
+                              {visit.nextSessionDate && (
+                                <p className="text-[10px] text-primary font-medium mt-0.5">
+                                  Susunod: {new Date(visit.nextSessionDate + 'T12:00:00').toLocaleDateString()}{visit.nextSessionTime ? ` ${visit.nextSessionTime}` : ''}
+                                </p>
+                              )}
                               {visit.address && (
                                 <button
                                   onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
