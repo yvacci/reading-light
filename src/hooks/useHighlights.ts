@@ -18,9 +18,8 @@ export const HIGHLIGHT_COLORS = [
   { name: 'Yellow', value: '#FFFF99' },
   { name: 'Green', value: '#90EE90' },
   { name: 'Blue', value: '#ADD8E6' },
-  { name: 'Purple', value: '#DDA0DD' },
-  { name: 'Pink', value: '#FFB6C1' },
-  { name: 'Orange', value: '#FFDAB9' },
+  { name: 'Red', value: '#FFB6C1' },
+  { name: 'Violet', value: '#DDA0DD' },
 ] as const;
 
 function loadHighlights(): Highlight[] {

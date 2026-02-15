@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 0%;
 
-    --primary: 271 91% 65%;
+    --primary: 300 100% 25%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 94%;
@@ -24,7 +24,7 @@
     --muted: 0 0% 92%;
     --muted-foreground: 0 0% 40%;
 
-    --accent: 271 80% 75%;
+    --accent: 300 60% 70%;
     --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
@@ -32,24 +32,26 @@
 
     --border: 0 0% 88%;
     --input: 0 0% 88%;
-    --ring: 271 91% 65%;
+    --ring: 300 100% 25%;
 
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 271 91% 65%;
+    --sidebar-primary: 300 100% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 95%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 91%;
-    --sidebar-ring: 271 91% 65%;
+    --sidebar-ring: 300 100% 25%;
 
     --success: 145 65% 42%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
   }
+
+  /* Dark mode removed per design spec - white/black/purple only */
 }
 
 @layer base {
@@ -58,18 +60,10 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.01em;
   }
 
   .safe-top {
@@ -101,11 +95,10 @@
 .bible-content h1,
 .bible-content h2,
 .bible-content h3 {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 700;
   margin: 1rem 0 0.5rem;
   color: hsl(var(--foreground));
-  letter-spacing: -0.01em;
 }
 
 .bible-content h1 { font-size: 1.3em; }
@@ -115,14 +108,6 @@
 .bible-content p {
   margin-bottom: 0.4em;
   text-align: justify;
-  line-height: 1.8;
-}
-
-/* Custom selection in reader - prevent native context menu */
-.bible-reader-container {
-  -webkit-user-select: text;
-  user-select: text;
-  -webkit-touch-callout: none;
 }
 
 .bible-content .verse-num,

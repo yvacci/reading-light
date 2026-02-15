@@ -153,7 +153,7 @@ export default function DailyTextPage() {
           <Calendar className="h-4 w-4 text-primary" />
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">{t('dailyText.title')}</p>
         </div>
-        <h1 className="mt-1 text-xl font-bold text-foreground tracking-tight">
+        <h1 className="mt-1 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
           {t('dailyText.pageSubtitle')}
         </h1>
       </div>
@@ -205,6 +205,7 @@ export default function DailyTextPage() {
               {dailyText.title && (
                 <p
                   className="text-[15px] font-semibold text-foreground text-center leading-relaxed daily-text-content"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
                   onClick={handleContentClick}
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(`\u201C${makeReferencesClickable(dailyText.title)}\u201D`) }}
                 />
@@ -215,7 +216,7 @@ export default function DailyTextPage() {
             <div className="px-5 py-5">
               <div
                 className="text-[13px] text-muted-foreground leading-[1.85] daily-text-content"
-                style={{ textAlign: 'justify' }}
+                style={{ textAlign: 'justify', fontFamily: "'Inter', sans-serif" }}
                 onClick={handleContentClick}
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
               />
@@ -261,7 +262,8 @@ export default function DailyTextPage() {
                                   {iv.error ? (
                                     <p className="text-[11px] text-destructive italic">Hindi ma-load ang talata.</p>
                                   ) : (
-                                    <p className="text-[12px] text-muted-foreground leading-[1.8] whitespace-pre-line">
+                                    <p className="text-[12px] text-muted-foreground leading-[1.8] whitespace-pre-line"
+                                       style={{ fontFamily: "'Inter', sans-serif" }}>
                                       {iv.text || 'Walang nahanap na teksto.'}
                                     </p>
                                   )}

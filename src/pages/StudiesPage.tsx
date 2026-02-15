@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History } from 'lucide-react';
-import { useStudies, StudyEntry, type VisitHistoryEntry } from '@/contexts/StudiesContext';
+import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink } from 'lucide-react';
+import { useStudies, StudyEntry } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
@@ -16,26 +16,24 @@ import {
 
 export default function StudiesPage() {
   const { language } = useReadingProgress();
-  const { studies, addStudy, updateStudy, deleteStudy, addVisitHistory } = useStudies();
+  const { studies, addStudy, updateStudy, deleteStudy } = useStudies();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'bible-study' | 'return-visit'>('all');
   const [form, setForm] = useState({
-    name: '', contactInfo: '', address: '', lastVisitDate: '', nextSessionDate: '', nextSessionTime: '', notes: '', type: 'bible-study' as 'bible-study' | 'return-visit',
+    name: '', contactInfo: '', address: '', lastVisitDate: '', notes: '', type: 'bible-study' as 'bible-study' | 'return-visit',
   });
-  const [historyDialogId, setHistoryDialogId] = useState<string | null>(null);
-  const [historyForm, setHistoryForm] = useState({ date: '', notes: '', outcome: '' });
 
   const openNew = () => {
     setEditingId(null);
-    setForm({ name: '', contactInfo: '', address: '', lastVisitDate: new Date().toISOString().slice(0, 10), nextSessionDate: '', nextSessionTime: '', notes: '', type: 'bible-study' });
+    setForm({ name: '', contactInfo: '', address: '', lastVisitDate: new Date().toISOString().slice(0, 10), notes: '', type: 'bible-study' });
     setDialogOpen(true);
   };
 
   const openEdit = (s: StudyEntry) => {
     setEditingId(s.id);
-    setForm({ name: s.name, contactInfo: s.contactInfo, address: s.address || '', lastVisitDate: s.lastVisitDate, nextSessionDate: s.nextSessionDate || '', nextSessionTime: s.nextSessionTime || '', notes: s.notes, type: s.type });
+    setForm({ name: s.name, contactInfo: s.contactInfo, address: s.address || '', lastVisitDate: s.lastVisitDate, notes: s.notes, type: s.type });
     setDialogOpen(true);
   };
 
@@ -173,14 +171,6 @@ export default function StudiesPage() {
                           <Calendar className="h-3 w-3 text-muted-foreground" />
                           <span className="text-[11px] text-muted-foreground">{new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}</span>
                         </div>
-                       )}
-                      {s.nextSessionDate && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Clock className="h-3 w-3 text-primary" />
-                          <span className="text-[11px] text-primary font-medium">
-                            Susunod: {new Date(s.nextSessionDate + 'T12:00:00').toLocaleDateString()}{s.nextSessionTime ? ` ${s.nextSessionTime}` : ''}
-                          </span>
-                        </div>
                       )}
                       {s.notes && (
                         <div className="flex items-start gap-1 mt-1">
@@ -190,9 +180,6 @@ export default function StudiesPage() {
                       )}
                     </div>
                     <div className="flex gap-1 ml-2">
-                      <button onClick={() => { setHistoryDialogId(s.id); setHistoryForm({ date: new Date().toISOString().slice(0, 10), notes: '', outcome: '' }); }} className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors" title="Visit History">
-                        <History className="h-3.5 w-3.5 text-primary" />
-                      </button>
                       <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
                         <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
@@ -275,13 +262,6 @@ export default function StudiesPage() {
               <Input type="date" value={form.lastVisitDate} onChange={e => setForm(p => ({ ...p, lastVisitDate: e.target.value }))} className="h-9" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Susunod na Session</label>
-              <div className="flex gap-2">
-                <Input type="date" value={form.nextSessionDate} onChange={e => setForm(p => ({ ...p, nextSessionDate: e.target.value }))} className="h-9 flex-1" />
-                <Input type="time" value={form.nextSessionTime} onChange={e => setForm(p => ({ ...p, nextSessionTime: e.target.value }))} className="h-9 w-28" />
-              </div>
-            </div>
-            <div>
               <label className="text-xs text-muted-foreground mb-1 block">{t('studies.notes', language)}</label>
               <Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="min-h-[60px]" />
             </div>
@@ -293,66 +273,6 @@ export default function StudiesPage() {
             </Button>
             <Button className="flex-1" onClick={handleSave} disabled={!form.name.trim()}>
               {t('common.save', language)}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Visit History Dialog */}
-      <Dialog open={!!historyDialogId} onOpenChange={(open) => !open && setHistoryDialogId(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-sm flex items-center gap-2">
-              <History className="h-4 w-4 text-primary" />
-              Kasaysayan ng Pagdalaw
-            </DialogTitle>
-          </DialogHeader>
-
-          {historyDialogId && (() => {
-            const study = studies.find(s => s.id === historyDialogId);
-            if (!study) return null;
-            return (
-              <div className="space-y-3">
-                <p className="text-xs font-semibold text-foreground">{study.name}</p>
-
-                {/* Existing history */}
-                {study.visitHistory && study.visitHistory.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto space-y-1.5">
-                    {study.visitHistory.slice().reverse().map((h, i) => (
-                      <div key={i} className="rounded-lg bg-muted/50 px-3 py-2">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-3 w-3 text-primary" />
-                          <span className="text-[11px] font-medium text-foreground">{new Date(h.date + 'T12:00:00').toLocaleDateString()}</span>
-                          {h.outcome && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{h.outcome}</span>}
-                        </div>
-                        {h.notes && <p className="text-[10px] text-muted-foreground mt-0.5">{h.notes}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add new visit */}
-                <div className="border-t border-border pt-3 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Magdagdag ng Pagdalaw</p>
-                  <Input type="date" value={historyForm.date} onChange={e => setHistoryForm(p => ({ ...p, date: e.target.value }))} className="h-9" />
-                  <Input placeholder="Resulta (e.g. Nag-aral, Absent)" value={historyForm.outcome} onChange={e => setHistoryForm(p => ({ ...p, outcome: e.target.value }))} className="h-9" />
-                  <Textarea placeholder="Mga tala..." value={historyForm.notes} onChange={e => setHistoryForm(p => ({ ...p, notes: e.target.value }))} className="min-h-[50px]" />
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="flex gap-2 mt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setHistoryDialogId(null)}>
-              Isara
-            </Button>
-            <Button className="flex-1" onClick={() => {
-              if (historyDialogId && historyForm.date) {
-                addVisitHistory(historyDialogId, historyForm);
-                setHistoryDialogId(null);
-              }
-            }} disabled={!historyForm.date}>
-              I-save
             </Button>
           </div>
         </DialogContent>
