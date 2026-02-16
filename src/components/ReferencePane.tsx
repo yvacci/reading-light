@@ -245,7 +245,7 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                   </div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-muted-foreground">Oras ng Ministeryo</span>
-                    <span className={`text-sm font-bold ${totalHours >= TARGET ? 'text-[hsl(145,65%,42%)]' : 'text-primary'}`}>
+                    <span className={`text-sm font-bold ${totalHours >= TARGET ? 'text-success' : 'text-primary'}`}>
                       {totalHours} / {TARGET}
                     </span>
                   </div>

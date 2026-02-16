@@ -98,7 +98,7 @@ export default function BibleSidebar() {
                   <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] text-muted-foreground">Oras</span>
-                      <span className={`text-xs font-bold ${totalHours >= TARGET ? 'text-[hsl(145,65%,42%)]' : 'text-primary'}`}>{totalHours}/{TARGET}</span>
+                      <span className={`text-xs font-bold ${totalHours >= TARGET ? 'text-success' : 'text-primary'}`}>{totalHours}/{TARGET}</span>
                     </div>
                     <Progress value={hoursPercent} className="h-1.5" />
                   </div>

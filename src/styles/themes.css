@@ -135,76 +135,6 @@
 }
 
 /* ========================================
-   THEME: NEO-BRUTALIST — Bold (Softened)
-   Neon green #39FF14, yellow #FFFF00, hot pink #FF69B4
-   Soft borders only, no thick/solid outlines
-   ======================================== */
-.theme-neo-brutalist {
-  --background: 0 0% 97%;
-  --foreground: 0 0% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 12%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 12%;
-  --primary: 110 100% 54%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 60 100% 50%;
-  --secondary-foreground: 0 0% 8%;
-  --muted: 0 0% 94%;
-  --muted-foreground: 0 0% 40%;
-  --accent: 330 100% 71%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 85% 52%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 93%;
-  --input: 0 0% 93%;
-  --ring: 110 100% 54%;
-  --radius: 0.75rem;
-  --success: 110 100% 54%;
-  --success-foreground: 0 0% 0%;
-  --warning: 60 100% 50%;
-  --warning-foreground: 0 0% 0%;
-  --sidebar-background: 0 0% 97%;
-  --sidebar-foreground: 0 0% 12%;
-  --sidebar-primary: 110 100% 54%;
-  --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 60 100% 80%;
-  --sidebar-accent-foreground: 0 0% 8%;
-  --sidebar-border: 0 0% 93%;
-  --sidebar-ring: 110 100% 54%;
-}
-
-.theme-neo-brutalist.dark {
-  --background: 0 0% 7%;
-  --foreground: 0 0% 92%;
-  --card: 0 0% 11%;
-  --card-foreground: 0 0% 92%;
-  --popover: 0 0% 11%;
-  --popover-foreground: 0 0% 92%;
-  --primary: 110 100% 54%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 60 80% 40%;
-  --secondary-foreground: 0 0% 95%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 330 90% 65%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 75% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 16%;
-  --input: 0 0% 16%;
-  --ring: 110 100% 54%;
-  --sidebar-background: 0 0% 9%;
-  --sidebar-foreground: 0 0% 92%;
-  --sidebar-primary: 110 100% 54%;
-  --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 60 60% 30%;
-  --sidebar-accent-foreground: 0 0% 95%;
-  --sidebar-border: 0 0% 16%;
-  --sidebar-ring: 110 100% 54%;
-}
-
-/* ========================================
    THEME: SOFT MINIMALIST — Calm & Organic
    sage #A7C957, sand #F4EBD0, cream #FFF8E8, terracotta #CD5C5C
    ======================================== */
@@ -364,8 +294,6 @@
   background-image: linear-gradient(135deg, hsl(270 30% 10% / 0.7) 0%, hsl(280 20% 14% / 0.5) 50%, hsl(260 25% 8% / 0.7) 100%);
 }
 
-/* Neo-Brutalist: flat solid — no texture */
-
 /* Soft Minimalist: subtle linen texture */
 .theme-soft-minimalist {
   background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23000' stroke-width='0.3' opacity='.025'/%3E%3C/svg%3E");
@@ -387,12 +315,10 @@
    All themes: no thick/heavy borders, only soft edges
    ======================================== */
 
-/* Global: soften all borders to 1px low-opacity */
 [class*="border"] {
   border-width: 1px;
 }
 
-/* Global: soften card shadows */
 .theme-bento [class*="shadow"],
 .theme-glassmorphic [class*="shadow"],
 .theme-soft-minimalist [class*="shadow"],
@@ -428,22 +354,6 @@
   border: 1px solid hsl(var(--border) / 0.25);
 }
 
-/* Neo-Brutalist: gentle shadow instead of thick borders */
-.theme-neo-brutalist [class*="shadow"] {
-  box-shadow: 2px 2px 0px 0px hsl(var(--foreground) / 0.08);
-}
-.theme-neo-brutalist.dark [class*="shadow"] {
-  box-shadow: 2px 2px 0px 0px hsl(var(--foreground) / 0.06);
-}
-
-/* Neo-Brutalist: bold typography */
-.theme-neo-brutalist h1,
-.theme-neo-brutalist h2,
-.theme-neo-brutalist h3 {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-
 /* Cottagecore: serif headings */
 .theme-cottagecore h1,
 .theme-cottagecore h2,
@@ -454,7 +364,6 @@
 
 /* ========================================
    GLOBAL SOFT DIVIDERS
-   Replace divide-border with softer opacity
    ======================================== */
 [class*="divide-border"] > * + * {
   border-color: hsl(var(--border) / 0.6);

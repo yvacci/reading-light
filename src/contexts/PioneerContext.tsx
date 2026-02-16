@@ -6,6 +6,7 @@ export interface PioneerEntry {
   bibleStudies: number;
   returnVisits: number;
   witnessingHours: number;
+  otherWitnessingHours: number;
 }
 
 type PioneerMap = Record<string, PioneerEntry>;
@@ -21,6 +22,7 @@ interface PioneerContextType {
     bibleStudies: number;
     returnVisits: number;
     witnessingHours: number;
+    otherWitnessingHours: number;
     daysWithData: number;
     daysInMonth: number;
   };
@@ -31,7 +33,16 @@ const STORAGE_KEY = 'nwt-pioneer-data';
 function loadEntries(): PioneerMap {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Migrate old entries that don't have otherWitnessingHours
+      for (const key of Object.keys(parsed)) {
+        if (parsed[key].otherWitnessingHours === undefined) {
+          parsed[key].otherWitnessingHours = 0;
+        }
+      }
+      return parsed;
+    }
   } catch {}
   return {};
 }
@@ -65,21 +76,22 @@ export function PioneerProvider({ children }: { children: React.ReactNode }) {
 
   const getMonthSummary = useCallback((year: number, month: number) => {
     const daysInMonth = new Date(year, month, 0).getDate();
-    let totalHours = 0, bibleStudies = 0, returnVisits = 0, witnessingHours = 0, daysWithData = 0;
+    let totalHours = 0, bibleStudies = 0, returnVisits = 0, witnessingHours = 0, otherWitnessingHours = 0, daysWithData = 0;
 
     for (let d = 1; d <= daysInMonth; d++) {
       const key = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const e = entries[key];
       if (e) {
         daysWithData++;
-        totalHours += e.ministryHours + e.witnessingHours;
+        totalHours += e.ministryHours + e.witnessingHours + (e.otherWitnessingHours || 0);
         bibleStudies += e.bibleStudies;
         returnVisits += e.returnVisits;
         witnessingHours += e.witnessingHours;
+        otherWitnessingHours += (e.otherWitnessingHours || 0);
       }
     }
 
-    return { totalHours, bibleStudies, returnVisits, witnessingHours, daysWithData, daysInMonth };
+    return { totalHours, bibleStudies, returnVisits, witnessingHours, otherWitnessingHours, daysWithData, daysInMonth };
   }, [entries]);
 
   return (
