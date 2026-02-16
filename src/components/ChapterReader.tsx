@@ -20,6 +20,7 @@ import VerseActionPopup from '@/components/VerseActionPopup';
 import { Button } from '@/components/ui/button';
 import ReferencePane from '@/components/ReferencePane';
 import ReaderBottomToolbar from '@/components/ReaderBottomToolbar';
+import ReaderSidebar from '@/components/ReaderSidebar';
 
 interface Props {
   bookId: number;
@@ -325,7 +326,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   };
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 flex">
+      <div className="flex-1 min-w-0">
       <PageHeader
         title={`${localizedName} ${chapter}`}
         showBack
@@ -475,9 +477,11 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         quickLinkUrl={refPaneUrl}
       />
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-40 safe-bottom md:right-[320px]">
         <ReaderBottomToolbar />
       </div>
+      </div>
+      <ReaderSidebar footnotes={footnotes} highlightedFootnoteId={highlightedFootnote} />
     </div>
   );
 }
