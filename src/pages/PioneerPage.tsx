@@ -10,7 +10,7 @@ import PageHeader from '@/components/PageHeader';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 function StepperField({ label, value, onChange, step = 1, max = 99, icon }: {
   label: string;
@@ -112,8 +112,8 @@ function ServiceYearCard({ entries, language }: { entries: Record<string, Pionee
   );
 }
 
-/** Sidebar for Pioneer page — shows Bible studies and return visits on tablet+ */
-function PioneerSidebar() {
+/** Inline studies & visits panel for the right column on tablet+ */
+function StudiesVisitsPanel({ language }: { language: string }) {
   const { studies, getUpcomingVisits } = useStudies();
 
   const bibleStudies = studies.filter(s => s.type === 'bible-study');
@@ -125,131 +125,127 @@ function PioneerSidebar() {
     .slice(0, 5);
 
   return (
-    <aside className="hidden md:flex flex-col w-[320px] shrink-0 border-l border-border/60 bg-card/50 sticky top-0 h-screen">
-      <ScrollArea className="flex-1">
-        <div className="p-5 space-y-5">
-          {/* Bible Studies */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="h-4 w-4 text-primary" />
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Bible Study ({bibleStudies.length})</h3>
-            </div>
-            {bibleStudies.length === 0 ? (
-              <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
-                <p className="text-[11px] text-muted-foreground">Wala pang Bible Study</p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border/40 bg-card divide-y divide-border/40 overflow-hidden">
-                {bibleStudies.map(s => (
-                  <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                    <BookOpen className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
-                      {s.lastVisitDate && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Huling bisita: {new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}
-                        </p>
-                      )}
-                      {s.address && (
-                        <button
-                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`, '_blank')}
-                          className="flex items-center gap-1 mt-0.5"
-                        >
-                          <MapPin className="h-2.5 w-2.5 text-primary" />
-                          <span className="text-[10px] text-primary hover:underline truncate">{s.address}</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Return Visits */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-primary" />
-              <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Return Visit ({returnVisits.length})</h3>
-            </div>
-            {returnVisits.length === 0 ? (
-              <div className="rounded-xl border border-border/40 bg-card p-4 text-center">
-                <p className="text-[11px] text-muted-foreground">Wala pang Return Visit</p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border/40 bg-card divide-y divide-border/40 overflow-hidden">
-                {returnVisits.map(s => (
-                  <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                    <Users className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
-                      {s.lastVisitDate && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Huling bisita: {new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Needs Visit */}
-          {upcomingVisits.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Bell className="h-4 w-4 text-destructive" />
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Kailangang Dalawin</h3>
-              </div>
-              <div className="rounded-xl border border-border/40 bg-card divide-y divide-border/40 overflow-hidden">
-                {upcomingVisits.map(visit => {
-                  const daysSince = visit.lastVisitDate
-                    ? Math.floor((Date.now() - new Date(visit.lastVisitDate + 'T12:00:00').getTime()) / 86400000)
-                    : null;
-                  return (
-                    <div key={visit.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                      <Users className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {visit.type === 'bible-study' ? 'BS' : 'RV'}
-                          {daysSince !== null && ` · ${daysSince}d ago`}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Scheduled Visits */}
-          {scheduledVisits.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Naka-iskedyul</h3>
-              </div>
-              <div className="rounded-xl border border-border/40 bg-card divide-y divide-border/40 overflow-hidden">
-                {scheduledVisits.map(visit => (
-                  <div key={visit.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                    <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-semibold text-foreground truncate">{visit.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(visit.nextVisitDate! + 'T12:00:00').toLocaleDateString()}
-                        {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+    <div className="space-y-4">
+      {/* Bible Studies */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <BookOpen className="h-4 w-4 text-primary" />
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Bible Study ({bibleStudies.length})</h3>
         </div>
-      </ScrollArea>
-    </aside>
+        {bibleStudies.length === 0 ? (
+          <div className="rounded-xl bg-muted/30 p-3 text-center">
+            <p className="text-[11px] text-muted-foreground">Wala pang Bible Study</p>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
+            {bibleStudies.map(s => (
+              <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
+                  {s.lastVisitDate && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Huling bisita: {new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}
+                    </p>
+                  )}
+                  {s.address && (
+                    <button
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`, '_blank')}
+                      className="flex items-center gap-1 mt-0.5"
+                    >
+                      <MapPin className="h-2.5 w-2.5 text-primary" />
+                      <span className="text-[10px] text-primary hover:underline truncate">{s.address}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Return Visits */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Users className="h-4 w-4 text-primary" />
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Return Visit ({returnVisits.length})</h3>
+        </div>
+        {returnVisits.length === 0 ? (
+          <div className="rounded-xl bg-muted/30 p-3 text-center">
+            <p className="text-[11px] text-muted-foreground">Wala pang Return Visit</p>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
+            {returnVisits.map(s => (
+              <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                <Users className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
+                  {s.lastVisitDate && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Huling bisita: {new Date(s.lastVisitDate + 'T12:00:00').toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Needs Visit */}
+      {upcomingVisits.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Bell className="h-4 w-4 text-destructive" />
+            <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Kailangang Dalawin</h3>
+          </div>
+          <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
+            {upcomingVisits.map(visit => {
+              const daysSince = visit.lastVisitDate
+                ? Math.floor((Date.now() - new Date(visit.lastVisitDate + 'T12:00:00').getTime()) / 86400000)
+                : null;
+              return (
+                <div key={visit.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                  <Users className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {visit.type === 'bible-study' ? 'BS' : 'RV'}
+                      {daysSince !== null && ` · ${daysSince}d ago`}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Scheduled Visits */}
+      {scheduledVisits.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="h-4 w-4 text-primary" />
+            <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Naka-iskedyul</h3>
+          </div>
+          <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
+            {scheduledVisits.map(visit => (
+              <div key={visit.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-foreground truncate">{visit.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(visit.nextVisitDate! + 'T12:00:00').toLocaleDateString()}
+                    {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -315,7 +311,7 @@ export default function PioneerPage() {
   const hoursPercent = Math.min(100, Math.round((totalHours / TARGET_HOURS) * 100));
 
   return (
-    <div className="min-h-screen pb-20 flex">
+    <div className="min-h-screen pb-20">
       <div className="flex-1 min-w-0">
         <PageHeader title={t('pioneer.title', language)} subtitle={t('pioneer.subtitle', language)} />
 
@@ -372,7 +368,7 @@ export default function PioneerPage() {
             <ServiceYearCard entries={entries} language={language} />
           </div>
 
-          {/* RIGHT COLUMN — Monthly Summary + Studies Link */}
+          {/* RIGHT COLUMN — Monthly Summary + Studies & Visits */}
           <div className="space-y-4 mt-4 md:mt-0">
             {/* Monthly Summary */}
             <motion.div
@@ -452,6 +448,16 @@ export default function PioneerPage() {
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </motion.button>
+
+            {/* Studies & Visits inline on tablet+ */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="hidden md:block rounded-2xl border border-border bg-card p-4"
+            >
+              <StudiesVisitsPanel language={language} />
+            </motion.div>
           </div>
         </div>
 
@@ -510,7 +516,6 @@ export default function PioneerPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <PioneerSidebar />
     </div>
   );
 }
