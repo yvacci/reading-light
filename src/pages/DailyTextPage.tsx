@@ -201,8 +201,10 @@ export default function DailyTextPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-5">
+      {/* Content — split-pane on md+ */}
+      <div className="px-5 max-w-5xl mx-auto md:grid md:grid-cols-[1fr_340px] md:gap-6">
+        {/* Main content */}
+        <div>
         {loading ? (
           <div className="py-16 flex flex-col items-center gap-3">
             <Loader2 className="h-5 w-5 text-primary animate-spin" />
@@ -241,8 +243,6 @@ export default function DailyTextPage() {
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
               />
             </div>
-
-            {/* Verses are now shown only in the Reference Pane - no inline section */}
           </motion.div>
         ) : (
           <div className="py-16 text-center rounded-2xl border border-border bg-card">
@@ -251,6 +251,33 @@ export default function DailyTextPage() {
             <p className="text-[11px] text-muted-foreground/70 mt-1">Kailangan ng internet connection para makuha ang teksto.</p>
           </div>
         )}
+        </div>
+
+        {/* Right sidebar — inline verse references (visible on md+) */}
+        <div className="hidden md:block">
+          {inlineVerses.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-4 sticky top-4 space-y-3 max-h-[calc(100vh-120px)] overflow-y-auto">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary">Sanggunian</p>
+              {inlineVerses.map((iv, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    setRefPaneVerse({ bookId: iv.ref.bookId, chapter: iv.ref.chapter, verse: iv.ref.verse, text: iv.text || iv.label });
+                    setRefPaneOpen(true);
+                  }}
+                  className="block w-full text-left rounded-xl bg-muted/50 p-3 hover:bg-muted transition-colors"
+                >
+                  <p className="text-[11px] font-semibold text-foreground">{iv.label}</p>
+                  {iv.loading ? (
+                    <Loader2 className="h-3 w-3 text-primary animate-spin mt-1" />
+                  ) : iv.text ? (
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-3 leading-relaxed">{iv.text}</p>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <ReferencePane
