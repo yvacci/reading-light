@@ -1,8 +1,10 @@
 /**
  * Export and import all app data for backup/restore.
  */
+import { z } from 'zod';
 
 const BACKUP_VERSION = 1;
+const MAX_BACKUP_SIZE = 10 * 1024 * 1024; // 10MB
 
 // All localStorage keys used by the app
 const LOCAL_STORAGE_KEYS = [
@@ -72,15 +74,40 @@ export function exportBackup(): void {
  * Import app data from a backup JSON file. Returns the number of keys restored.
  */
 export async function importBackup(file: File): Promise<number> {
-  const text = await file.text();
-  const data: BackupData = JSON.parse(text);
+  if (file.size > MAX_BACKUP_SIZE) {
+    throw new Error('Backup file too large (max 10MB)');
+  }
 
-  if (!data.version || !data.localStorage) {
-    throw new Error('Invalid backup file format');
+  const text = await file.text();
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('Invalid JSON format');
+  }
+
+  const BackupSchema = z.object({
+    version: z.number().int().min(1),
+    timestamp: z.string(),
+    localStorage: z.record(z.string(), z.string()),
+  });
+
+  const result = BackupSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error('Invalid backup file structure');
+  }
+
+  const data = result.data;
+
+  // Only allow keys with the app prefix
+  const entries = Object.entries(data.localStorage).filter(([key]) => key.startsWith('nwt-'));
+  if (entries.length === 0) {
+    throw new Error('Backup contains no valid app data');
   }
 
   let count = 0;
-  for (const [key, value] of Object.entries(data.localStorage)) {
+  for (const [key, value] of entries) {
     localStorage.setItem(key, value);
     count++;
   }
