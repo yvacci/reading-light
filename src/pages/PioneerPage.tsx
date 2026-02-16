@@ -165,16 +165,16 @@ function PriorityBreakdown({ totalFS, totalBS, totalRV, totalPW, totalOther }: {
       {/* Tree Health Indicator */}
       <div className="flex items-center gap-3 pt-2 border-t border-border/40">
         <div className="text-3xl leading-none">
-          {isHealthy ? '🌳' : '🥀'}
+          {isHealthy ? '🌳' : '🌱'}
         </div>
         <div>
           <p className="text-[11px] font-semibold text-foreground">
-            {isHealthy ? 'Malusog na Punong-Kahoy' : 'Nalalantang Punong-Kahoy'}
+            {isHealthy ? 'Malusog na Punong-Kahoy' : 'Nagsisimulang Supling'}
           </p>
           <p className="text-[10px] text-muted-foreground">
             {isHealthy
               ? 'Field service ang una mong priority — magaling!'
-              : 'Mas marami ang "Others" kaysa Field Service — i-adjust ang focus.'}
+              : 'Mas marami ang "Others" kaysa Field Service — kailangan pang lumago.'}
           </p>
         </div>
       </div>
@@ -479,38 +479,46 @@ export default function PioneerPage() {
                 <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
                   <Megaphone className="h-5 w-5 text-primary shrink-0" />
                   <div>
-                    <span className="text-lg font-bold text-primary">{totalFS}</span>
+                    <span className="text-lg font-bold text-primary">{totalFS}h</span>
                     <p className="text-[10px] text-muted-foreground">Field Service</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
                   <BookOpen className="h-5 w-5 text-primary shrink-0" />
                   <div>
-                    <span className="text-lg font-bold text-foreground">{totalBS}</span>
+                    <span className="text-lg font-bold text-foreground">{totalBS}h</span>
                     <p className="text-[10px] text-muted-foreground">{t('pioneer.bibleStudies', language)}</p>
                   </div>
                 </div>
               </div>
 
+              {/* Bible Studies conducted this month */}
+              {totalBS > 0 && (
+                <div className="rounded-xl bg-muted/30 px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-foreground">Bible Studies This Month</span>
+                  <span className="text-sm font-bold text-primary">{totalBS}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
                   <Users className="h-4 w-4 text-primary shrink-0" />
                   <div>
-                    <span className="text-base font-bold text-foreground">{totalRV}</span>
+                    <span className="text-base font-bold text-foreground">{totalRV}h</span>
                     <p className="text-[10px] text-muted-foreground">{t('pioneer.returnVisits', language)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
                   <Megaphone className="h-4 w-4 text-primary shrink-0" />
                   <div>
-                    <span className="text-base font-bold text-foreground">{totalPW}</span>
+                    <span className="text-base font-bold text-foreground">{totalPW}h</span>
                     <p className="text-[10px] text-muted-foreground">{t('pioneer.witnessing', language)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
                   <MoreHorizontal className="h-4 w-4 text-primary shrink-0" />
                   <div>
-                    <span className="text-base font-bold text-foreground">{totalOther}</span>
+                    <span className="text-base font-bold text-foreground">{totalOther}h</span>
                     <p className="text-[10px] text-muted-foreground">Others</p>
                   </div>
                 </div>
@@ -584,16 +592,16 @@ export default function PioneerPage() {
                 label={t('pioneer.bibleStudies', language)}
                 value={formData.bibleStudies}
                 onChange={v => setFormData(p => ({ ...p, bibleStudies: v }))}
-                step={1}
-                max={99}
+                step={0.5}
+                max={24}
                 icon={<BookOpen className="h-4 w-4 text-primary" />}
               />
               <StepperField
                 label={t('pioneer.returnVisits', language)}
                 value={formData.returnVisits}
                 onChange={v => setFormData(p => ({ ...p, returnVisits: v }))}
-                step={1}
-                max={99}
+                step={0.5}
+                max={24}
                 icon={<Users className="h-4 w-4 text-primary" />}
               />
               <StepperField

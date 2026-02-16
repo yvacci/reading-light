@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { usePioneer } from '@/contexts/PioneerContext';
 import { getBookById } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { getChapterEvents } from '@/lib/bible-events';
@@ -11,6 +12,53 @@ import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
 import ReadingStatsCard from '@/components/ReadingStatsCard';
 
+function PioneerSummaryCard() {
+  const { getMonthSummary } = usePioneer();
+  const navigate = useNavigate();
+  const now = new Date();
+  const summary = getMonthSummary(now.getFullYear(), now.getMonth() + 1);
+
+  if (summary.daysWithData === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.4 }}
+      className="rounded-2xl border border-border bg-card p-4 space-y-3"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Megaphone className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold text-foreground">Ministry Summary</span>
+        </div>
+        <button onClick={() => navigate('/pioneer')} className="text-[10px] text-primary font-medium hover:underline">
+          View All →
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col items-center rounded-xl bg-primary/10 p-2.5">
+          <span className="text-lg font-bold text-primary">{summary.totalHours}h</span>
+          <span className="text-[10px] text-muted-foreground">Total Hours</span>
+        </div>
+        <div className="flex flex-col items-center rounded-xl bg-muted/50 p-2.5">
+          <span className="text-lg font-bold text-foreground">{summary.bibleStudies}h</span>
+          <span className="text-[10px] text-muted-foreground">Bible Study</span>
+        </div>
+        <div className="flex flex-col items-center rounded-xl bg-muted/50 p-2.5">
+          <span className="text-lg font-bold text-foreground">{summary.returnVisits}h</span>
+          <span className="text-[10px] text-muted-foreground">Return Visit</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+        <span>{summary.daysWithData} / {summary.daysInMonth} days logged</span>
+        <span>{summary.witnessingHours}h witnessing · {summary.otherWitnessingHours}h others</span>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -59,6 +107,9 @@ export default function HomePage() {
 
           {/* Reading Statistics */}
           <ReadingStatsCard />
+
+          {/* Pioneer Summary */}
+          <PioneerSummaryCard />
 
           {/* Weekly Progress Chart */}
           <motion.div
