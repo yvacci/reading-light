@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Zap, Leaf, Home } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useTheme, THEME_OPTIONS, type ThemeName } from '@/contexts/ThemeContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
@@ -23,12 +23,40 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-const themePreviewColors: Record<ThemeName, { bg: string; accent: string; fg: string }> = {
-  bento: { bg: 'bg-blue-50', accent: 'bg-blue-500', fg: 'text-blue-900' },
-  glassmorphic: { bg: 'bg-purple-50', accent: 'bg-purple-400', fg: 'text-purple-900' },
-  'neo-brutalist': { bg: 'bg-yellow-100', accent: 'bg-green-500', fg: 'text-black' },
-  'soft-minimalist': { bg: 'bg-amber-50', accent: 'bg-emerald-500', fg: 'text-amber-900' },
-  cottagecore: { bg: 'bg-orange-50', accent: 'bg-green-700', fg: 'text-stone-800' },
+const themeIcons: Record<ThemeName, React.ElementType> = {
+  bento: Grid3X3,
+  glassmorphic: Sparkles,
+  'neo-brutalist': Zap,
+  'soft-minimalist': Leaf,
+  cottagecore: Home,
+};
+
+const themePreviewStyles: Record<ThemeName, { light: string; dark: string; accentBar: string }> = {
+  bento: {
+    light: 'bg-gradient-to-br from-blue-50 to-slate-100',
+    dark: 'bg-gradient-to-br from-slate-800 to-slate-900',
+    accentBar: 'bg-blue-500',
+  },
+  glassmorphic: {
+    light: 'bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50',
+    dark: 'bg-gradient-to-br from-purple-900/60 to-indigo-950',
+    accentBar: 'bg-purple-400',
+  },
+  'neo-brutalist': {
+    light: 'bg-neutral-100',
+    dark: 'bg-neutral-900',
+    accentBar: 'bg-green-500',
+  },
+  'soft-minimalist': {
+    light: 'bg-gradient-to-br from-amber-50 to-stone-100',
+    dark: 'bg-gradient-to-br from-stone-800 to-stone-900',
+    accentBar: 'bg-emerald-500',
+  },
+  cottagecore: {
+    light: 'bg-gradient-to-br from-orange-50 to-amber-100',
+    dark: 'bg-gradient-to-br from-stone-800 to-amber-950',
+    accentBar: 'bg-green-700',
+  },
 };
 
 export default function SettingsPage() {
@@ -112,30 +140,39 @@ export default function SettingsPage() {
                 <Palette className="h-5 w-5 text-primary" />
                 <span className="text-sm text-foreground">Design Theme</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2">
                 {THEME_OPTIONS.map((opt) => {
-                  const colors = themePreviewColors[opt.id];
                   const isActive = theme === opt.id;
+                  const Icon = themeIcons[opt.id];
+                  const preview = themePreviewStyles[opt.id];
+                  const bgClass = mode === 'dark' ? preview.dark : preview.light;
                   return (
                     <button
                       key={opt.id}
                       onClick={() => setTheme(opt.id)}
-                      className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${
+                      className={`relative flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
                         isActive
                           ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                           : 'border-border hover:border-primary/40 hover:bg-muted/50'
                       }`}
                     >
-                      {/* Mini preview */}
-                      <div className={`flex h-10 w-full items-center justify-center rounded-lg ${colors.bg}`}>
-                        <div className={`h-4 w-4 rounded-full ${colors.accent}`} />
+                      {/* Mini preview square */}
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-lg shrink-0 ${bgClass}`}>
+                        <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-foreground/60'}`} />
                       </div>
-                      <span className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
-                        {opt.preview} {opt.name}
-                      </span>
-                      <span className="text-[9px] text-muted-foreground leading-tight">{opt.description}</span>
+                      {/* Label */}
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                            {opt.name}
+                          </span>
+                          {/* Accent bar */}
+                          <div className={`h-1.5 w-6 rounded-full ${preview.accentBar}`} />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground leading-tight">{opt.description}</span>
+                      </div>
                       {isActive && (
-                        <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[8px]">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] shrink-0">
                           ✓
                         </div>
                       )}
