@@ -176,134 +176,140 @@ export default function PioneerPage() {
     <div className="min-h-screen pb-20">
       <PageHeader title={t('pioneer.title', language)} subtitle={t('pioneer.subtitle', language)} />
 
-      <div className="space-y-4 px-4 pt-4">
-        {/* Calendar */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-border bg-card p-4"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-              <ChevronLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <span className="text-sm font-semibold text-foreground">{monthName}</span>
-            <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-              <ChevronRight className="h-5 w-5 text-foreground" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {dayLabels.map(d => (
-              <div key={d} className="text-center text-[10px] font-medium text-muted-foreground py-1">{d}</div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day, i) => {
-              if (day === null) return <div key={`empty-${i}`} />;
-              const key = getDateKey(day);
-              const hasData = !!entries[key];
-              const isToday = key === new Date().toISOString().slice(0, 10);
-
-              return (
-                <button
-                  key={day}
-                  onClick={() => handleDayClick(day)}
-                  className={`relative aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all
-                    ${isToday ? 'ring-2 ring-primary' : ''}
-                    ${hasData ? 'bg-[hsl(145,65%,42%)]/20 text-[hsl(145,65%,30%)]' : 'bg-destructive/10 text-muted-foreground'}
-                    hover:opacity-80`}
-                >
-                  {day}
-                  {hasData && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[hsl(145,65%,42%)]" />}
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Monthly Summary */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-2xl border border-border bg-card p-4 space-y-4"
-        >
-          <h3 className="text-xs font-semibold text-foreground">{t('pioneer.monthlySummary', language)}</h3>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs text-foreground">{t('pioneer.totalHours', language)}</span>
-              </div>
-              <span className={`text-sm font-bold ${totalHours >= TARGET_HOURS ? 'text-[hsl(145,65%,42%)]' : 'text-destructive'}`}>
-                {totalHours} / {TARGET_HOURS}
-              </span>
+      <div className="px-4 pt-4 max-w-5xl mx-auto md:grid md:grid-cols-[1fr_1fr] md:gap-6">
+        {/* LEFT COLUMN — Calendar + Service Year */}
+        <div className="space-y-4">
+          {/* Calendar */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-border bg-card p-4"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <ChevronLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <span className="text-sm font-semibold text-foreground">{monthName}</span>
+              <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <ChevronRight className="h-5 w-5 text-foreground" />
+              </button>
             </div>
-            <Progress value={hoursPercent} className="h-2" />
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
-              <Megaphone className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <span className="text-lg font-bold text-primary">{totalHours}</span>
-                <p className="text-[10px] text-muted-foreground">Field Service</p>
-              </div>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {dayLabels.map(d => (
+                <div key={d} className="text-center text-[10px] font-medium text-muted-foreground py-1">{d}</div>
+              ))}
             </div>
-            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
-              <BookOpen className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <span className="text-lg font-bold text-foreground">{totalBS}</span>
-                <p className="text-[10px] text-muted-foreground">{t('pioneer.bibleStudies', language)}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
-              <Users className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <span className="text-lg font-bold text-foreground">{totalRV}</span>
-                <p className="text-[10px] text-muted-foreground">{t('pioneer.returnVisits', language)}</p>
-              </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day, i) => {
+                if (day === null) return <div key={`empty-${i}`} />;
+                const key = getDateKey(day);
+                const hasData = !!entries[key];
+                const isToday = key === new Date().toISOString().slice(0, 10);
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => handleDayClick(day)}
+                    className={`relative aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all
+                      ${isToday ? 'ring-2 ring-primary' : ''}
+                      ${hasData ? 'bg-[hsl(145,65%,42%)]/20 text-[hsl(145,65%,30%)]' : 'bg-destructive/10 text-muted-foreground'}
+                      hover:opacity-80`}
+                  >
+                    {day}
+                    {hasData && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[hsl(145,65%,42%)]" />}
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
-              <Megaphone className="h-5 w-5 text-primary shrink-0" />
-              <div>
-                <span className="text-lg font-bold text-foreground">{totalPW}</span>
-                <p className="text-[10px] text-muted-foreground">{t('pioneer.witnessing', language)}</p>
+          </motion.div>
+
+          {/* Service Year Summary */}
+          <ServiceYearCard entries={entries} language={language} />
+        </div>
+
+        {/* RIGHT COLUMN — Monthly Summary + Studies Link */}
+        <div className="space-y-4 mt-4 md:mt-0">
+          {/* Monthly Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-2xl border border-border bg-card p-4 space-y-4"
+          >
+            <h3 className="text-xs font-semibold text-foreground">{t('pioneer.monthlySummary', language)}</h3>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs text-foreground">{t('pioneer.totalHours', language)}</span>
+                </div>
+                <span className={`text-sm font-bold ${totalHours >= TARGET_HOURS ? 'text-[hsl(145,65%,42%)]' : 'text-destructive'}`}>
+                  {totalHours} / {TARGET_HOURS}
+                </span>
+              </div>
+              <Progress value={hoursPercent} className="h-2" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
+                <Megaphone className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <span className="text-lg font-bold text-primary">{totalHours}</span>
+                  <p className="text-[10px] text-muted-foreground">Field Service</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+                <BookOpen className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <span className="text-lg font-bold text-foreground">{totalBS}</span>
+                  <p className="text-[10px] text-muted-foreground">{t('pioneer.bibleStudies', language)}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="text-[10px] text-muted-foreground text-center">
-            {daysWithData} / {daysInMonth} {t('pioneer.daysLogged', language)}
-          </div>
-        </motion.div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+                <Users className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <span className="text-lg font-bold text-foreground">{totalRV}</span>
+                  <p className="text-[10px] text-muted-foreground">{t('pioneer.returnVisits', language)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
+                <Megaphone className="h-5 w-5 text-primary shrink-0" />
+                <div>
+                  <span className="text-lg font-bold text-foreground">{totalPW}</span>
+                  <p className="text-[10px] text-muted-foreground">{t('pioneer.witnessing', language)}</p>
+                </div>
+              </div>
+            </div>
 
-        {/* Service Year Summary */}
-        <ServiceYearCard entries={entries} language={language} />
+            <div className="text-[10px] text-muted-foreground text-center">
+              {daysWithData} / {daysInMonth} {t('pioneer.daysLogged', language)}
+            </div>
+          </motion.div>
 
-        {/* Studies & Visits link */}
-        <motion.button
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          onClick={() => navigate('/studies')}
-          className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-            <BookOpen className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1">
-            <span className="text-sm font-semibold text-foreground">{t('studies.title', language)}</span>
-            <p className="text-[10px] text-muted-foreground">{t('studies.subtitle', language)}</p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        </motion.button>
+          {/* Studies & Visits link */}
+          <motion.button
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={() => navigate('/studies')}
+            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+              <BookOpen className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <span className="text-sm font-semibold text-foreground">{t('studies.title', language)}</span>
+              <p className="text-[10px] text-muted-foreground">{t('studies.subtitle', language)}</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </motion.button>
+        </div>
       </div>
 
       {/* Entry Dialog */}
