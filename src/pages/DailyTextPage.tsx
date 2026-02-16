@@ -242,62 +242,7 @@ export default function DailyTextPage() {
               />
             </div>
 
-            {/* Inline verse references - left-aligned, not justified */}
-            {inlineVerses.length > 0 && (
-              <div className="border-t border-border/50">
-                <div className="px-5 py-3">
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-[0.12em] mb-2">
-                    Mga Sanggunian ({inlineVerses.length})
-                  </p>
-                  <div className="space-y-1.5">
-                    {inlineVerses.map((iv, i) => {
-                      const key = `${iv.ref.bookId}-${iv.ref.chapter}-${iv.ref.verse}`;
-                      const isExpanded = expandedRefs.has(key);
-                      return (
-                        <div key={i} className="rounded-xl border border-border/60 bg-background overflow-hidden">
-                          <button
-                            onClick={() => toggleExpanded(key)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/40 transition-colors"
-                          >
-                            <BookOpen className="h-3 w-3 text-primary shrink-0" />
-                            <span className="text-[11px] font-semibold text-foreground flex-1 text-left">{iv.label}</span>
-                            {iv.loading ? (
-                              <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
-                            ) : isExpanded ? (
-                              <ChevronUp className="h-3 w-3 text-muted-foreground shrink-0" />
-                            ) : (
-                              <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
-                            )}
-                          </button>
-                          <AnimatePresence>
-                            {isExpanded && !iv.loading && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="px-3 pb-3 pt-0">
-                                  {iv.error ? (
-                                    <p className="text-[11px] text-destructive italic text-left">Hindi ma-load ang talata.</p>
-                                  ) : (
-                                    <p className="text-[12px] text-foreground/70 leading-[1.8] whitespace-pre-line text-left"
-                                       style={{ fontFamily: "'Inter', sans-serif" }}>
-                                      {iv.text || 'Walang nahanap na teksto.'}
-                                    </p>
-                                  )}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Verses are now shown only in the Reference Pane - no inline section */}
           </motion.div>
         ) : (
           <div className="py-16 text-center rounded-2xl border border-border bg-card">
