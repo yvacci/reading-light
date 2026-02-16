@@ -23,8 +23,9 @@ const LOCAL_STORAGE_KEYS = [
   'nwt-reading-plan',
   'nwt-reading-streak',
   'nwt-reading-time',
-  'nwt-reminder-enabled',
-  'nwt-reminder-time',
+  'nwt-reminder-settings',
+  'nwt-theme',
+  'nwt-theme-mode',
 ];
 
 interface BackupData {
@@ -63,7 +64,7 @@ export function exportBackup(): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `nwt-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `nwt-backup-${new Date().toISOString().slice(0, 10)}.nwt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

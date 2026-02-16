@@ -270,7 +270,7 @@ export default function SettingsPage() {
               <input
                 ref={backupInputRef}
                 type="file"
-                accept=".json"
+                accept=".nwt,.json"
                 onChange={handleImportBackup}
                 className="hidden"
               />

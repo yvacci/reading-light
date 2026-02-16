@@ -67,34 +67,40 @@ export function useReminderNotifications() {
 
     const checkAndNotify = () => {
       const now = new Date();
-      const todayKey = now.toISOString().slice(0, 10);
+      const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
-      // Already notified today
-      if (settings.lastNotifiedDate === todayKey) return;
+      // Re-read from storage to avoid stale closure
+      const current = loadSettings();
+      if (current.lastNotifiedDate === todayKey) return;
 
       const [targetHour, targetMinute] = settings.time.split(':').map(Number);
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
 
-      // Check if current time is past the reminder time
       if (currentHour > targetHour || (currentHour === targetHour && currentMinute >= targetMinute)) {
-        // Show notification
-        new Notification('📖 Time to Read!', {
-          body: 'Your daily Bible reading is waiting. Stay consistent with your plan!',
-          icon: '/favicon.ico',
-          tag: 'daily-reading-reminder',
-        });
-        setSettings(prev => ({ ...prev, lastNotifiedDate: todayKey }));
+        try {
+          new Notification('📖 Oras na para Magbasa!', {
+            body: 'Naghihintay ang iyong daily Bible reading. Manatiling consistent sa iyong plano!',
+            icon: '/favicon.ico',
+            tag: 'daily-reading-reminder',
+          });
+        } catch (e) {
+          // Fallback: some browsers block Notification constructor
+          console.warn('Notification failed:', e);
+        }
+        const updated = { ...settings, lastNotifiedDate: todayKey };
+        setSettings(updated);
+        saveSettings(updated);
       }
     };
 
     // Check immediately
     checkAndNotify();
 
-    // Check every minute
-    const interval = setInterval(checkAndNotify, 60000);
+    // Check every 30 seconds for more reliable triggering
+    const interval = setInterval(checkAndNotify, 30000);
     return () => clearInterval(interval);
-  }, [settings.enabled, settings.time, settings.lastNotifiedDate, isSupported, permissionState]);
+  }, [settings.enabled, settings.time, isSupported, permissionState]);
 
   return {
     isSupported,
