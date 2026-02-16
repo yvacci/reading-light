@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Zap, Leaf, Home } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Zap, Leaf, Home, Check } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useTheme, THEME_OPTIONS, type ThemeName } from '@/contexts/ThemeContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
@@ -31,32 +31,12 @@ const themeIcons: Record<ThemeName, React.ElementType> = {
   cottagecore: Home,
 };
 
-const themePreviewStyles: Record<ThemeName, { light: string; dark: string; accentBar: string }> = {
-  bento: {
-    light: 'bg-gradient-to-br from-blue-50 to-slate-100',
-    dark: 'bg-gradient-to-br from-slate-800 to-slate-900',
-    accentBar: 'bg-blue-500',
-  },
-  glassmorphic: {
-    light: 'bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50',
-    dark: 'bg-gradient-to-br from-purple-900/60 to-indigo-950',
-    accentBar: 'bg-purple-400',
-  },
-  'neo-brutalist': {
-    light: 'bg-neutral-100',
-    dark: 'bg-neutral-900',
-    accentBar: 'bg-green-500',
-  },
-  'soft-minimalist': {
-    light: 'bg-gradient-to-br from-amber-50 to-stone-100',
-    dark: 'bg-gradient-to-br from-stone-800 to-stone-900',
-    accentBar: 'bg-emerald-500',
-  },
-  cottagecore: {
-    light: 'bg-gradient-to-br from-orange-50 to-amber-100',
-    dark: 'bg-gradient-to-br from-stone-800 to-amber-950',
-    accentBar: 'bg-green-700',
-  },
+const themePreviewColors: Record<ThemeName, { bg: string; accent: string }> = {
+  bento: { bg: 'bg-blue-50 dark:bg-slate-800', accent: 'bg-blue-500' },
+  glassmorphic: { bg: 'bg-purple-50 dark:bg-purple-900/40', accent: 'bg-purple-400' },
+  'neo-brutalist': { bg: 'bg-neutral-100 dark:bg-neutral-800', accent: 'bg-green-400' },
+  'soft-minimalist': { bg: 'bg-amber-50 dark:bg-stone-800', accent: 'bg-emerald-500' },
+  cottagecore: { bg: 'bg-orange-50 dark:bg-stone-800', accent: 'bg-green-700' },
 };
 
 export default function SettingsPage() {
@@ -113,6 +93,9 @@ export default function SettingsPage() {
     toast.success('Na-reset ang lahat ng data.');
   };
 
+  /* Shared section card style */
+  const sectionClass = "rounded-2xl bg-card/80 p-4 mb-4 shadow-sm";
+
   return (
     <div className="min-h-screen pb-20">
       <div className="px-5 pt-12 pb-4 safe-top">
@@ -120,13 +103,16 @@ export default function SettingsPage() {
         <h1 className="mt-1 text-2xl font-bold text-foreground">{t('settings.subtitle', language)}</h1>
       </div>
 
-      <div className="px-5 max-w-lg mx-auto">
-        {/* Theme & Design */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Theme & Design</p>
-          <div className="space-y-0 divide-y divide-border">
+      {/* Two-column on md+ */}
+      <div className="px-5 max-w-4xl mx-auto md:grid md:grid-cols-2 md:gap-6">
+        {/* LEFT COLUMN */}
+        <div>
+          {/* Theme & Design */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Theme & Design</p>
+
             {/* Light/Dark toggle */}
-            <div className="flex items-center justify-between py-3.5">
+            <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 {mode === 'dark' ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
                 <span className="text-sm text-foreground">{mode === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
@@ -135,8 +121,8 @@ export default function SettingsPage() {
             </div>
 
             {/* Theme selector */}
-            <div className="py-3.5">
-              <div className="flex items-center gap-3 mb-3">
+            <div className="pt-2 border-t border-border/40">
+              <div className="flex items-center gap-3 mb-3 pt-2">
                 <Palette className="h-5 w-5 text-primary" />
                 <span className="text-sm text-foreground">Design Theme</span>
               </div>
@@ -144,36 +130,32 @@ export default function SettingsPage() {
                 {THEME_OPTIONS.map((opt) => {
                   const isActive = theme === opt.id;
                   const Icon = themeIcons[opt.id];
-                  const preview = themePreviewStyles[opt.id];
-                  const bgClass = mode === 'dark' ? preview.dark : preview.light;
+                  const colors = themePreviewColors[opt.id];
                   return (
                     <button
                       key={opt.id}
                       onClick={() => setTheme(opt.id)}
-                      className={`relative flex items-center gap-3 rounded-xl border-2 p-3 transition-all ${
+                      className={`relative flex items-center gap-3 rounded-xl p-3 transition-all border ${
                         isActive
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                          ? 'border-primary/40 bg-primary/5 shadow-md'
+                          : 'border-border/30 hover:border-primary/20 hover:bg-muted/40'
                       }`}
                     >
-                      {/* Mini preview square */}
-                      <div className={`flex h-11 w-11 items-center justify-center rounded-lg shrink-0 ${bgClass}`}>
-                        <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-foreground/60'}`} />
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${colors.bg}`}>
+                        <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-foreground/50'}`} />
                       </div>
-                      {/* Label */}
                       <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
                             {opt.name}
                           </span>
-                          {/* Accent bar */}
-                          <div className={`h-1.5 w-6 rounded-full ${preview.accentBar}`} />
+                          <div className={`h-1.5 w-5 rounded-full ${colors.accent}`} />
                         </div>
                         <span className="text-[10px] text-muted-foreground leading-tight">{opt.description}</span>
                       </div>
                       {isActive && (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] shrink-0">
-                          ✓
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shrink-0">
+                          <Check className="h-3 w-3" />
                         </div>
                       )}
                     </button>
@@ -182,13 +164,11 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Appearance */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.appearance', language)}</p>
-          <div className="space-y-0 divide-y divide-border">
-            <div className="py-3.5">
+          {/* Appearance */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.appearance', language)}</p>
+            <div className="py-2">
               <div className="flex items-center gap-3 mb-3">
                 <Type className="h-5 w-5 text-primary" />
                 <span className="text-sm text-foreground">{t('settings.fontSize', language)}</span>
@@ -205,11 +185,12 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.notifications', language)}</p>
-          <div className="space-y-0 divide-y divide-border">
-            <div className="flex items-center justify-between py-3.5">
+        {/* RIGHT COLUMN */}
+        <div>
+          {/* Notifications */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.notifications', language)}</p>
+            <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
                 <Bell className="h-5 w-5 text-primary" />
                 <div>
@@ -229,7 +210,7 @@ export default function SettingsPage() {
               />
             </div>
             {remindersEnabled && (
-              <div className="flex items-center gap-3 py-3.5">
+              <div className="flex items-center gap-3 py-2 mt-1 border-t border-border/40">
                 <Clock className="h-5 w-5 text-primary" />
                 <span className="text-sm text-foreground">{t('settings.reminderTime', language)}</span>
                 <Input
@@ -241,15 +222,13 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-        </div>
 
-        {/* Quick Links */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Mga Link</p>
-          <div className="space-y-0 divide-y divide-border">
+          {/* Quick Links */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Mga Link</p>
             <button
               onClick={() => navigate('/plans')}
-              className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70"
+              className="flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:opacity-70"
             >
               <CalendarDays className="h-5 w-5 text-primary" />
               <span className="text-sm text-foreground flex-1">{t('plans.title', language)}</span>
@@ -257,20 +236,18 @@ export default function SettingsPage() {
             </button>
             <button
               onClick={() => navigate('/how-to')}
-              className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70"
+              className="flex w-full items-center gap-3 py-2.5 text-left transition-colors hover:opacity-70 border-t border-border/40"
             >
               <HelpCircle className="h-5 w-5 text-primary" />
               <span className="text-sm text-foreground flex-1">{t('settings.howTo', language)}</span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
-        </div>
 
-        {/* Backup & Restore */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.backup', language)}</p>
-          <div className="space-y-0 divide-y divide-border">
-            <div className="py-3.5">
+          {/* Backup & Restore */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.backup', language)}</p>
+            <div className="py-2">
               <div className="flex items-center gap-3">
                 <Download className="h-5 w-5 text-primary" />
                 <div className="flex-1">
@@ -303,15 +280,13 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-        </div>
 
-        {/* Data */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.data', language)}</p>
-          <div className="divide-y divide-border">
+          {/* Data */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.data', language)}</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <button className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:opacity-70">
+                <button className="flex w-full items-center gap-3 py-2 text-left transition-colors hover:opacity-70">
                   <RotateCcw className="h-5 w-5 text-destructive" />
                   <div className="flex-1">
                     <span className="text-sm text-destructive">{t('settings.resetProgress', language)}</span>
@@ -338,19 +313,19 @@ export default function SettingsPage() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </div>
 
-        {/* About */}
-        <div className="mb-10">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.about', language)}</p>
-          <div className="flex items-start gap-3 py-3.5">
-            <Info className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-              <p className="text-[10px] text-muted-foreground">Version 2.3.0</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t('settings.aboutDesc', language)}
-              </p>
+          {/* About */}
+          <div className={sectionClass + ' mb-10'}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.about', language)}</p>
+            <div className="flex items-start gap-3 py-2">
+              <Info className="h-5 w-5 text-primary mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
+                <p className="text-[10px] text-muted-foreground">Version 2.3.0</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t('settings.aboutDesc', language)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
