@@ -6,44 +6,44 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 25% 20%;
+    --background: 205 25% 97%;
+    --foreground: 215 25% 18%;
 
-    --card: 210 25% 97%;
-    --card-foreground: 215 25% 20%;
+    --card: 205 20% 98%;
+    --card-foreground: 215 25% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 20%;
+    --popover-foreground: 215 25% 18%;
 
-    --primary: 210 90% 50%;
+    --primary: 200 80% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 15% 93%;
-    --secondary-foreground: 215 20% 25%;
+    --secondary: 200 18% 93%;
+    --secondary-foreground: 215 20% 22%;
 
-    --muted: 210 15% 92%;
+    --muted: 200 15% 92%;
     --muted-foreground: 215 10% 46%;
 
-    --accent: 195 70% 55%;
-    --accent-foreground: 215 25% 15%;
+    --accent: 190 65% 50%;
+    --accent-foreground: 215 25% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 89%;
-    --input: 210 15% 89%;
-    --ring: 210 90% 50%;
+    --border: 200 15% 88%;
+    --input: 200 15% 88%;
+    --ring: 200 80% 52%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 210 20% 97%;
-    --sidebar-foreground: 215 20% 25%;
-    --sidebar-primary: 210 90% 50%;
+    --sidebar-background: 205 20% 97%;
+    --sidebar-foreground: 215 20% 22%;
+    --sidebar-primary: 200 80% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 15% 94%;
-    --sidebar-accent-foreground: 215 20% 15%;
-    --sidebar-border: 210 15% 90%;
-    --sidebar-ring: 210 90% 50%;
+    --sidebar-accent: 200 15% 94%;
+    --sidebar-accent-foreground: 215 20% 12%;
+    --sidebar-border: 200 15% 89%;
+    --sidebar-ring: 200 80% 52%;
 
     --success: 145 65% 42%;
     --success-foreground: 0 0% 100%;
@@ -52,42 +52,42 @@
   }
 
   .dark {
-    --background: 220 20% 10%;
-    --foreground: 210 20% 90%;
+    --background: 215 22% 11%;
+    --foreground: 200 20% 90%;
 
-    --card: 220 18% 13%;
-    --card-foreground: 210 20% 90%;
+    --card: 215 20% 14%;
+    --card-foreground: 200 20% 90%;
 
-    --popover: 220 18% 13%;
-    --popover-foreground: 210 20% 90%;
+    --popover: 215 20% 14%;
+    --popover-foreground: 200 20% 90%;
 
-    --primary: 210 85% 55%;
+    --primary: 200 75% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 210 15% 80%;
+    --secondary: 215 15% 19%;
+    --secondary-foreground: 200 15% 80%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 210 10% 55%;
+    --muted: 215 15% 19%;
+    --muted-foreground: 200 10% 55%;
 
-    --accent: 195 65% 50%;
-    --accent-foreground: 210 20% 95%;
+    --accent: 190 60% 48%;
+    --accent-foreground: 200 20% 95%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 210 85% 55%;
+    --border: 215 15% 22%;
+    --input: 215 15% 22%;
+    --ring: 200 75% 55%;
 
-    --sidebar-background: 220 18% 12%;
-    --sidebar-foreground: 210 15% 80%;
-    --sidebar-primary: 210 85% 55%;
+    --sidebar-background: 215 20% 13%;
+    --sidebar-foreground: 200 15% 80%;
+    --sidebar-primary: 200 75% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 16%;
-    --sidebar-accent-foreground: 210 15% 85%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 210 85% 55%;
+    --sidebar-accent: 215 15% 17%;
+    --sidebar-accent-foreground: 200 15% 85%;
+    --sidebar-border: 215 15% 22%;
+    --sidebar-ring: 200 75% 55%;
 
     --success: 145 55% 45%;
     --success-foreground: 0 0% 100%;
@@ -234,16 +234,36 @@
 
 /* Daily text verse reference links */
 .daily-text-content .verse-ref-link {
-  color: hsl(var(--primary));
-  font-weight: 600;
+  color: inherit;
+  font-weight: 700;
   cursor: pointer;
   text-decoration: underline;
-  text-decoration-style: dotted;
+  text-decoration-color: hsl(var(--primary) / 0.4);
+  text-decoration-style: solid;
   text-underline-offset: 2px;
-  transition: opacity 0.15s ease;
+  transition: text-decoration-color 0.15s ease;
 }
 
 .daily-text-content .verse-ref-link:hover,
 .daily-text-content .verse-ref-link:active {
-  opacity: 0.75;
+  text-decoration-color: hsl(var(--primary));
+}
+
+/* Responsive typography for larger screens */
+@media (min-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1280px) {
+  body {
+    font-size: 18px;
+  }
 }

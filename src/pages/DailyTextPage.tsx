@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, ChevronLeft, ChevronRight, Loader2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchAndGetDailyText, getDailyTextByDate } from '@/lib/daily-text-service';
@@ -7,7 +8,7 @@ import { sanitizeHtml } from '@/lib/sanitize';
 import { getLocalizedBookName } from '@/lib/localization';
 import { loadChapter, initEpub } from '@/lib/epub-service';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
-import VersePopup from '@/components/VersePopup';
+import ReferencePane from '@/components/ReferencePane';
 import { t } from '@/lib/i18n';
 
 interface InlineVerse {
@@ -19,15 +20,16 @@ interface InlineVerse {
 }
 
 export default function DailyTextPage() {
+  const navigate = useNavigate();
   const { language } = useReadingProgress();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dailyText, setDailyText] = useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [popupOpen, setPopupOpen] = useState(false);
-  const [popupRef, setPopupRef] = useState<{ bookId: number; chapter: number; verse?: number; verseEnd?: number; verseList?: number[] }>({ bookId: 1, chapter: 1 });
   const [inlineVerses, setInlineVerses] = useState<InlineVerse[]>([]);
   const [expandedRefs, setExpandedRefs] = useState<Set<string>>(new Set());
   const [autoDisplayed, setAutoDisplayed] = useState(false);
+  const [refPaneOpen, setRefPaneOpen] = useState(false);
+  const [refPaneVerse, setRefPaneVerse] = useState<{ bookId: number; chapter: number; verse?: number; text?: string } | undefined>();
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +77,6 @@ export default function DailyTextPage() {
 
     setInlineVerses(initialVerses);
 
-    // Fetch all in background
     (async () => {
       try {
         await initEpub(language);
@@ -109,6 +110,7 @@ export default function DailyTextPage() {
     });
   };
 
+  // When a verse reference is tapped, open the Reference Pane (not a popup)
   const handleContentClick = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const refEl = target.closest('.verse-ref-link');
@@ -121,11 +123,29 @@ export default function DailyTextPage() {
       const verseListStr = refEl.getAttribute('data-verse-list') || '';
       const verseList = verseListStr ? verseListStr.split(',').map(Number).filter(Boolean) : undefined;
       if (bookId && chapter) {
-        setPopupRef({ bookId, chapter, verse, verseEnd, verseList });
-        setPopupOpen(true);
+        const bookName = getLocalizedBookName(bookId, language);
+        let label = `${bookName} ${chapter}`;
+        if (verse) {
+          label += `:${verse}`;
+          if (verseEnd) label += `–${verseEnd}`;
+          else if (verseList && verseList.length > 1) label += `, ${verseList.slice(1).join(', ')}`;
+        }
+
+        // Find matching inline verse text if already fetched
+        const match = inlineVerses.find(iv =>
+          iv.ref.bookId === bookId && iv.ref.chapter === chapter && iv.ref.verse === verse
+        );
+
+        setRefPaneVerse({
+          bookId,
+          chapter,
+          verse,
+          text: match?.text || `${label} — Kinukuha ang teksto...`,
+        });
+        setRefPaneOpen(true);
       }
     }
-  }, []);
+  }, [inlineVerses, language]);
 
   const toggleExpanded = (key: string) => {
     setExpandedRefs(prev => {
@@ -215,14 +235,14 @@ export default function DailyTextPage() {
             {/* Body content */}
             <div className="px-5 py-5">
               <div
-                className="text-[13px] text-muted-foreground leading-[1.85] daily-text-content"
+                className="text-[13px] text-foreground/80 leading-[1.85] daily-text-content"
                 style={{ textAlign: 'justify', fontFamily: "'Inter', sans-serif" }}
                 onClick={handleContentClick}
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
               />
             </div>
 
-            {/* Inline verse references */}
+            {/* Inline verse references - left-aligned, not justified */}
             {inlineVerses.length > 0 && (
               <div className="border-t border-border/50">
                 <div className="px-5 py-3">
@@ -240,7 +260,7 @@ export default function DailyTextPage() {
                             className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/40 transition-colors"
                           >
                             <BookOpen className="h-3 w-3 text-primary shrink-0" />
-                            <span className="text-[11px] font-semibold text-foreground flex-1">{iv.label}</span>
+                            <span className="text-[11px] font-semibold text-foreground flex-1 text-left">{iv.label}</span>
                             {iv.loading ? (
                               <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
                             ) : isExpanded ? (
@@ -260,9 +280,9 @@ export default function DailyTextPage() {
                               >
                                 <div className="px-3 pb-3 pt-0">
                                   {iv.error ? (
-                                    <p className="text-[11px] text-destructive italic">Hindi ma-load ang talata.</p>
+                                    <p className="text-[11px] text-destructive italic text-left">Hindi ma-load ang talata.</p>
                                   ) : (
-                                    <p className="text-[12px] text-muted-foreground leading-[1.8] whitespace-pre-line"
+                                    <p className="text-[12px] text-foreground/70 leading-[1.8] whitespace-pre-line text-left"
                                        style={{ fontFamily: "'Inter', sans-serif" }}>
                                       {iv.text || 'Walang nahanap na teksto.'}
                                     </p>
@@ -288,14 +308,10 @@ export default function DailyTextPage() {
         )}
       </div>
 
-      <VersePopup
-        open={popupOpen}
-        onOpenChange={setPopupOpen}
-        bookId={popupRef.bookId}
-        chapter={popupRef.chapter}
-        verse={popupRef.verse}
-        verseEnd={popupRef.verseEnd}
-        verseList={popupRef.verseList}
+      <ReferencePane
+        open={refPaneOpen}
+        onClose={() => setRefPaneOpen(false)}
+        verseRef={refPaneVerse}
       />
     </div>
   );
@@ -323,7 +339,6 @@ function extractVerseTextSimple(html: string, verses?: number[]): string {
       const t = match[1].trim().replace(/\s+/g, ' ');
       if (t.length > 5) { collected.push(`${vStr} ${t}`); continue; }
     }
-    // Fallback
     const segs = text.split(/\b(\d{1,3})\b/);
     for (let i = 0; i < segs.length; i++) {
       if (segs[i] === vStr && i + 1 < segs.length) {
