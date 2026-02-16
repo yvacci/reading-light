@@ -3,17 +3,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Simple in-memory rate limiter
+const rateLimiter = new Map<string, number[]>();
+const MAX_REQUESTS = 10;
+const WINDOW_MS = 60000;
+
+function checkRateLimit(clientId: string): boolean {
+  const now = Date.now();
+  const requests = rateLimiter.get(clientId) || [];
+  const recent = requests.filter(t => now - t < WINDOW_MS);
+  if (recent.length >= MAX_REQUESTS) return false;
+  recent.push(now);
+  rateLimiter.set(clientId, recent);
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const clientId = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
+  if (!checkRateLimit(clientId)) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Rate limit exceeded. Try again in a minute.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { year, month, day } = await req.json();
 
-    if (!year || !month || !day) {
+    if (!year || !month || !day ||
+        typeof year !== 'number' || typeof month !== 'number' || typeof day !== 'number' ||
+        month < 1 || month > 12 || day < 1 || day > 31 || year < 2000 || year > 2100) {
       return new Response(
-        JSON.stringify({ success: false, error: 'year, month, day are required' }),
+        JSON.stringify({ success: false, error: 'Valid year, month, day are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -53,10 +78,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse the daily text from the HTML
     const html = data.data?.html || data.html || '';
     
-    // Extract the theme scripture (title)
     const titleMatch = html.match(/<p[^>]*class="[^"]*themeScrp[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
     let title = '';
     if (titleMatch) {
@@ -68,13 +91,10 @@ Deno.serve(async (req) => {
         .trim();
     }
 
-    // Extract body text
     const bodyMatch = html.match(/<div[^>]*class="[^"]*bodyTxt[^"]*"[^>]*>([\s\S]*?)<\/div>\s*(?:<\/div>|$)/i);
     let content = '';
     if (bodyMatch) {
-      // Get only the first bodyTxt div (daily text), not meeting workbook
       const firstBodyTxt = bodyMatch[0];
-      // Extract paragraphs
       const paragraphs: string[] = [];
       const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
       let pMatch;

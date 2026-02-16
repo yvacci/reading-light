@@ -3,17 +3,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Simple in-memory rate limiter
+const rateLimiter = new Map<string, number[]>();
+const MAX_REQUESTS = 10;
+const WINDOW_MS = 60000;
+
+function checkRateLimit(clientId: string): boolean {
+  const now = Date.now();
+  const requests = rateLimiter.get(clientId) || [];
+  const recent = requests.filter(t => now - t < WINDOW_MS);
+  if (recent.length >= MAX_REQUESTS) return false;
+  recent.push(now);
+  rateLimiter.set(clientId, recent);
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const clientId = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
+  if (!checkRateLimit(clientId)) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Rate limit exceeded. Try again in a minute.' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { bookNum, chapter } = await req.json();
 
-    if (!bookNum) {
+    if (!bookNum || typeof bookNum !== 'number' || bookNum < 1 || bookNum > 66) {
       return new Response(
-        JSON.stringify({ success: false, error: 'bookNum is required' }),
+        JSON.stringify({ success: false, error: 'Valid bookNum (1-66) is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -26,8 +49,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Chapter outline: scrape the study pane of the chapter page
-    // Book summary: scrape the book's chapter 1 page (outline covers whole book in study pane)
     const targetCh = chapter || 1;
     const url = `https://wol.jw.org/tl/wol/b/r27/lp-tg/nwtsty/${bookNum}/${targetCh}`;
     console.log('Scraping bible summary:', url);
@@ -59,17 +80,14 @@ Deno.serve(async (req) => {
     const html = data.data?.html || data.html || '';
 
     // Extract chapter outline from summaryOutline section
-    // Structure: <div class="summaryOutline"><ul class="content"><li>...<li class="L2"><p>Heading (verses)</p></li>...</li></ul></div>
     const outline: { heading: string; verses: string }[] = [];
     const outlineMatch = html.match(/<div[^>]*class="[^"]*summaryOutline[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
     if (outlineMatch) {
       const outlineHtml = outlineMatch[1];
-      // Match L2 items which contain the actual section headings
       const l2Regex = /<li[^>]*class="[^"]*L2[^"]*"[^>]*>\s*<p>([\s\S]*?)<\/p>\s*<\/li>/gi;
       let l2Match;
       while ((l2Match = l2Regex.exec(outlineHtml)) !== null) {
         const rawText = l2Match[1];
-        // Extract heading text and verse range
         const cleanText = rawText
           .replace(/<a[^>]*>([\s\S]*?)<\/a>/gi, '$1')
           .replace(/<span[^>]*class="[^"]*altsize[^"]*"[^>]*>/gi, '')
@@ -80,7 +98,6 @@ Deno.serve(async (req) => {
           .replace(/\s+/g, ' ')
           .trim();
         
-        // Split heading and verse range: "Salita ng buhay (1-4)"
         const verseMatch = cleanText.match(/^(.+?)\s*\((\d[\d\s,;-]*)\)\s*$/);
         if (verseMatch) {
           outline.push({ heading: verseMatch[1].trim(), verses: verseMatch[2].trim() });
@@ -90,9 +107,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // If no chapter specified, also build a book-level summary from the outlines of all chapters
     if (!chapter) {
-      // Try to extract a title for the book
       const navMatch = html.match(/class="[^"]*navChapter[^"]*"[^>]*>[\s\S]*?<a[^>]*>[^<]*?([\w\s]+\d+)<\/a>/i);
       const bookTitle = navMatch ? navMatch[1].replace(/\d+$/, '').trim() : '';
 
