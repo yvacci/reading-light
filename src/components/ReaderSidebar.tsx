@@ -51,7 +51,7 @@ export default function ReaderSidebar({ footnotes, highlightedFootnoteId }: Prop
             <div className="rounded-xl border border-border/40 bg-card p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">Oras ng Ministeryo</span>
-                <span className={`text-sm font-bold ${totalHours >= TARGET ? 'text-[hsl(145,65%,42%)]' : 'text-primary'}`}>
+                <span className={`text-sm font-bold ${totalHours >= TARGET ? 'text-success' : 'text-primary'}`}>
                   {totalHours} / {TARGET}
                 </span>
               </div>
