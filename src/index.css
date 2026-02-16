@@ -6,76 +6,8 @@
 @tailwind utilities;
 
 @layer base {
-  /* Default / fallback variables (Bento light) */
-  :root {
-    --background: 210 20% 97%;
-    --foreground: 215 25% 15%;
-    --card: 210 15% 98%;
-    --card-foreground: 215 25% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
-    --primary: 220 85% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 15% 93%;
-    --secondary-foreground: 215 20% 22%;
-    --muted: 215 12% 92%;
-    --muted-foreground: 215 10% 46%;
-    --accent: 220 75% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 12% 89%;
-    --input: 215 12% 89%;
-    --ring: 220 85% 55%;
-    --radius: 1rem;
-    --sidebar-background: 210 15% 97%;
-    --sidebar-foreground: 215 20% 22%;
-    --sidebar-primary: 220 85% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 12% 94%;
-    --sidebar-accent-foreground: 215 20% 12%;
-    --sidebar-border: 215 12% 89%;
-    --sidebar-ring: 220 85% 55%;
-    --success: 145 65% 42%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-  }
-
-  /* Default dark fallback */
-  .dark {
-    --background: 220 20% 10%;
-    --foreground: 210 15% 90%;
-    --card: 220 18% 13%;
-    --card-foreground: 210 15% 90%;
-    --popover: 220 18% 13%;
-    --popover-foreground: 210 15% 90%;
-    --primary: 220 80% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 12% 18%;
-    --secondary-foreground: 210 12% 80%;
-    --muted: 220 12% 18%;
-    --muted-foreground: 210 8% 55%;
-    --accent: 220 70% 55%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 12% 22%;
-    --input: 220 12% 22%;
-    --ring: 220 80% 60%;
-    --sidebar-background: 220 18% 12%;
-    --sidebar-foreground: 210 12% 80%;
-    --sidebar-primary: 220 80% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 12% 16%;
-    --sidebar-accent-foreground: 210 12% 85%;
-    --sidebar-border: 220 12% 22%;
-    --sidebar-ring: 220 80% 60%;
-    --success: 145 55% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 80% 50%;
-    --warning-foreground: 0 0% 100%;
-  }
+  /* Variables are defined in themes.css — no fallback needed here.
+     ThemeContext always applies a theme-* class to <html>. */
 }
 
 @layer base {
