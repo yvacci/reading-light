@@ -16,8 +16,8 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-lg safe-bottom">
-      <div className="mx-auto flex max-w-lg items-center justify-around py-1.5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl safe-bottom">
+      <div className="mx-auto flex max-w-lg items-center justify-around py-1">
         {navItems.map(({ to, icon: Icon, labelKey }) => (
           <NavLink
             key={to}
@@ -25,13 +25,20 @@ export default function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-0.5 px-3 py-1.5 text-[10px] font-medium transition-colors',
+                'relative flex flex-col items-center gap-0.5 px-3 py-2 text-[10px] font-medium transition-all duration-200',
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )
             }
           >
-            <Icon className="h-5 w-5" />
-            <span>{t(labelKey, language)}</span>
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-primary" />
+                )}
+                <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive && "scale-110")} />
+                <span className="leading-tight">{t(labelKey, language)}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </div>

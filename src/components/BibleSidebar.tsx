@@ -12,7 +12,7 @@ export default function BibleSidebar() {
   const recentBookmarks = bookmarks.slice(0, 8);
 
   return (
-    <aside className="hidden md:flex flex-col w-[320px] shrink-0 border-l border-border/60 bg-card/50 sticky top-0 h-screen">
+    <aside className="hidden md:flex flex-col w-[320px] shrink-0 border-l border-border/40 bg-background/50 backdrop-blur-sm sticky top-0 h-screen">
       <ScrollArea className="flex-1">
         <div className="p-5 space-y-6">
           {/* Recent Bookmarks */}
