@@ -83,7 +83,7 @@ export function PioneerProvider({ children }: { children: React.ReactNode }) {
       const e = entries[key];
       if (e) {
         daysWithData++;
-        totalHours += e.ministryHours + e.witnessingHours + (e.otherWitnessingHours || 0);
+        totalHours += e.ministryHours + e.bibleStudies + e.returnVisits + e.witnessingHours + (e.otherWitnessingHours || 0);
         bibleStudies += e.bibleStudies;
         returnVisits += e.returnVisits;
         witnessingHours += e.witnessingHours;
