@@ -1,4 +1,4 @@
-import { Clock, Bell, Users, MapPin, Calendar, BookOpen } from 'lucide-react';
+import { Clock, Bell, Users, MapPin, Calendar, BookOpen, BookText } from 'lucide-react';
 import { useStudies } from '@/contexts/StudiesContext';
 import { usePioneer } from '@/contexts/PioneerContext';
 import { Progress } from '@/components/ui/progress';
@@ -33,6 +33,10 @@ export default function ReaderSidebar({ footnotes, highlightedFootnoteId }: Prop
   }
   const TARGET = 50;
   const hoursPercent = Math.min(100, Math.round((totalHours / TARGET) * 100));
+
+  // Split footnotes into cross-references and regular footnotes
+  const crossRefs = footnotes?.filter(fn => /^\w+\.?\s+\d+:\d+/.test(fn.reference)) || [];
+  const regularFootnotes = footnotes?.filter(fn => !/^\w+\.?\s+\d+:\d+/.test(fn.reference)) || [];
 
   return (
     <aside className="hidden md:flex flex-col w-[320px] shrink-0 border-l border-border/60 bg-card/50 sticky top-0 h-screen">
@@ -122,12 +126,12 @@ export default function ReaderSidebar({ footnotes, highlightedFootnoteId }: Prop
             </div>
           )}
 
-          {/* Footnotes */}
+          {/* Footnotes & Cross-References */}
           {footnotes && footnotes.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <BookOpen className="h-4 w-4 text-primary" />
-                <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Mga Footnote</h3>
+                <BookText className="h-4 w-4 text-primary" />
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Footnote at Sanggunian</h3>
               </div>
               <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
                 {footnotes.map((fn) => (
@@ -140,7 +144,7 @@ export default function ReaderSidebar({ footnotes, highlightedFootnoteId }: Prop
                         : 'text-muted-foreground'
                     }`}
                   >
-                    <span className="font-semibold text-primary mr-1">*</span>
+                    <span className="font-semibold text-primary mr-1">{fn.reference || '*'}</span>
                     {fn.content}
                   </div>
                 ))}

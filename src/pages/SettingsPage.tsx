@@ -94,7 +94,7 @@ export default function SettingsPage() {
   };
 
   /* Shared section card style */
-  const sectionClass = "rounded-2xl bg-card/80 p-4 mb-4 shadow-sm";
+  const sectionClass = "bg-transparent p-0 mb-6";
 
   return (
     <div className="min-h-screen pb-20">
@@ -135,10 +135,10 @@ export default function SettingsPage() {
                     <button
                       key={opt.id}
                       onClick={() => setTheme(opt.id)}
-                      className={`relative flex items-center gap-3 rounded-xl p-3 transition-all border ${
+                      className={`relative flex items-center gap-3 rounded-xl p-3 transition-all ${
                         isActive
-                          ? 'border-primary/40 bg-primary/5 shadow-md'
-                          : 'border-border/30 hover:border-primary/20 hover:bg-muted/40'
+                          ? 'bg-primary/5'
+                          : 'hover:bg-muted/40'
                       }`}
                     >
                       <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${colors.bg}`}>
