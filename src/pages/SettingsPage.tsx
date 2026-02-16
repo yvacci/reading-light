@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
+import { useTheme, THEME_OPTIONS, type ThemeName } from '@/contexts/ThemeContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { usePioneer } from '@/contexts/PioneerContext';
 import { exportBackup, importBackup } from '@/lib/backup-service';
@@ -22,9 +23,18 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+const themePreviewColors: Record<ThemeName, { bg: string; accent: string; fg: string }> = {
+  bento: { bg: 'bg-blue-50', accent: 'bg-blue-500', fg: 'text-blue-900' },
+  glassmorphic: { bg: 'bg-purple-50', accent: 'bg-purple-400', fg: 'text-purple-900' },
+  'neo-brutalist': { bg: 'bg-yellow-100', accent: 'bg-green-500', fg: 'text-black' },
+  'soft-minimalist': { bg: 'bg-amber-50', accent: 'bg-emerald-500', fg: 'text-amber-900' },
+  cottagecore: { bg: 'bg-orange-50', accent: 'bg-green-700', fg: 'text-stone-800' },
+};
+
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { fontSize, setFontSize, language, darkMode, setDarkMode, resetProgress } = useReadingProgress();
+  const { fontSize, setFontSize, language, resetProgress } = useReadingProgress();
+  const { theme, mode, setTheme, toggleMode } = useTheme();
   const { resetEntries } = usePioneer();
   const {
     isSupported,
@@ -43,15 +53,6 @@ export default function SettingsPage() {
       await enableReminders();
     } else {
       disableReminders();
-    }
-  };
-
-  const handleDarkModeToggle = (checked: boolean) => {
-    setDarkMode(checked);
-    if (checked) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
     }
   };
 
@@ -92,6 +93,60 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-5 max-w-lg mx-auto">
+        {/* Theme & Design */}
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Theme & Design</p>
+          <div className="space-y-0 divide-y divide-border">
+            {/* Light/Dark toggle */}
+            <div className="flex items-center justify-between py-3.5">
+              <div className="flex items-center gap-3">
+                {mode === 'dark' ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+                <span className="text-sm text-foreground">{mode === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+              </div>
+              <Switch checked={mode === 'dark'} onCheckedChange={toggleMode} />
+            </div>
+
+            {/* Theme selector */}
+            <div className="py-3.5">
+              <div className="flex items-center gap-3 mb-3">
+                <Palette className="h-5 w-5 text-primary" />
+                <span className="text-sm text-foreground">Design Theme</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {THEME_OPTIONS.map((opt) => {
+                  const colors = themePreviewColors[opt.id];
+                  const isActive = theme === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setTheme(opt.id)}
+                      className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all ${
+                        isActive
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                          : 'border-border hover:border-primary/40 hover:bg-muted/50'
+                      }`}
+                    >
+                      {/* Mini preview */}
+                      <div className={`flex h-10 w-full items-center justify-center rounded-lg ${colors.bg}`}>
+                        <div className={`h-4 w-4 rounded-full ${colors.accent}`} />
+                      </div>
+                      <span className={`text-xs font-semibold ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                        {opt.preview} {opt.name}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground leading-tight">{opt.description}</span>
+                      {isActive && (
+                        <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[8px]">
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Appearance */}
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">{t('settings.appearance', language)}</p>
@@ -108,16 +163,6 @@ export default function SettingsPage() {
                 min={12}
                 max={24}
                 step={1}
-              />
-            </div>
-            <div className="flex items-center justify-between py-3.5">
-              <div className="flex items-center gap-3">
-                {darkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
-                <span className="text-sm text-foreground">Dark Mode</span>
-              </div>
-              <Switch
-                checked={darkMode}
-                onCheckedChange={handleDarkModeToggle}
               />
             </div>
           </div>
@@ -265,7 +310,7 @@ export default function SettingsPage() {
             <Info className="h-5 w-5 text-primary mt-0.5" />
             <div>
               <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-              <p className="text-[10px] text-muted-foreground">Version 2.2.0</p>
+              <p className="text-[10px] text-muted-foreground">Version 2.3.0</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {t('settings.aboutDesc', language)}
               </p>
