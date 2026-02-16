@@ -11,6 +11,7 @@ import { fetchChapterOutline, getCachedChapterOutline } from '@/lib/bible-summar
 import PageHeader from '@/components/PageHeader';
 import ChapterReader from '@/components/ChapterReader';
 import ReferencePane from '@/components/ReferencePane';
+import BibleSidebar from '@/components/BibleSidebar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const VIEW_PREF_KEY = 'nwt-book-view';
@@ -59,7 +60,8 @@ export default function ReaderPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-20 flex">
+      <div className="flex-1 min-w-0">
       <PageHeader
         title="Bibliya Para sa Pag-aaral"
         subtitle="Tagalog"
@@ -158,6 +160,8 @@ export default function ReaderPage() {
       ) : (
         <SubTabContent tabId={activeSubTab} />
       )}
+      </div>
+      <BibleSidebar />
     </div>
   );
 }
@@ -353,7 +357,8 @@ function ChapterSelector({ book }: { book: BibleBook }) {
   };
 
   return (
-    <div className="min-h-screen pb-20 bg-background">
+    <div className="min-h-screen pb-20 bg-background flex">
+      <div className="flex-1 min-w-0">
       {/* Header */}
       <div className="px-5 pt-12 pb-3 safe-top">
         <div className="flex items-center gap-2 mb-1">
@@ -502,6 +507,8 @@ function ChapterSelector({ book }: { book: BibleBook }) {
         onClose={() => setPaneOpen(false)}
         quickLinkUrl={paneUrl}
       />
+      </div>
+      <BibleSidebar />
     </div>
   );
 }
