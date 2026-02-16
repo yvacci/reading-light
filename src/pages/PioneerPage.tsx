@@ -67,7 +67,7 @@ function ServiceYearCard({ entries, language }: { entries: Record<string, Pionee
   Object.entries(entries).forEach(([dateKey, entry]) => {
     const d = new Date(dateKey + 'T12:00:00');
     if (d >= sy.start && d <= sy.end) {
-      totalHours += entry.ministryHours + entry.witnessingHours + (entry.otherWitnessingHours || 0);
+      totalHours += entry.ministryHours + entry.bibleStudies + entry.returnVisits + entry.witnessingHours + (entry.otherWitnessingHours || 0);
     }
   });
 
@@ -376,7 +376,7 @@ export default function PioneerPage() {
     }
   }
 
-  const totalHours = totalFS + totalPW + totalOther;
+  const totalHours = totalFS + totalBS + totalRV + totalPW + totalOther;
 
   const dayLabels = language === 'en'
     ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -475,68 +475,43 @@ export default function PioneerPage() {
             >
               <h3 className="text-xs font-semibold text-foreground">{t('pioneer.monthlySummary', language)}</h3>
 
+              {/* Successful visits — larger highlight boxes */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3">
-                  <Megaphone className="h-5 w-5 text-primary shrink-0" />
-                  <div>
-                    <span className="text-lg font-bold text-primary">{totalFS}h</span>
-                    <p className="text-[10px] text-muted-foreground">Field Service</p>
-                  </div>
+                <div className="rounded-xl bg-success/10 px-4 py-3 text-center space-y-1">
+                  <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('bible-study')}</span>
+                  <p className="text-[10px] text-muted-foreground">Matagumpay na BS</p>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-4 py-3">
-                  <BookOpen className="h-5 w-5 text-primary shrink-0" />
-                  <div>
-                    <span className="text-lg font-bold text-foreground">{totalBS}h</span>
-                    <p className="text-[10px] text-muted-foreground">{t('pioneer.bibleStudies', language)}</p>
-                  </div>
+                <div className="rounded-xl bg-success/10 px-4 py-3 text-center space-y-1">
+                  <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('return-visit')}</span>
+                  <p className="text-[10px] text-muted-foreground">Matagumpay na RV</p>
                 </div>
               </div>
 
-              {/* Successful visits from Studies */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl bg-success/10 px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-foreground">Matagumpay na BS</span>
-                  <span className="text-sm font-bold text-success">{getSuccessfulVisitsThisMonth('bible-study')}</span>
+              {/* All hour categories — uniform small boxes */}
+              <div className="grid grid-cols-5 gap-2">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                  <span className="text-sm font-bold text-foreground">{totalFS}h</span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Field Svc</p>
                 </div>
-                <div className="rounded-xl bg-success/10 px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-foreground">Matagumpay na RV</span>
-                  <span className="text-sm font-bold text-success">{getSuccessfulVisitsThisMonth('return-visit')}</span>
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                  <span className="text-sm font-bold text-foreground">{totalBS}h</span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Bible Study</p>
                 </div>
-              </div>
-
-              {/* Bible Studies conducted this month */}
-              {totalBS > 0 && (
-                <div className="rounded-xl bg-muted/30 px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-foreground">Bible Studies Hours</span>
-                  <span className="text-sm font-bold text-primary">{totalBS}h</span>
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                  <span className="text-sm font-bold text-foreground">{totalRV}h</span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Return Visit</p>
                 </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
-                  <Users className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <span className="text-base font-bold text-foreground">{totalRV}h</span>
-                    <p className="text-[10px] text-muted-foreground">{t('pioneer.returnVisits', language)}</p>
-                  </div>
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                  <span className="text-sm font-bold text-foreground">{totalPW}h</span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Witnessing</p>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
-                  <Megaphone className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <span className="text-base font-bold text-foreground">{totalPW}h</span>
-                    <p className="text-[10px] text-muted-foreground">{t('pioneer.witnessing', language)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl bg-muted/50 px-3 py-3">
-                  <MoreHorizontal className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <span className="text-base font-bold text-foreground">{totalOther}h</span>
-                    <p className="text-[10px] text-muted-foreground">Others</p>
-                  </div>
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                  <span className="text-sm font-bold text-foreground">{totalOther}h</span>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">Others</p>
                 </div>
               </div>
 
-              {/* Total Hours in Monthly Summary */}
+              {/* Total Hours */}
               <div className="rounded-xl bg-primary/5 px-4 py-3 flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground">Total Hours</span>
                 <span className="text-lg font-bold text-primary">{totalHours}h</span>
