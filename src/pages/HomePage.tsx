@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone, Users } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { usePioneer } from '@/contexts/PioneerContext';
+import { useStudies } from '@/contexts/StudiesContext';
 import { getBookById } from '@/lib/bible-data';
 import { getLocalizedBookName } from '@/lib/localization';
 import { getChapterEvents } from '@/lib/bible-events';
@@ -14,11 +15,14 @@ import ReadingStatsCard from '@/components/ReadingStatsCard';
 
 function PioneerSummaryCard() {
   const { getMonthSummary } = usePioneer();
+  const { getSuccessfulVisitsThisMonth } = useStudies();
   const navigate = useNavigate();
   const now = new Date();
   const summary = getMonthSummary(now.getFullYear(), now.getMonth() + 1);
+  const successfulBS = getSuccessfulVisitsThisMonth('bible-study');
+  const successfulRV = getSuccessfulVisitsThisMonth('return-visit');
 
-  if (summary.daysWithData === 0) return null;
+  if (summary.daysWithData === 0 && successfulBS === 0 && successfulRV === 0) return null;
 
   return (
     <motion.div
@@ -51,6 +55,26 @@ function PioneerSummaryCard() {
           <span className="text-[10px] text-muted-foreground">Return Visit</span>
         </div>
       </div>
+
+      {/* Successful visits this month */}
+      {(successfulBS > 0 || successfulRV > 0) && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-2 rounded-xl bg-success/10 px-3 py-2">
+            <BookOpen className="h-3.5 w-3.5 text-success" />
+            <div>
+              <span className="text-sm font-bold text-success">{successfulBS}</span>
+              <p className="text-[9px] text-muted-foreground">Matagumpay na BS</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-success/10 px-3 py-2">
+            <Users className="h-3.5 w-3.5 text-success" />
+            <div>
+              <span className="text-sm font-bold text-success">{successfulRV}</span>
+              <p className="text-[9px] text-muted-foreground">Matagumpay na RV</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between text-[10px] text-muted-foreground">
         <span>{summary.daysWithData} / {summary.daysInMonth} days logged</span>

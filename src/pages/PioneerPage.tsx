@@ -323,7 +323,7 @@ export default function PioneerPage() {
   const navigate = useNavigate();
   const { language } = useReadingProgress();
   const { entries, getEntry, saveEntry } = usePioneer();
-  const { getStudyCount } = useStudies();
+  const { getStudyCount, getSuccessfulVisitsThisMonth } = useStudies();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [formData, setFormData] = useState({ ministryHours: 0, bibleStudies: 0, returnVisits: 0, witnessingHours: 0, otherWitnessingHours: 0 });
@@ -492,11 +492,23 @@ export default function PioneerPage() {
                 </div>
               </div>
 
+              {/* Successful visits from Studies */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-success/10 px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-foreground">Matagumpay na BS</span>
+                  <span className="text-sm font-bold text-success">{getSuccessfulVisitsThisMonth('bible-study')}</span>
+                </div>
+                <div className="rounded-xl bg-success/10 px-4 py-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-foreground">Matagumpay na RV</span>
+                  <span className="text-sm font-bold text-success">{getSuccessfulVisitsThisMonth('return-visit')}</span>
+                </div>
+              </div>
+
               {/* Bible Studies conducted this month */}
               {totalBS > 0 && (
                 <div className="rounded-xl bg-muted/30 px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-foreground">Bible Studies This Month</span>
-                  <span className="text-sm font-bold text-primary">{totalBS}</span>
+                  <span className="text-[11px] font-medium text-foreground">Bible Studies Hours</span>
+                  <span className="text-sm font-bold text-primary">{totalBS}h</span>
                 </div>
               )}
 
