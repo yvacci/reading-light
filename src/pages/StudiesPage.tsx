@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History, ChevronUp, ChevronDown } from 'lucide-react';
-import { useStudies, StudyEntry } from '@/contexts/StudiesContext';
+import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History, ChevronUp, ChevronDown, CheckCircle2, XCircle } from 'lucide-react';
+import { useStudies, StudyEntry, VisitHistoryEntry } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
 import PageHeader from '@/components/PageHeader';
@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-function VisitHistoryDropdown({ visitHistory }: { visitHistory: { id: string; date: string; notes: string }[] }) {
+function VisitHistoryDropdown({ visitHistory }: { visitHistory: VisitHistoryEntry[] }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div className="mt-2 border-t border-border/50 pt-2">
@@ -37,9 +37,17 @@ function VisitHistoryDropdown({ visitHistory }: { visitHistory: { id: string; da
             className="overflow-hidden"
           >
             <div className="space-y-1 mt-1.5 max-h-32 overflow-y-auto">
-              {visitHistory.slice().reverse().map(vh => (
+               {visitHistory.slice().reverse().map(vh => (
                 <div key={vh.id} className="flex items-start gap-1.5">
+                  {vh.status === 'not-successful' ? (
+                    <XCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                  ) : (
+                    <CheckCircle2 className="h-3 w-3 text-success shrink-0 mt-0.5" />
+                  )}
                   <span className="text-[10px] text-muted-foreground shrink-0">{new Date(vh.date + 'T12:00:00').toLocaleDateString()}</span>
+                  <span className={`text-[10px] font-medium ${vh.status === 'not-successful' ? 'text-destructive' : 'text-success'}`}>
+                    {vh.status === 'not-successful' ? 'Hindi Matagumpay' : 'Matagumpay'}
+                  </span>
                   {vh.notes && <span className="text-[10px] text-foreground/70">— {vh.notes}</span>}
                 </div>
               ))}
@@ -61,6 +69,7 @@ export default function StudiesPage() {
   const [visitHistoryDialogOpen, setVisitHistoryDialogOpen] = useState(false);
   const [visitHistoryStudyId, setVisitHistoryStudyId] = useState<string | null>(null);
   const [visitHistoryNotes, setVisitHistoryNotes] = useState('');
+  const [visitHistoryStatus, setVisitHistoryStatus] = useState<'successful' | 'not-successful'>('successful');
   const [form, setForm] = useState({
     name: '', contactInfo: '', address: '', lastVisitDate: '', notes: '',
     type: 'bible-study' as 'bible-study' | 'return-visit',
@@ -99,10 +108,11 @@ export default function StudiesPage() {
 
   const handleAddVisitHistory = () => {
     if (!visitHistoryStudyId) return;
-    addVisitHistory(visitHistoryStudyId, visitHistoryNotes);
+    addVisitHistory(visitHistoryStudyId, visitHistoryNotes, visitHistoryStatus);
     toast.success('Naidagdag ang visit history');
     setVisitHistoryDialogOpen(false);
     setVisitHistoryNotes('');
+    setVisitHistoryStatus('successful');
     setVisitHistoryStudyId(null);
   };
 
@@ -359,6 +369,29 @@ export default function StudiesPage() {
             <p className="text-xs text-muted-foreground">
               Ire-record ito bilang bagong bisita at ia-update ang huling bisita date.
             </p>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Status ng Bisita</label>
+              <div className="flex gap-1 rounded-xl bg-muted p-1">
+                <button
+                  onClick={() => setVisitHistoryStatus('successful')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-all ${
+                    visitHistoryStatus === 'successful' ? 'bg-card text-success shadow-sm' : 'text-muted-foreground'
+                  }`}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Matagumpay
+                </button>
+                <button
+                  onClick={() => setVisitHistoryStatus('not-successful')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-medium transition-all ${
+                    visitHistoryStatus === 'not-successful' ? 'bg-card text-destructive shadow-sm' : 'text-muted-foreground'
+                  }`}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  Hindi Matagumpay
+                </button>
+              </div>
+            </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Notes sa Bisita</label>
               <Textarea

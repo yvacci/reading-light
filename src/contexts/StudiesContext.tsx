@@ -4,6 +4,7 @@ export interface VisitHistoryEntry {
   id: string;
   date: string;
   notes: string;
+  status?: 'successful' | 'not-successful';
 }
 
 export interface StudyEntry {
@@ -27,7 +28,8 @@ interface StudiesContextType {
   deleteStudy: (id: string) => void;
   getStudyCount: (type: 'bible-study' | 'return-visit') => number;
   getUpcomingVisits: () => StudyEntry[];
-  addVisitHistory: (studyId: string, notes: string) => void;
+  addVisitHistory: (studyId: string, notes: string, status?: 'successful' | 'not-successful') => void;
+  getSuccessfulVisitsThisMonth: (type: 'bible-study' | 'return-visit') => number;
 }
 
 const STORAGE_KEY = 'nwt-studies-data';
@@ -73,13 +75,14 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
     return studies.filter(s => s.type === type).length;
   }, [studies]);
 
-  const addVisitHistory = useCallback((studyId: string, notes: string) => {
+  const addVisitHistory = useCallback((studyId: string, notes: string, status?: 'successful' | 'not-successful') => {
     setStudies(prev => prev.map(s => {
       if (s.id !== studyId) return s;
       const entry: VisitHistoryEntry = {
         id: Date.now().toString(36),
         date: new Date().toISOString().slice(0, 10),
         notes,
+        status: status || 'successful',
       };
       return {
         ...s,
@@ -88,6 +91,21 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
       };
     }));
   }, []);
+
+  const getSuccessfulVisitsThisMonth = useCallback((type: 'bible-study' | 'return-visit') => {
+    const now = new Date();
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    let count = 0;
+    studies.forEach(s => {
+      if (s.type !== type) return;
+      (s.visitHistory || []).forEach(vh => {
+        if (vh.date.startsWith(yearMonth) && (vh.status === 'successful' || !vh.status)) {
+          count++;
+        }
+      });
+    });
+    return count;
+  }, [studies]);
 
   const getUpcomingVisits = useCallback(() => {
     return studies.filter(s => {
@@ -102,7 +120,7 @@ export function StudiesProvider({ children }: { children: React.ReactNode }) {
   }, [studies]);
 
   return (
-    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount, getUpcomingVisits, addVisitHistory }}>
+    <StudiesContext.Provider value={{ studies, addStudy, updateStudy, deleteStudy, getStudyCount, getUpcomingVisits, addVisitHistory, getSuccessfulVisitsThisMonth }}>
       {children}
     </StudiesContext.Provider>
   );
