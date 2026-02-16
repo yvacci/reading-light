@@ -65,7 +65,7 @@ export default function ReadingStatsCard() {
 
         {/* Plan adherence */}
         <div className="flex flex-col items-center rounded-xl bg-muted/50 p-3">
-          <span className="text-2xl font-bold text-[hsl(var(--success))]">{adherence}%</span>
+          <span className="text-2xl font-bold text-success">{adherence}%</span>
           <span className="text-[10px] text-muted-foreground mt-0.5 text-center leading-tight">
             {t('stats.planAdherence', language)}
           </span>

@@ -13,14 +13,14 @@ export default function ReadingStreakCard() {
       className="rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Flame className={`h-4 w-4 ${currentStreak > 0 ? 'text-[hsl(var(--warning))]' : 'text-muted-foreground'}`} />
+        <Flame className={`h-4 w-4 ${currentStreak > 0 ? 'text-warning' : 'text-muted-foreground'}`} />
         <span className="text-xs font-semibold text-foreground">Reading Streak</span>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         {/* Current streak */}
         <div className="flex flex-col items-center rounded-xl bg-muted/50 p-3">
-          <span className={`text-2xl font-bold ${currentStreak > 0 ? 'text-[hsl(var(--warning))]' : 'text-muted-foreground'}`}>
+          <span className={`text-2xl font-bold ${currentStreak > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
             {currentStreak}
           </span>
           <span className="text-[10px] text-muted-foreground mt-0.5">Current</span>
@@ -42,7 +42,7 @@ export default function ReadingStreakCard() {
       </div>
 
       {!readToday && currentStreak > 0 && (
-        <p className="mt-3 text-[10px] text-center text-[hsl(var(--warning))]">
+        <p className="mt-3 text-[10px] text-center text-warning">
           Read today to keep your {currentStreak}-day streak alive! 🔥
         </p>
       )}

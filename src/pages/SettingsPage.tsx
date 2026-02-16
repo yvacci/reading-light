@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Zap, Leaf, Home, Check } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Leaf, Home, Check } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useTheme, THEME_OPTIONS, type ThemeName } from '@/contexts/ThemeContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
@@ -26,7 +26,6 @@ import {
 const themeIcons: Record<ThemeName, React.ElementType> = {
   bento: Grid3X3,
   glassmorphic: Sparkles,
-  'neo-brutalist': Zap,
   'soft-minimalist': Leaf,
   cottagecore: Home,
 };
@@ -34,7 +33,6 @@ const themeIcons: Record<ThemeName, React.ElementType> = {
 const themePreviewColors: Record<ThemeName, { bg: string; accent: string }> = {
   bento: { bg: 'bg-blue-50 dark:bg-slate-800', accent: 'bg-blue-500' },
   glassmorphic: { bg: 'bg-purple-50 dark:bg-purple-900/40', accent: 'bg-purple-400' },
-  'neo-brutalist': { bg: 'bg-neutral-100 dark:bg-neutral-800', accent: 'bg-green-400' },
   'soft-minimalist': { bg: 'bg-amber-50 dark:bg-stone-800', accent: 'bg-emerald-500' },
   cottagecore: { bg: 'bg-orange-50 dark:bg-stone-800', accent: 'bg-green-700' },
 };
@@ -93,7 +91,6 @@ export default function SettingsPage() {
     toast.success('Na-reset ang lahat ng data.');
   };
 
-  /* Shared section card style */
   const sectionClass = "bg-transparent p-0 mb-6";
 
   return (
@@ -103,7 +100,6 @@ export default function SettingsPage() {
         <h1 className="mt-1 text-2xl font-bold text-foreground">{t('settings.subtitle', language)}</h1>
       </div>
 
-      {/* Two-column on md+ */}
       <div className="px-5 max-w-4xl mx-auto md:grid md:grid-cols-2 md:gap-6">
         {/* LEFT COLUMN */}
         <div>
