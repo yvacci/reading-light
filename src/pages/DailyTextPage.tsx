@@ -171,9 +171,9 @@ export default function DailyTextPage() {
       <div className="px-5 pt-12 pb-2 safe-top">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">{t('dailyText.title')}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('dailyText.title')}</p>
         </div>
-        <h1 className="mt-1 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <h1 className="mt-1.5 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
           {t('dailyText.pageSubtitle')}
         </h1>
       </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone, Users } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone, Users, Clock } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { usePioneer } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
@@ -42,15 +42,18 @@ function PioneerSummaryCard() {
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="flex flex-col items-center rounded-xl bg-primary/10 p-2.5">
+        <div className="flex flex-col items-center gap-1 rounded-xl bg-primary/10 p-2.5">
+          <Clock className="h-3.5 w-3.5 text-primary" />
           <span className="text-lg font-bold text-primary">{summary.totalHours}h</span>
           <span className="text-[10px] text-muted-foreground">Total Hours</span>
         </div>
-        <div className="flex flex-col items-center rounded-xl bg-muted/50 p-2.5">
+        <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-2.5">
+          <BookOpen className="h-3.5 w-3.5 text-primary" />
           <span className="text-lg font-bold text-foreground">{summary.bibleStudies}h</span>
           <span className="text-[10px] text-muted-foreground">Bible Study</span>
         </div>
-        <div className="flex flex-col items-center rounded-xl bg-muted/50 p-2.5">
+        <div className="flex flex-col items-center gap-1 rounded-xl bg-muted/50 p-2.5">
+          <Users className="h-3.5 w-3.5 text-primary" />
           <span className="text-lg font-bold text-foreground">{summary.returnVisits}h</span>
           <span className="text-[10px] text-muted-foreground">Return Visit</span>
         </div>
@@ -94,17 +97,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen pb-20">
       {/* Hero */}
-      <div className="px-5 pb-6 pt-12 safe-top">
+      <div className="px-5 pb-5 pt-12 safe-top">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('app.title')}</p>
-          <h1 className="mt-1 text-3xl font-bold text-foreground whitespace-pre-line" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('app.title')}</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-foreground whitespace-pre-line tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
             {t('home.subtitle')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
             {t('home.tagline')}
           </p>
         </motion.div>

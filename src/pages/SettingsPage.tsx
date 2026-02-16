@@ -96,8 +96,8 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen pb-20">
       <div className="px-5 pt-12 pb-4 safe-top">
-        <p className="text-xs font-medium uppercase tracking-widest text-primary">{t('settings.title', language)}</p>
-        <h1 className="mt-1 text-2xl font-bold text-foreground">{t('settings.subtitle', language)}</h1>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('settings.title', language)}</p>
+        <h1 className="mt-1.5 text-2xl font-bold text-foreground tracking-tight">{t('settings.subtitle', language)}</h1>
       </div>
 
       <div className="px-5 max-w-4xl mx-auto md:grid md:grid-cols-2 md:gap-6">

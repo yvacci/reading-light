@@ -389,6 +389,7 @@ export default function PioneerPage() {
       <div className="flex-1 min-w-0">
         <PageHeader title={t('pioneer.title', language)} subtitle={t('pioneer.subtitle', language)} />
 
+
         <div className="px-4 pt-4 max-w-5xl mx-auto md:grid md:grid-cols-[1fr_1fr] md:gap-6">
           {/* LEFT COLUMN — Calendar + Service Year + Monthly Target */}
           <div className="space-y-4">
@@ -477,44 +478,45 @@ export default function PioneerPage() {
 
               {/* Successful visits — larger highlight boxes */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-success/10 px-4 py-3 text-center space-y-1">
+                <div className="rounded-xl bg-success/10 px-4 py-3 flex flex-col items-center gap-1">
+                  <BookOpen className="h-4 w-4 text-success" />
                   <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('bible-study')}</span>
                   <p className="text-[10px] text-muted-foreground">Matagumpay na BS</p>
                 </div>
-                <div className="rounded-xl bg-success/10 px-4 py-3 text-center space-y-1">
+                <div className="rounded-xl bg-success/10 px-4 py-3 flex flex-col items-center gap-1">
+                  <Users className="h-4 w-4 text-success" />
                   <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('return-visit')}</span>
                   <p className="text-[10px] text-muted-foreground">Matagumpay na RV</p>
                 </div>
               </div>
 
-              {/* All hour categories — uniform small boxes */}
+              {/* All hour categories — uniform small boxes with icons */}
               <div className="grid grid-cols-5 gap-2">
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
+                  <Megaphone className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-foreground">{totalFS}h</span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">Field Svc</p>
+                  <p className="text-[9px] text-muted-foreground">Field Svc</p>
                 </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
+                  <BookOpen className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-foreground">{totalBS}h</span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">Bible Study</p>
+                  <p className="text-[9px] text-muted-foreground">Bible Study</p>
                 </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
+                  <Users className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-foreground">{totalRV}h</span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">Return Visit</p>
+                  <p className="text-[9px] text-muted-foreground">Return Visit</p>
                 </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-foreground">{totalPW}h</span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">Witnessing</p>
+                  <p className="text-[9px] text-muted-foreground">Witnessing</p>
                 </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 text-center">
+                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
+                  <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-bold text-foreground">{totalOther}h</span>
-                  <p className="text-[9px] text-muted-foreground mt-0.5">Others</p>
+                  <p className="text-[9px] text-muted-foreground">Others</p>
                 </div>
-              </div>
-
-              {/* Total Hours */}
-              <div className="rounded-xl bg-primary/5 px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-medium text-foreground">Total Hours</span>
-                <span className="text-lg font-bold text-primary">{totalHours}h</span>
               </div>
             </motion.div>
 
