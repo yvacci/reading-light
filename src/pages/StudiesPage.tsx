@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Search, BookOpen, Users, Trash2, Edit2, Phone, Calendar, FileText, MapPin, ExternalLink, Clock, History, ChevronUp, ChevronDown } from 'lucide-react';
 import { useStudies, StudyEntry } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { t } from '@/lib/i18n';
@@ -14,6 +14,42 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+
+function VisitHistoryDropdown({ visitHistory }: { visitHistory: { id: string; date: string; notes: string }[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="mt-2 border-t border-border/50 pt-2">
+      <button
+        onClick={(e) => { e.stopPropagation(); setExpanded(prev => !prev); }}
+        className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors w-full text-left"
+      >
+        <History className="h-3 w-3" />
+        <span className="flex-1">Kasaysayan ng Bisita ({visitHistory.length})</span>
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-1 mt-1.5 max-h-32 overflow-y-auto">
+              {visitHistory.slice().reverse().map(vh => (
+                <div key={vh.id} className="flex items-start gap-1.5">
+                  <span className="text-[10px] text-muted-foreground shrink-0">{new Date(vh.date + 'T12:00:00').toLocaleDateString()}</span>
+                  {vh.notes && <span className="text-[10px] text-foreground/70">— {vh.notes}</span>}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function StudiesPage() {
   const { language } = useReadingProgress();
@@ -197,19 +233,9 @@ export default function StudiesPage() {
                           <span className="text-[11px] text-muted-foreground line-clamp-2">{s.notes}</span>
                         </div>
                       )}
-                      {/* Visit history details */}
+                      {/* Visit history - collapsible */}
                       {(s.visitHistory?.length || 0) > 0 && (
-                        <div className="mt-2 border-t border-border/50 pt-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Kasaysayan ng Bisita</p>
-                          <div className="space-y-1 max-h-24 overflow-y-auto">
-                            {s.visitHistory!.slice().reverse().map(vh => (
-                              <div key={vh.id} className="flex items-start gap-1.5">
-                                <span className="text-[10px] text-muted-foreground shrink-0">{new Date(vh.date + 'T12:00:00').toLocaleDateString()}</span>
-                                {vh.notes && <span className="text-[10px] text-foreground/70">— {vh.notes}</span>}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <VisitHistoryDropdown visitHistory={s.visitHistory!} />
                       )}
                     </div>
                     <div className="flex gap-1 ml-2">
