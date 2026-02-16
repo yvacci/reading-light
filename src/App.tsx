@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +8,7 @@ import { BookmarksProvider } from "@/contexts/BookmarksContext";
 import { JournalProvider } from "@/contexts/JournalContext";
 import { PioneerProvider } from "@/contexts/PioneerContext";
 import { StudiesProvider } from "@/contexts/StudiesContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import BottomNav from "@/components/BottomNav";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import HomePage from "./pages/HomePage";
@@ -27,30 +27,15 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function DarkModeInit() {
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('nwt-reading-progress');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.darkMode) {
-          document.documentElement.classList.add('dark');
-        }
-      }
-    } catch {}
-  }, []);
-  return null;
-}
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ReadingProgressProvider>
-        <BookmarksProvider>
-          <JournalProvider>
-            <PioneerProvider>
-              <StudiesProvider>
-                <DarkModeInit />
+      <ThemeProvider>
+        <ReadingProgressProvider>
+          <BookmarksProvider>
+            <JournalProvider>
+              <PioneerProvider>
+                <StudiesProvider>
                 <Toaster />
                 <Sonner />
                 <OfflineIndicator />
@@ -74,11 +59,12 @@ const App = () => (
                   </Routes>
                   <BottomNav />
                 </BrowserRouter>
-              </StudiesProvider>
-            </PioneerProvider>
-          </JournalProvider>
-        </BookmarksProvider>
-      </ReadingProgressProvider>
+                </StudiesProvider>
+              </PioneerProvider>
+            </JournalProvider>
+          </BookmarksProvider>
+        </ReadingProgressProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
