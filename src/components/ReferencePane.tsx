@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, BookOpen, Clock, Link2, Star, ChevronRight, MapPin, Users, Bell, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePioneer } from '@/contexts/PioneerContext';
@@ -32,6 +33,7 @@ const QUICK_LINKS = [
 ];
 
 export default function ReferencePane({ open, onClose, verseRef, footnotes, quickLinkUrl }: Props) {
+  const navigate = useNavigate();
   const { entries } = usePioneer();
   const { getUpcomingVisits, studies } = useStudies();
   const [randomVerse, setRandomVerse] = useState(PIONEER_VERSES[0]);
@@ -44,7 +46,6 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
 
   const upcomingVisits = open ? getUpcomingVisits() : [];
   
-  // Get all studies with scheduled next visits
   const scheduledVisits = open ? studies.filter(s => s.nextVisitDate).sort((a, b) => 
     (a.nextVisitDate || '').localeCompare(b.nextVisitDate || '')
   ).slice(0, 5) : [];
@@ -62,6 +63,13 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
   }
   const TARGET = 50;
   const hoursPercent = Math.min(100, Math.round((totalHours / TARGET) * 100));
+
+  const handleGoToVerse = () => {
+    if (verseRef) {
+      onClose();
+      navigate(`/reader/${verseRef.bookId}/${verseRef.chapter}`);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -103,13 +111,21 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                   </div>
                 )}
 
-                {/* Verse content when a verse is selected */}
+                {/* Verse content when a verse is selected (from Daily Text or reader) */}
                 {verseRef && (
                   <div className="rounded-xl bg-primary/5 p-4 border border-primary/10">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-2">Talata</p>
-                    <p className="text-sm text-foreground leading-relaxed">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-2">Binanggit na Teksto</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-line text-left">
                       {verseRef.text || `${verseRef.bookId} ${verseRef.chapter}:${verseRef.verse || ''}`}
                     </p>
+                    <button
+                      onClick={handleGoToVerse}
+                      className="mt-2 text-[11px] text-primary font-semibold hover:underline transition-colors flex items-center gap-1"
+                    >
+                      <BookOpen className="h-3 w-3" />
+                      Buksan sa Bibliya
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
                   </div>
                 )}
 
@@ -161,6 +177,12 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                                   <span className="text-[10px] text-primary hover:underline truncate">{visit.address}</span>
                                 </button>
                               )}
+                              {/* Visit history summary */}
+                              {(visit.visitHistory?.length || 0) > 0 && (
+                                <p className="text-[9px] text-muted-foreground mt-0.5">
+                                  {visit.visitHistory!.length} naka-record na bisita
+                                </p>
+                              )}
                             </div>
                           </div>
                         );
@@ -177,27 +199,40 @@ export default function ReferencePane({ open, onClose, verseRef, footnotes, quic
                       <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Naka-iskedyul na Bisita</p>
                     </div>
                     <div className="space-y-2">
-                      {scheduledVisits.map(visit => (
-                        <div key={visit.id} className="flex items-start gap-2.5 rounded-lg bg-background/80 p-2.5">
-                          <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              {visit.type === 'bible-study' ? 'BS' : 'RV'} · {new Date(visit.nextVisitDate! + 'T12:00:00').toLocaleDateString()}
-                              {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
-                            </p>
-                            {visit.address && (
-                              <button
-                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
-                                className="flex items-center gap-1 mt-0.5"
-                              >
-                                <MapPin className="h-2.5 w-2.5 text-primary" />
-                                <span className="text-[10px] text-primary hover:underline truncate">{visit.address}</span>
-                              </button>
-                            )}
+                      {scheduledVisits.map(visit => {
+                        const daysSince = visit.lastVisitDate
+                          ? Math.floor((Date.now() - new Date(visit.lastVisitDate + 'T12:00:00').getTime()) / 86400000)
+                          : null;
+                        return (
+                          <div key={visit.id} className="flex items-start gap-2.5 rounded-lg bg-background/80 p-2.5">
+                            <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-semibold text-foreground">{visit.name}</p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {visit.type === 'bible-study' ? 'BS' : 'RV'}
+                                {daysSince !== null && ` · ${daysSince}d ago`}
+                                {' · '}
+                                {new Date(visit.nextVisitDate! + 'T12:00:00').toLocaleDateString()}
+                                {visit.nextVisitTime && ` ${visit.nextVisitTime}`}
+                              </p>
+                              {visit.address && (
+                                <button
+                                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.address)}`, '_blank')}
+                                  className="flex items-center gap-1 mt-0.5"
+                                >
+                                  <MapPin className="h-2.5 w-2.5 text-primary" />
+                                  <span className="text-[10px] text-primary hover:underline truncate">{visit.address}</span>
+                                </button>
+                              )}
+                              {(visit.visitHistory?.length || 0) > 0 && (
+                                <p className="text-[9px] text-muted-foreground mt-0.5">
+                                  {visit.visitHistory!.length} naka-record na bisita
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

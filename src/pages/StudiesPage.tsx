@@ -197,11 +197,18 @@ export default function StudiesPage() {
                           <span className="text-[11px] text-muted-foreground line-clamp-2">{s.notes}</span>
                         </div>
                       )}
-                      {/* Visit history count */}
+                      {/* Visit history details */}
                       {(s.visitHistory?.length || 0) > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <History className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">{s.visitHistory!.length} visit(s) recorded</span>
+                        <div className="mt-2 border-t border-border/50 pt-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Kasaysayan ng Bisita</p>
+                          <div className="space-y-1 max-h-24 overflow-y-auto">
+                            {s.visitHistory!.slice().reverse().map(vh => (
+                              <div key={vh.id} className="flex items-start gap-1.5">
+                                <span className="text-[10px] text-muted-foreground shrink-0">{new Date(vh.date + 'T12:00:00').toLocaleDateString()}</span>
+                                {vh.notes && <span className="text-[10px] text-foreground/70">— {vh.notes}</span>}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
