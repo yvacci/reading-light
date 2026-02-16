@@ -399,12 +399,15 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         </AnimatePresence>
       </div>
 
+      {/* Footnotes panel only on mobile (sidebar handles it on md+) */}
       {!loading && (
-        <FootnotesPanel
-          footnotes={footnotes}
-          highlightedId={highlightedFootnote}
-          onHighlightClear={handleClearHighlight}
-        />
+        <div className="md:hidden">
+          <FootnotesPanel
+            footnotes={footnotes}
+            highlightedId={highlightedFootnote}
+            onHighlightClear={handleClearHighlight}
+          />
+        </div>
       )}
 
       {!loading && (
