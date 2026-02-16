@@ -135,71 +135,71 @@
 }
 
 /* ========================================
-   THEME: NEO-BRUTALIST — Bold (Edgy & Loud)
+   THEME: NEO-BRUTALIST — Bold (Softened)
    ======================================== */
 .theme-neo-brutalist {
-  --background: 60 100% 97%;
-  --foreground: 0 0% 8%;
+  --background: 0 0% 97%;
+  --foreground: 0 0% 12%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 8%;
+  --card-foreground: 0 0% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 8%;
-  --primary: 150 100% 40%;
+  --popover-foreground: 0 0% 12%;
+  --primary: 150 80% 40%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 50 100% 60%;
-  --secondary-foreground: 0 0% 0%;
-  --muted: 60 20% 90%;
-  --muted-foreground: 0 0% 35%;
-  --accent: 330 100% 55%;
+  --secondary: 50 70% 65%;
+  --secondary-foreground: 0 0% 8%;
+  --muted: 0 0% 93%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 330 80% 55%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 100% 50%;
+  --destructive: 0 85% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 0%;
-  --input: 0 0% 0%;
-  --ring: 150 100% 40%;
-  --radius: 0px;
-  --success: 150 100% 40%;
+  --border: 0 0% 82%;
+  --input: 0 0% 82%;
+  --ring: 150 80% 40%;
+  --radius: 0.5rem;
+  --success: 150 80% 40%;
   --success-foreground: 0 0% 0%;
-  --warning: 50 100% 50%;
+  --warning: 50 85% 50%;
   --warning-foreground: 0 0% 0%;
-  --sidebar-background: 60 100% 97%;
-  --sidebar-foreground: 0 0% 8%;
-  --sidebar-primary: 150 100% 40%;
+  --sidebar-background: 0 0% 97%;
+  --sidebar-foreground: 0 0% 12%;
+  --sidebar-primary: 150 80% 40%;
   --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 50 100% 65%;
-  --sidebar-accent-foreground: 0 0% 0%;
-  --sidebar-border: 0 0% 0%;
-  --sidebar-ring: 150 100% 40%;
+  --sidebar-accent: 50 70% 70%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-border: 0 0% 82%;
+  --sidebar-ring: 150 80% 40%;
 }
 
 .theme-neo-brutalist.dark {
-  --background: 0 0% 6%;
-  --foreground: 60 100% 95%;
-  --card: 0 0% 10%;
-  --card-foreground: 60 100% 95%;
-  --popover: 0 0% 10%;
-  --popover-foreground: 60 100% 95%;
-  --primary: 150 100% 45%;
+  --background: 0 0% 8%;
+  --foreground: 0 0% 92%;
+  --card: 0 0% 12%;
+  --card-foreground: 0 0% 92%;
+  --popover: 0 0% 12%;
+  --popover-foreground: 0 0% 92%;
+  --primary: 150 75% 45%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 50 90% 45%;
-  --secondary-foreground: 0 0% 0%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 60 10% 55%;
-  --accent: 330 90% 55%;
+  --secondary: 50 60% 40%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 16%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 330 70% 55%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 90% 50%;
+  --destructive: 0 75% 50%;
   --destructive-foreground: 0 0% 100%;
-  --border: 60 100% 80%;
-  --input: 60 100% 80%;
-  --ring: 150 100% 45%;
-  --sidebar-background: 0 0% 8%;
-  --sidebar-foreground: 60 100% 95%;
-  --sidebar-primary: 150 100% 45%;
+  --border: 0 0% 24%;
+  --input: 0 0% 24%;
+  --ring: 150 75% 45%;
+  --sidebar-background: 0 0% 10%;
+  --sidebar-foreground: 0 0% 92%;
+  --sidebar-primary: 150 75% 45%;
   --sidebar-primary-foreground: 0 0% 0%;
-  --sidebar-accent: 50 90% 40%;
-  --sidebar-accent-foreground: 0 0% 0%;
-  --sidebar-border: 60 100% 80%;
-  --sidebar-ring: 150 100% 45%;
+  --sidebar-accent: 50 60% 35%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 24%;
+  --sidebar-ring: 150 75% 45%;
 }
 
 /* ========================================
@@ -339,6 +339,46 @@
 }
 
 /* ========================================
+   THEME-SPECIFIC BACKGROUND PATTERNS
+   ======================================== */
+
+/* Bento: subtle dot grid */
+.theme-bento {
+  background-image: radial-gradient(circle, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.theme-bento.dark {
+  background-image: radial-gradient(circle, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glassmorphic: soft gradient background */
+.theme-glassmorphic {
+  background-image: linear-gradient(135deg, hsl(280 60% 92% / 0.6) 0%, hsl(20 80% 92% / 0.4) 50%, hsl(280 40% 94% / 0.5) 100%);
+}
+.theme-glassmorphic.dark {
+  background-image: linear-gradient(135deg, hsl(270 30% 10% / 0.8) 0%, hsl(280 20% 14% / 0.6) 50%, hsl(260 25% 8% / 0.8) 100%);
+}
+
+/* Neo-Brutalist: flat solid — no texture */
+
+/* Soft Minimalist: subtle linen texture */
+.theme-soft-minimalist {
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23000' stroke-width='0.3' opacity='.03'/%3E%3C/svg%3E");
+}
+.theme-soft-minimalist.dark {
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M0 20h40M20 0v40' stroke='%23fff' stroke-width='0.3' opacity='.03'/%3E%3C/svg%3E");
+}
+
+/* Cottagecore: parchment / paper texture */
+.theme-cottagecore {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+.theme-cottagecore.dark {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ========================================
    THEME-SPECIFIC UTILITY OVERRIDES
    ======================================== */
 
@@ -359,15 +399,21 @@
   border: 1px solid hsl(var(--border) / 0.3);
 }
 
-/* Neo-Brutalist: thick borders, no rounding */
-.theme-neo-brutalist [class*="rounded"] {
-  border-radius: 0 !important;
-}
+/* Neo-Brutalist: bold shadows, slight rounding, NO colored outlines */
 .theme-neo-brutalist [class*="shadow"] {
-  box-shadow: 4px 4px 0px 0px hsl(var(--foreground)) !important;
+  box-shadow: 3px 3px 0px 0px hsl(var(--foreground) / 0.15) !important;
 }
 .theme-neo-brutalist [class*="border"] {
-  border-width: 2px;
+  border-color: hsl(var(--border));
+}
+
+/* Neo-Brutalist decorative elements */
+.theme-neo-brutalist .neo-badge {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* Cottagecore: serif headings */
