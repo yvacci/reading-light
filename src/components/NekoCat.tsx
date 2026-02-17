@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const NEKO_ENABLED_KEY = 'nwt-neko-enabled';
 
@@ -34,7 +34,42 @@ export function useNekoEnabled() {
   return { nekoEnabled: enabled, setNekoEnabled: toggle };
 }
 
-/* ─── Ghibli-style white fluffy cat SVG ─── */
+/* ─── Thought Bubble ─── */
+function ThoughtBubble({ message }: { message: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -5, scale: 0.8 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="absolute -top-14 left-1/2 -translate-x-1/2 pointer-events-none"
+      style={{ width: 'max-content', maxWidth: 180 }}
+    >
+      <div className="relative bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg border border-border/30">
+        <p className="text-[9px] leading-tight text-foreground/80 font-medium whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: 160 }}>
+          {message}
+        </p>
+        {/* Bubble tail */}
+        <svg className="absolute -bottom-2 left-1/2 -translate-x-1/2" width="12" height="8" viewBox="0 0 12 8">
+          <path d="M2,0 Q6,7 10,0" fill="white" className="dark:fill-slate-800" opacity="0.9" />
+        </svg>
+      </div>
+      {/* Small thought dots */}
+      <motion.div
+        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-white/80 dark:bg-slate-700/80"
+        animate={{ scale: [0.8, 1, 0.8] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute -bottom-6 left-[calc(50%-4px)] w-1 h-1 rounded-full bg-white/60 dark:bg-slate-700/60"
+        animate={{ scale: [0.6, 1, 0.6] }}
+        transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+      />
+    </motion.div>
+  );
+}
+
+/* ─── Realistic 3D-style Cat SVG ─── */
 function CatSprite({ state, facingRight }: { state: NekoState; facingRight: boolean }) {
   const isWalking = state === 'walk-left' || state === 'walk-right';
   const isSleeping = state === 'sleep';
@@ -49,436 +84,524 @@ function CatSprite({ state, facingRight }: { state: NekoState; facingRight: bool
 
   return (
     <svg
-      viewBox="0 0 64 64"
-      className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16"
+      viewBox="0 0 80 80"
+      className="w-14 h-14 md:w-16 md:h-16 lg:w-20 lg:h-20"
       style={{
         transform: facingRight ? 'scaleX(1)' : 'scaleX(-1)',
-        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.08))',
+        filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.15)) drop-shadow(0 1px 2px rgba(0,0,0,0.08))',
       }}
     >
       <defs>
-        {/* Soft watercolor-like filter */}
-        <filter id="neko-soft">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.3" />
-        </filter>
-        {/* Fur texture gradient */}
-        <radialGradient id="neko-fur" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#FEFEFE" />
-          <stop offset="60%" stopColor="#F5F0EB" />
-          <stop offset="100%" stopColor="#E8E0D8" />
+        {/* Realistic fur gradient with depth */}
+        <radialGradient id="neko3d-body" cx="45%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#FAFAFA" />
+          <stop offset="35%" stopColor="#F2EFEB" />
+          <stop offset="70%" stopColor="#E6E0D8" />
+          <stop offset="100%" stopColor="#D4CCC2" />
         </radialGradient>
-        <radialGradient id="neko-fur-shadow" cx="50%" cy="70%" r="50%">
-          <stop offset="0%" stopColor="#F0EBE5" />
-          <stop offset="100%" stopColor="#DDD5CC" />
+        {/* Belly highlight */}
+        <radialGradient id="neko3d-belly" cx="50%" cy="30%" r="50%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F0EDE8" />
         </radialGradient>
-        {/* Eye gradient */}
-        <radialGradient id="neko-eye" cx="40%" cy="35%">
-          <stop offset="0%" stopColor="#7EC8E3" />
-          <stop offset="50%" stopColor="#4A9EBF" />
-          <stop offset="100%" stopColor="#2D7A9C" />
+        {/* Head gradient with light from top-left */}
+        <radialGradient id="neko3d-head" cx="40%" cy="30%" r="55%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="40%" stopColor="#F5F2EE" />
+          <stop offset="80%" stopColor="#E8E2DA" />
+          <stop offset="100%" stopColor="#D8D0C6" />
         </radialGradient>
-        {/* Tail stripe pattern */}
-        <linearGradient id="neko-tail-stripe" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#F5F0EB" />
-          <stop offset="30%" stopColor="#EDE5DC" />
-          <stop offset="50%" stopColor="#F5F0EB" />
-          <stop offset="70%" stopColor="#EDE5DC" />
-          <stop offset="100%" stopColor="#F5F0EB" />
+        {/* Realistic eye - deep blue with light refraction */}
+        <radialGradient id="neko3d-iris" cx="35%" cy="30%" r="60%">
+          <stop offset="0%" stopColor="#6CB8E0" />
+          <stop offset="40%" stopColor="#4A9CC8" />
+          <stop offset="75%" stopColor="#2D7AA0" />
+          <stop offset="100%" stopColor="#1B5C7A" />
+        </radialGradient>
+        {/* Ambient shadow under cat */}
+        <radialGradient id="neko3d-shadow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(0,0,0,0.12)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </radialGradient>
+        {/* Nose gradient */}
+        <radialGradient id="neko3d-nose" cx="40%" cy="35%">
+          <stop offset="0%" stopColor="#E8A0A0" />
+          <stop offset="100%" stopColor="#D08080" />
+        </radialGradient>
+        {/* Ear inner pink */}
+        <linearGradient id="neko3d-ear-inner" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#F0B8B8" />
+          <stop offset="100%" stopColor="#E09898" />
         </linearGradient>
+        {/* Tail gradient */}
+        <linearGradient id="neko3d-tail" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#EDE8E2" />
+          <stop offset="50%" stopColor="#F5F2EE" />
+          <stop offset="100%" stopColor="#E0D8CE" />
+        </linearGradient>
+        {/* Paw pad */}
+        <radialGradient id="neko3d-pawpad" cx="50%" cy="40%">
+          <stop offset="0%" stopColor="#E8A8A8" />
+          <stop offset="100%" stopColor="#D09090" />
+        </radialGradient>
       </defs>
 
-      <g filter="url(#neko-soft)">
-        {/* === BODY === */}
-        {/* Main fluffy body */}
+      {/* Ground shadow */}
+      <motion.ellipse
+        fill="url(#neko3d-shadow)"
+        animate={{
+          cx: 40, cy: isSleeping || isLying || isRolling ? 66 : 68,
+          rx: isStretching ? 22 : isSleeping ? 18 : 16,
+          ry: 3,
+        }}
+        transition={{ duration: 0.4 }}
+      />
+
+      {/* === TAIL (fluffy, volumetric) === */}
+      <motion.path
+        fill="none"
+        stroke="url(#neko3d-tail)"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+        animate={{
+          d: isSleeping
+            ? ['M28,58 Q16,52 18,42 Q20,36 24,40', 'M28,58 Q14,54 16,44 Q18,38 22,42', 'M28,58 Q16,52 18,42 Q20,36 24,40']
+            : isPlaying
+            ? ['M54,52 Q66,36 60,22 Q56,16 52,20', 'M54,52 Q70,30 64,16 Q60,10 56,14', 'M54,52 Q66,36 60,22 Q56,16 52,20']
+            : isLying || isRolling
+            ? ['M24,56 Q14,50 16,40 Q18,34 22,38', 'M24,56 Q12,52 14,42 Q16,36 20,40', 'M24,56 Q14,50 16,40 Q18,34 22,38']
+            : ['M54,52 Q64,40 58,26 Q54,20 50,24', 'M54,52 Q68,42 62,28 Q58,22 54,26', 'M54,52 Q64,40 58,26 Q54,20 50,24'],
+        }}
+        transition={{ duration: isPlaying ? 0.9 : 3, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* Tail highlight */}
+      <motion.path
+        fill="none" stroke="#FEFEFE" strokeWidth="2" strokeLinecap="round" opacity="0.5"
+        animate={{
+          d: isSleeping
+            ? ['M28,58 Q17,52 19,43', 'M28,58 Q15,54 17,45', 'M28,58 Q17,52 19,43']
+            : ['M54,52 Q63,41 59,28', 'M54,52 Q67,43 63,30', 'M54,52 Q63,41 59,28'],
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* === BODY (3D volumetric form) === */}
+      <motion.ellipse
+        fill="url(#neko3d-body)"
+        animate={{
+          cx: isStretching ? 36 : 40,
+          cy: isSleeping ? 58 : isLying || isRolling ? 56 : 52,
+          rx: isStretching ? 20 : isSleeping ? 18 : isLying || isRolling ? 18 : 15,
+          ry: isStretching ? 7 : isSleeping ? 9 : isLying || isRolling ? 8 : 12,
+        }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+      />
+      {/* Body contour line (subtle) */}
+      <motion.ellipse
+        fill="none" stroke="#C8BEB2" strokeWidth="0.4" opacity="0.3"
+        animate={{
+          cx: isStretching ? 36 : 40,
+          cy: isSleeping ? 58 : isLying || isRolling ? 56 : 52,
+          rx: isStretching ? 20 : isSleeping ? 18 : isLying || isRolling ? 18 : 15,
+          ry: isStretching ? 7 : isSleeping ? 9 : isLying || isRolling ? 8 : 12,
+        }}
+        transition={{ duration: 0.5 }}
+      />
+      {/* Belly/chest highlight */}
+      {!(isSleeping || isLying || isRolling) && (
         <motion.ellipse
-          fill="url(#neko-fur)"
-          stroke="#E0D8D0"
-          strokeWidth="0.3"
-          animate={{
-            cx: isStretching ? 30 : 32,
-            cy: isSleeping ? 46 : isLying || isRolling ? 44 : 42,
-            rx: isStretching ? 16 : isSleeping ? 14 : isLying || isRolling ? 14 : 12,
-            ry: isStretching ? 6 : isSleeping ? 7 : isLying || isRolling ? 6 : 9,
-          }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          fill="url(#neko3d-belly)" opacity="0.7"
+          animate={{ cx: 40, cy: 46, rx: 8, ry: 5 }}
         />
-        {/* Body shadow/depth */}
-        <motion.ellipse
-          fill="url(#neko-fur-shadow)"
-          opacity="0.4"
-          animate={{
-            cx: 32, cy: isSleeping ? 48 : 45,
-            rx: isStretching ? 14 : 10,
-            ry: isStretching ? 4 : isSleeping ? 5 : 5,
-          }}
-          transition={{ duration: 0.5 }}
-        />
+      )}
 
-        {/* === FLUFFY CHEST FUR === */}
-        {!(isSleeping || isLying || isRolling) && (
-          <motion.ellipse
-            cx="32" fill="#FEFEFE" opacity="0.6"
-            animate={{ cy: 36, rx: 6, ry: 4 }}
-          />
-        )}
-
-        {/* === TAIL (bushy with subtle stripes) === */}
-        <motion.path
-          fill="none"
-          stroke="url(#neko-tail-stripe)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          animate={{
-            d: isSleeping
-              ? ['M22,46 Q14,42 16,36 Q18,32 20,34', 'M22,46 Q13,43 15,37 Q17,33 19,35', 'M22,46 Q14,42 16,36 Q18,32 20,34']
-              : isPlaying
-              ? ['M44,42 Q54,30 50,20 Q48,16 46,18', 'M44,42 Q56,26 52,16 Q50,12 48,14', 'M44,42 Q54,30 50,20 Q48,16 46,18']
-              : isLying || isRolling
-              ? ['M20,44 Q12,40 14,34 Q16,30 18,32', 'M20,44 Q11,41 13,35 Q15,31 17,33', 'M20,44 Q12,40 14,34 Q16,30 18,32']
-              : ['M44,42 Q52,32 48,22 Q46,18 44,20', 'M44,42 Q54,34 50,24 Q48,20 46,22', 'M44,42 Q52,32 48,22 Q46,18 44,20'],
-          }}
-          transition={{ duration: isPlaying ? 0.8 : 3.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {/* Tail fur fluff overlay */}
-        <motion.path
-          fill="none"
-          stroke="#FEFEFE"
-          strokeWidth="2"
-          strokeLinecap="round"
-          opacity="0.5"
-          animate={{
-            d: isSleeping
-              ? ['M22,46 Q15,42 17,37', 'M22,46 Q14,43 16,38', 'M22,46 Q15,42 17,37']
-              : ['M44,42 Q51,33 48,24', 'M44,42 Q53,35 50,26', 'M44,42 Q51,33 48,24'],
-          }}
-          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* === HEAD === */}
-        <motion.circle
-          fill="url(#neko-fur)"
-          stroke="#E0D8D0"
-          strokeWidth="0.3"
-          animate={{
-            cx: isGrooming ? 28 : 32,
-            cy: isSleeping ? 40 : isLying || isRolling ? 38 : 28,
-            r: isSleeping ? 9 : 10,
-          }}
-          transition={{ duration: 0.4, ease: 'easeInOut' }}
-        />
-        {/* Head fluffy cheeks */}
-        {!(isSleeping) && (
-          <>
-            <motion.ellipse fill="#FEFEFE" opacity="0.4"
-              animate={{ cx: 25, cy: isLying ? 40 : 30, rx: 4, ry: 3 }}
-              transition={{ duration: 0.4 }}
-            />
-            <motion.ellipse fill="#FEFEFE" opacity="0.4"
-              animate={{ cx: 39, cy: isLying ? 40 : 30, rx: 4, ry: 3 }}
-              transition={{ duration: 0.4 }}
-            />
-          </>
-        )}
-
-        {/* === EARS === */}
-        {/* Left ear */}
-        <motion.polygon
-          fill="url(#neko-fur)"
-          stroke="#E0D8D0"
-          strokeWidth="0.3"
-          animate={{
-            points: isSleeping || isLying
-              ? '24,36 26,28 30,35'
-              : '22,20 26,8 30,18',
-          }}
-          transition={{ duration: 0.4 }}
-        />
-        {/* Left ear inner (pink) */}
-        <motion.polygon
-          fill="#F5C5C5"
-          opacity="0.6"
-          animate={{
-            points: isSleeping || isLying
-              ? '25,35 26.5,30 29,34'
-              : '24,19 26.5,11 29,18',
-          }}
-          transition={{ duration: 0.4 }}
-        />
-        {/* Right ear */}
-        <motion.polygon
-          fill="url(#neko-fur)"
-          stroke="#E0D8D0"
-          strokeWidth="0.3"
-          animate={{
-            points: isSleeping || isLying
-              ? '34,35 38,28 40,36'
-              : '34,18 38,8 42,20',
-          }}
-          transition={{ duration: 0.4 }}
-        />
-        {/* Right ear inner (pink) */}
-        <motion.polygon
-          fill="#F5C5C5"
-          opacity="0.6"
-          animate={{
-            points: isSleeping || isLying
-              ? '35,34 37.5,30 39,35'
-              : '35,18 37.5,11 40,19',
-          }}
-          transition={{ duration: 0.4 }}
-        />
-
-        {/* === EYES === */}
-        {isSleeping ? (
-          <>
-            {/* Closed eyes - gentle curves */}
-            <motion.path
-              d="M27,39 Q29,41 31,39" fill="none"
-              stroke="#8B7D72" strokeWidth="0.8" strokeLinecap="round"
-              animate={{ opacity: [1, 0.8, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            <motion.path
-              d="M33,39 Q35,41 37,39" fill="none"
-              stroke="#8B7D72" strokeWidth="0.8" strokeLinecap="round"
-              animate={{ opacity: [1, 0.8, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-          </>
-        ) : isWaking ? (
-          <>
-            {/* Half-open eyes */}
-            <motion.ellipse cx="29" cy="27" fill="url(#neko-eye)"
-              animate={{ rx: [0.5, 2.5], ry: [0.3, 2.5] }}
-              transition={{ duration: 0.8 }}
-            />
-            <motion.ellipse cx="35" cy="27" fill="url(#neko-eye)"
-              animate={{ rx: [0.5, 2.5], ry: [0.3, 2.5] }}
-              transition={{ duration: 0.8 }}
-            />
-          </>
-        ) : isLying || isRolling ? (
-          <>
-            <circle cx="29" cy="37" r="2.2" fill="white" />
-            <circle cx="29" cy="37" r="1.5" fill="url(#neko-eye)" />
-            <circle cx="29.5" cy="36.5" r="0.5" fill="white" opacity="0.8" />
-            <circle cx="35" cy="37" r="2.2" fill="white" />
-            <circle cx="35" cy="37" r="1.5" fill="url(#neko-eye)" />
-            <circle cx="35.5" cy="36.5" r="0.5" fill="white" opacity="0.8" />
-          </>
-        ) : (
-          <>
-            {/* Big expressive blue eyes */}
-            <circle cx="29" cy="27" r="2.8" fill="white" />
-            <motion.circle
-              cx="29" cy="27" r="2" fill="url(#neko-eye)"
-              animate={isLooking
-                ? { cx: [29, 27, 31, 29], cy: [27, 26, 26, 27] }
-                : isFalling
-                ? { r: [2, 2.5, 2] }
-                : { r: [2, 2.1, 2] }
-              }
-              transition={isLooking
-                ? { duration: 4, repeat: Infinity, ease: 'easeInOut' }
-                : { duration: 3, repeat: Infinity }
-              }
-            />
-            {/* Eye shine */}
-            <circle cx="29.8" cy="26" r="0.7" fill="white" opacity="0.9" />
-            <circle cx="28.5" cy="27.8" r="0.3" fill="white" opacity="0.6" />
-
-            <circle cx="35" cy="27" r="2.8" fill="white" />
-            <motion.circle
-              cx="35" cy="27" r="2" fill="url(#neko-eye)"
-              animate={isLooking
-                ? { cx: [35, 33, 37, 35], cy: [27, 26, 26, 27] }
-                : isFalling
-                ? { r: [2, 2.5, 2] }
-                : { r: [2, 2.1, 2] }
-              }
-              transition={isLooking
-                ? { duration: 4, repeat: Infinity, ease: 'easeInOut' }
-                : { duration: 3, repeat: Infinity, delay: 0.2 }
-              }
-            />
-            <circle cx="35.8" cy="26" r="0.7" fill="white" opacity="0.9" />
-            <circle cx="34.5" cy="27.8" r="0.3" fill="white" opacity="0.6" />
-
-            {/* Blink animation overlay */}
-            <motion.rect
-              x="26" y="24" width="7" height="6" rx="2" fill="url(#neko-fur)"
-              animate={{ scaleY: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ transformOrigin: '29px 27px' }}
-            />
-            <motion.rect
-              x="32" y="24" width="7" height="6" rx="2" fill="url(#neko-fur)"
-              animate={{ scaleY: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.02 }}
-              style={{ transformOrigin: '35px 27px' }}
-            />
-          </>
-        )}
-
-        {/* === NOSE (tiny pink) === */}
-        {!(isSleeping) && (
-          <motion.ellipse
-            fill="#E8A0A0"
+      {/* === LEGS === */}
+      {isWalking && (
+        <>
+          {/* Back legs (behind body) */}
+          <motion.path
+            fill="#DDD6CC" stroke="#C8BEB2" strokeWidth="0.3"
             animate={{
-              cx: isGrooming ? 28 : 32,
-              cy: isLying ? 40 : 30,
-              rx: 1, ry: 0.7,
+              d: ['M34,60 Q32,66 33,70 Q34,72 36,70 Q37,66 35,60',
+                  'M34,60 Q30,64 31,70 Q32,72 34,70 Q35,64 35,60',
+                  'M34,60 Q32,66 33,70 Q34,72 36,70 Q37,66 35,60'],
             }}
+            transition={{ duration: 0.4, repeat: Infinity }}
+          />
+          <motion.path
+            fill="#DDD6CC" stroke="#C8BEB2" strokeWidth="0.3"
+            animate={{
+              d: ['M46,60 Q48,64 47,70 Q46,72 44,70 Q43,64 45,60',
+                  'M46,60 Q50,66 49,70 Q48,72 46,70 Q45,66 45,60',
+                  'M46,60 Q48,64 47,70 Q46,72 44,70 Q43,64 45,60'],
+            }}
+            transition={{ duration: 0.4, repeat: Infinity, delay: 0.1 }}
+          />
+          {/* Front legs */}
+          <motion.path
+            fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3"
+            animate={{
+              d: ['M36,58 Q34,64 35,70 Q36,72 38,70 Q39,64 37,58',
+                  'M36,58 Q32,62 33,70 Q34,72 36,70 Q37,62 37,58',
+                  'M36,58 Q34,64 35,70 Q36,72 38,70 Q39,64 37,58'],
+            }}
+            transition={{ duration: 0.4, repeat: Infinity, delay: 0.05 }}
+          />
+          <motion.path
+            fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3"
+            animate={{
+              d: ['M44,58 Q46,62 45,70 Q44,72 42,70 Q41,62 43,58',
+                  'M44,58 Q48,64 47,70 Q46,72 44,70 Q43,64 43,58',
+                  'M44,58 Q46,62 45,70 Q44,72 42,70 Q41,62 43,58'],
+            }}
+            transition={{ duration: 0.4, repeat: Infinity, delay: 0.15 }}
+          />
+          {/* Paw pads */}
+          <motion.ellipse fill="url(#neko3d-pawpad)" rx="1.8" ry="1"
+            animate={{ cx: 36, cy: [70, 66, 70] }}
+            transition={{ duration: 0.4, repeat: Infinity, delay: 0.05 }}
+          />
+          <motion.ellipse fill="url(#neko3d-pawpad)" rx="1.8" ry="1"
+            animate={{ cx: 44, cy: [66, 70, 66] }}
+            transition={{ duration: 0.4, repeat: Infinity, delay: 0.15 }}
+          />
+        </>
+      )}
+
+      {/* Sitting front paws */}
+      {!isWalking && !isSleeping && !isLying && !isRolling && !isStretching && !isGrooming && (
+        <>
+          <ellipse cx="34" cy="62" rx="3" ry="2" fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" />
+          <ellipse cx="46" cy="62" rx="3" ry="2" fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" />
+          {/* Tiny toe lines */}
+          <path d="M32.5,62.5 L33,61.5" stroke="#D0C8BC" strokeWidth="0.3" opacity="0.5" />
+          <path d="M34,62.5 L34,61.5" stroke="#D0C8BC" strokeWidth="0.3" opacity="0.5" />
+          <path d="M44.5,62.5 L44.5,61.5" stroke="#D0C8BC" strokeWidth="0.3" opacity="0.5" />
+          <path d="M46,62.5 L46,61.5" stroke="#D0C8BC" strokeWidth="0.3" opacity="0.5" />
+        </>
+      )}
+
+      {/* Stretching paws */}
+      {isStretching && (
+        <>
+          <motion.ellipse fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" ry="2"
+            animate={{ cx: [34, 24, 34], cy: 62, rx: [3, 4, 3] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <ellipse cx="46" cy="62" rx="3" ry="2" fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" />
+        </>
+      )}
+
+      {/* Grooming paw */}
+      {isGrooming && (
+        <motion.ellipse fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" rx="2.5" ry="2"
+          animate={{ cx: [30, 33, 30], cy: [42, 36, 42] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+
+      {/* Playing paw */}
+      {isPlaying && (
+        <>
+          <motion.circle r="1.5" fill="#E8C8C8" opacity="0.3"
+            animate={{ cx: [50, 56, 50], cy: [44, 38, 44], opacity: [0.1, 0.5, 0.1] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+          <motion.ellipse fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3" ry="2"
+            animate={{ cx: [46, 52, 46], cy: [58, 44, 58], rx: [3, 2, 3] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+        </>
+      )}
+
+      {/* Rolling belly */}
+      {isRolling && (
+        <motion.ellipse cx="40" fill="url(#neko3d-belly)" opacity="0.6"
+          animate={{ cy: [56, 55, 56], rx: [12, 13, 12], ry: [5, 6, 5] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+
+      {/* Falling paw flail */}
+      {isFalling && (
+        <>
+          <motion.path fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3"
+            animate={{
+              d: ['M32,56 Q28,50 26,52 Q24,54 28,56',
+                  'M32,56 Q26,48 24,50 Q22,52 26,54',
+                  'M32,56 Q28,50 26,52 Q24,54 28,56'],
+            }}
+            transition={{ duration: 0.35, repeat: Infinity }}
+          />
+          <motion.path fill="#E8E2DA" stroke="#C8BEB2" strokeWidth="0.3"
+            animate={{
+              d: ['M48,56 Q52,50 54,52 Q56,54 52,56',
+                  'M48,56 Q54,48 56,50 Q58,52 54,54',
+                  'M48,56 Q52,50 54,52 Q56,54 52,56'],
+            }}
+            transition={{ duration: 0.35, repeat: Infinity }}
+          />
+        </>
+      )}
+
+      {/* === HEAD === */}
+      <motion.ellipse
+        fill="url(#neko3d-head)"
+        animate={{
+          cx: isGrooming ? 36 : 40,
+          cy: isSleeping ? 50 : isLying || isRolling ? 48 : 34,
+          rx: isSleeping ? 12 : 13,
+          ry: isSleeping ? 10 : 12,
+        }}
+        transition={{ duration: 0.4, ease: 'easeInOut' }}
+      />
+      {/* Head contour */}
+      <motion.ellipse
+        fill="none" stroke="#C0B6AA" strokeWidth="0.4" opacity="0.25"
+        animate={{
+          cx: isGrooming ? 36 : 40,
+          cy: isSleeping ? 50 : isLying || isRolling ? 48 : 34,
+          rx: isSleeping ? 12 : 13,
+          ry: isSleeping ? 10 : 12,
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      {/* Cheek fluff */}
+      {!isSleeping && (
+        <>
+          <motion.ellipse fill="#FEFEFE" opacity="0.35"
+            animate={{ cx: 32, cy: isLying ? 50 : 37, rx: 5, ry: 4 }}
             transition={{ duration: 0.4 }}
           />
-        )}
+          <motion.ellipse fill="#FEFEFE" opacity="0.35"
+            animate={{ cx: 48, cy: isLying ? 50 : 37, rx: 5, ry: 4 }}
+            transition={{ duration: 0.4 }}
+          />
+        </>
+      )}
 
-        {/* === MOUTH === */}
-        {!(isSleeping || isLying) && !isWaking && (
+      {/* === EARS (3D with depth) === */}
+      {/* Left ear outer */}
+      <motion.path
+        fill="url(#neko3d-head)" stroke="#C0B6AA" strokeWidth="0.4"
+        animate={{
+          d: isSleeping || isLying
+            ? 'M30,46 Q28,38 34,44'
+            : 'M28,26 Q30,10 36,22',
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      {/* Left ear inner */}
+      <motion.path
+        fill="url(#neko3d-ear-inner)" opacity="0.7"
+        animate={{
+          d: isSleeping || isLying
+            ? 'M31,45 Q29,40 33,44'
+            : 'M29.5,25 Q31,14 35,22',
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      {/* Right ear outer */}
+      <motion.path
+        fill="url(#neko3d-head)" stroke="#C0B6AA" strokeWidth="0.4"
+        animate={{
+          d: isSleeping || isLying
+            ? 'M46,44 Q48,38 50,46'
+            : 'M44,22 Q46,10 52,26',
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      {/* Right ear inner */}
+      <motion.path
+        fill="url(#neko3d-ear-inner)" opacity="0.7"
+        animate={{
+          d: isSleeping || isLying
+            ? 'M47,44 Q48.5,40 49,45'
+            : 'M45,22 Q46.5,14 50.5,25',
+        }}
+        transition={{ duration: 0.4 }}
+      />
+
+      {/* === EYES (realistic with depth) === */}
+      {isSleeping ? (
+        <>
           <motion.path
-            fill="none" stroke="#C4A090" strokeWidth="0.5" strokeLinecap="round"
-            d={isWaking ? "M30,31 Q32,33 34,31" : "M30,31 Q32,32.5 34,31"}
+            d="M34,50 Q36,52 38,50" fill="none"
+            stroke="#8B7D72" strokeWidth="0.9" strokeLinecap="round"
+            animate={{ opacity: [1, 0.7, 1] }}
+            transition={{ duration: 3.5, repeat: Infinity }}
           />
-        )}
-        {/* Wake yawn */}
-        {isWaking && (
-          <motion.ellipse cx="32" cy="31" fill="#E8A0A0" opacity="0.5"
-            animate={{ rx: [0, 2, 0], ry: [0, 1.5, 0] }}
-            transition={{ duration: 1.2, ease: 'easeInOut' }}
+          <motion.path
+            d="M42,50 Q44,52 46,50" fill="none"
+            stroke="#8B7D72" strokeWidth="0.9" strokeLinecap="round"
+            animate={{ opacity: [1, 0.7, 1] }}
+            transition={{ duration: 3.5, repeat: Infinity }}
           />
-        )}
-
-        {/* === WHISKERS (delicate) === */}
-        {!(isSleeping || isLying) && (
-          <>
-            <line x1="18" y1="28" x2="26" y2="29.5" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-            <line x1="17" y1="30.5" x2="26" y2="30.5" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-            <line x1="18" y1="33" x2="26" y2="31.5" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-            <line x1="38" y1="29.5" x2="46" y2="28" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-            <line x1="38" y1="30.5" x2="47" y2="30.5" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-            <line x1="38" y1="31.5" x2="46" y2="33" stroke="#D0C4B8" strokeWidth="0.3" opacity="0.6" />
-          </>
-        )}
-
-        {/* === LEGS === */}
-        {isWalking && (
-          <>
-            {/* Front legs */}
-            <motion.line
-              x1="27" x2="25" stroke="#E8E0D8" strokeWidth="2.5" strokeLinecap="round"
-              animate={{ y1: 48, y2: [54, 50, 54] }}
-              transition={{ duration: 0.35, repeat: Infinity }}
-            />
-            <motion.line
-              x1="30" x2="29" stroke="#E8E0D8" strokeWidth="2.5" strokeLinecap="round"
-              animate={{ y1: 48, y2: [50, 54, 50] }}
-              transition={{ duration: 0.35, repeat: Infinity }}
-            />
-            {/* Back legs */}
-            <motion.line
-              x1="34" x2="35" stroke="#E8E0D8" strokeWidth="2.5" strokeLinecap="round"
-              animate={{ y1: 48, y2: [54, 50, 54] }}
-              transition={{ duration: 0.35, repeat: Infinity, delay: 0.08 }}
-            />
-            <motion.line
-              x1="37" x2="39" stroke="#E8E0D8" strokeWidth="2.5" strokeLinecap="round"
-              animate={{ y1: 48, y2: [50, 54, 50] }}
-              transition={{ duration: 0.35, repeat: Infinity, delay: 0.08 }}
-            />
-            {/* Tiny paw circles */}
-            <motion.circle r="1.2" fill="#F0EBE5"
-              animate={{ cx: 25, cy: [54, 50, 54] }}
-              transition={{ duration: 0.35, repeat: Infinity }}
-            />
-            <motion.circle r="1.2" fill="#F0EBE5"
-              animate={{ cx: 39, cy: [50, 54, 50] }}
-              transition={{ duration: 0.35, repeat: Infinity, delay: 0.08 }}
-            />
-          </>
-        )}
-
-        {/* Static front paws when sitting */}
-        {!isWalking && !isSleeping && !isLying && !isRolling && !isStretching && (
-          <>
-            <ellipse cx="28" cy="48" rx="2" ry="1.5" fill="#F0EBE5" />
-            <ellipse cx="36" cy="48" rx="2" ry="1.5" fill="#F0EBE5" />
-          </>
-        )}
-
-        {/* Stretching pose front paws */}
-        {isStretching && (
-          <>
-            <motion.ellipse fill="#F0EBE5" ry="1.5"
-              animate={{ cx: [28, 22, 28], cy: 48, rx: [2, 3, 2] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <ellipse cx="36" cy="48" rx="2" ry="1.5" fill="#F0EBE5" />
-          </>
-        )}
-
-        {/* Grooming paw to face */}
-        {isGrooming && (
-          <motion.circle r="2" fill="#F0EBE5"
-            animate={{ cx: [24, 26, 24], cy: [32, 28, 32] }}
-            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        </>
+      ) : isWaking ? (
+        <>
+          <motion.ellipse cx="36" cy="33" fill="url(#neko3d-iris)"
+            animate={{ rx: [0.5, 3], ry: [0.3, 3] }}
+            transition={{ duration: 0.9 }}
           />
-        )}
-
-        {/* Playing - batting at imaginary object */}
-        {isPlaying && (
-          <>
-            <motion.circle r="1" fill="#F5C5C5" opacity="0.4"
-              animate={{ cx: [40, 44, 40], cy: [36, 32, 36], opacity: [0.2, 0.6, 0.2] }}
-              transition={{ duration: 0.7, repeat: Infinity }}
-            />
-            <motion.ellipse fill="#F0EBE5" ry="1.5"
-              animate={{ cx: [36, 40, 36], cy: [46, 38, 46], rx: [2, 1.5, 2] }}
-              transition={{ duration: 0.7, repeat: Infinity }}
-            />
-          </>
-        )}
-
-        {/* Rolling belly-up hint */}
-        {isRolling && (
-          <motion.ellipse cx="32" fill="#FEFEFE" opacity="0.5"
-            animate={{ cy: [44, 43, 44], rx: [8, 9, 8], ry: [4, 5, 4], rotate: [0, 5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          <motion.ellipse cx="44" cy="33" fill="url(#neko3d-iris)"
+            animate={{ rx: [0.5, 3], ry: [0.3, 3] }}
+            transition={{ duration: 0.9 }}
           />
-        )}
+        </>
+      ) : isLying || isRolling ? (
+        <>
+          {/* Relaxed eyes */}
+          <ellipse cx="36" cy="47" rx="3.2" ry="2.8" fill="white" />
+          <ellipse cx="36" cy="47" rx="2.2" ry="2" fill="url(#neko3d-iris)" />
+          <circle cx="35" cy="46.2" r="0.6" fill="white" opacity="0.9" />
+          <ellipse cx="44" cy="47" rx="3.2" ry="2.8" fill="white" />
+          <ellipse cx="44" cy="47" rx="2.2" ry="2" fill="url(#neko3d-iris)" />
+          <circle cx="43" cy="46.2" r="0.6" fill="white" opacity="0.9" />
+        </>
+      ) : (
+        <>
+          {/* Left eye */}
+          <ellipse cx="36" cy="33" rx="3.5" ry="3.2" fill="white" />
+          <ellipse cx="36" cy="33" rx="3.3" ry="3" fill="#F8F8FF" />
+          <motion.ellipse
+            fill="url(#neko3d-iris)"
+            animate={isLooking
+              ? { cx: [36, 34, 38, 36], cy: [33, 32, 32, 33], rx: 2.4, ry: 2.4 }
+              : isFalling
+              ? { cx: 36, cy: 33, rx: [2.4, 3, 2.4], ry: [2.4, 3, 2.4] }
+              : { cx: 36, cy: 33, rx: 2.4, ry: 2.4 }
+            }
+            transition={isLooking
+              ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 3, repeat: Infinity }
+            }
+          />
+          {/* Pupil */}
+          <motion.circle fill="#1A3A4A" r="1.2"
+            animate={isLooking
+              ? { cx: [36, 34.5, 37.5, 36], cy: [33, 32.5, 32.5, 33] }
+              : { cx: 36, cy: 33 }
+            }
+            transition={isLooking ? { duration: 4.5, repeat: Infinity } : {}}
+          />
+          {/* Eye shine */}
+          <circle cx="37.2" cy="31.8" r="0.9" fill="white" opacity="0.95" />
+          <circle cx="35" cy="34" r="0.4" fill="white" opacity="0.5" />
 
-        {/* Falling wide-eyed surprise */}
-        {isFalling && (
-          <>
-            <motion.line x1="26" y1="46" x2="22" y2="42" stroke="#E8E0D8" strokeWidth="2" strokeLinecap="round"
-              animate={{ x2: [22, 20, 22], y2: [42, 40, 42] }}
-              transition={{ duration: 0.3, repeat: Infinity }}
-            />
-            <motion.line x1="38" y1="46" x2="42" y2="42" stroke="#E8E0D8" strokeWidth="2" strokeLinecap="round"
-              animate={{ x2: [42, 44, 42], y2: [42, 40, 42] }}
-              transition={{ duration: 0.3, repeat: Infinity }}
-            />
-          </>
-        )}
+          {/* Right eye */}
+          <ellipse cx="44" cy="33" rx="3.5" ry="3.2" fill="white" />
+          <ellipse cx="44" cy="33" rx="3.3" ry="3" fill="#F8F8FF" />
+          <motion.ellipse
+            fill="url(#neko3d-iris)"
+            animate={isLooking
+              ? { cx: [44, 42, 46, 44], cy: [33, 32, 32, 33], rx: 2.4, ry: 2.4 }
+              : isFalling
+              ? { cx: 44, cy: 33, rx: [2.4, 3, 2.4], ry: [2.4, 3, 2.4] }
+              : { cx: 44, cy: 33, rx: 2.4, ry: 2.4 }
+            }
+            transition={isLooking
+              ? { duration: 4.5, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 3, repeat: Infinity, delay: 0.15 }
+            }
+          />
+          <motion.circle fill="#1A3A4A" r="1.2"
+            animate={isLooking
+              ? { cx: [44, 42.5, 45.5, 44], cy: [33, 32.5, 32.5, 33] }
+              : { cx: 44, cy: 33 }
+            }
+            transition={isLooking ? { duration: 4.5, repeat: Infinity } : {}}
+          />
+          <circle cx="45.2" cy="31.8" r="0.9" fill="white" opacity="0.95" />
+          <circle cx="43" cy="34" r="0.4" fill="white" opacity="0.5" />
 
-        {/* === SLEEP breathing + Zzz === */}
-        {isSleeping && (
-          <>
-            <motion.ellipse cx="32" fill="url(#neko-fur)" opacity="0.3"
-              animate={{ cy: [46, 45.5, 46], rx: [13, 13.5, 13], ry: [6.5, 7, 6.5] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.text x="44" fontSize="6" fill="#A0C4D8" fontFamily="'Caveat', cursive" fontWeight="bold"
-              animate={{ opacity: [0, 0.7, 0], y: [36, 28, 20] }}
-              transition={{ duration: 3, repeat: Infinity }}>z</motion.text>
-            <motion.text x="48" fontSize="4.5" fill="#A0C4D8" fontFamily="'Caveat', cursive" fontWeight="bold"
-              animate={{ opacity: [0, 0.5, 0], y: [30, 22, 14] }}
-              transition={{ duration: 3, repeat: Infinity, delay: 1 }}>z</motion.text>
-            <motion.text x="51" fontSize="3.5" fill="#A0C4D8" fontFamily="'Caveat', cursive" fontWeight="bold"
-              animate={{ opacity: [0, 0.4, 0], y: [24, 16, 8] }}
-              transition={{ duration: 3, repeat: Infinity, delay: 2 }}>z</motion.text>
-          </>
-        )}
-      </g>
+          {/* Blink overlay */}
+          <motion.rect
+            x="32" y="29" width="9" height="8" rx="3" fill="url(#neko3d-head)"
+            animate={{ scaleY: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ transformOrigin: '36px 33px' }}
+          />
+          <motion.rect
+            x="40" y="29" width="9" height="8" rx="3" fill="url(#neko3d-head)"
+            animate={{ scaleY: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.02 }}
+            style={{ transformOrigin: '44px 33px' }}
+          />
+        </>
+      )}
+
+      {/* === NOSE === */}
+      {!isSleeping && (
+        <motion.path
+          fill="url(#neko3d-nose)"
+          animate={{
+            d: isGrooming
+              ? 'M35,38 Q36,37 37,38 Q36,39.5 35,38'
+              : isLying
+              ? 'M39,50.5 Q40,49.5 41,50.5 Q40,52 39,50.5'
+              : 'M39,37.5 Q40,36.5 41,37.5 Q40,39 39,37.5',
+          }}
+          transition={{ duration: 0.4 }}
+        />
+      )}
+
+      {/* === MOUTH === */}
+      {!isSleeping && !isLying && !isWaking && (
+        <motion.path
+          fill="none" stroke="#B8A090" strokeWidth="0.5" strokeLinecap="round"
+          d="M38,39 Q40,40.5 42,39"
+        />
+      )}
+      {isWaking && (
+        <motion.ellipse cx="40" fill="#D8A0A0" opacity="0.4"
+          animate={{ cy: 39, rx: [0, 2.5, 0], ry: [0, 2, 0] }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+        />
+      )}
+
+      {/* === WHISKERS (fine, realistic) === */}
+      {!isSleeping && !isLying && (
+        <g opacity="0.45">
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 22, y1: 35, x2: 33, y2: 37 }}
+          />
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 20, y1: 38, x2: 33, y2: 38 }}
+          />
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 22, y1: 41, x2: 33, y2: 39 }}
+          />
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 47, y1: 37, x2: 58, y2: 35 }}
+          />
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 47, y1: 38, x2: 60, y2: 38 }}
+          />
+          <motion.line stroke="#B8AEA0" strokeWidth="0.35" strokeLinecap="round"
+            animate={{ x1: 47, y1: 39, x2: 58, y2: 41 }}
+          />
+        </g>
+      )}
+
+      {/* === SLEEP Zzz === */}
+      {isSleeping && (
+        <>
+          <motion.ellipse cx="40" fill="url(#neko3d-body)" opacity="0.25"
+            animate={{ cy: [58, 57.5, 58], rx: [17, 17.5, 17], ry: [8.5, 9, 8.5] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.text x="54" fontSize="7" fill="hsl(200, 40%, 65%)" fontFamily="sans-serif" fontWeight="600"
+            animate={{ opacity: [0, 0.6, 0], y: [44, 34, 24] }}
+            transition={{ duration: 3.5, repeat: Infinity }}>z</motion.text>
+          <motion.text x="58" fontSize="5.5" fill="hsl(200, 40%, 65%)" fontFamily="sans-serif" fontWeight="600"
+            animate={{ opacity: [0, 0.4, 0], y: [36, 26, 16] }}
+            transition={{ duration: 3.5, repeat: Infinity, delay: 1.2 }}>z</motion.text>
+          <motion.text x="61" fontSize="4" fill="hsl(200, 40%, 65%)" fontFamily="sans-serif" fontWeight="600"
+            animate={{ opacity: [0, 0.3, 0], y: [28, 18, 8] }}
+            transition={{ duration: 3.5, repeat: Infinity, delay: 2.4 }}>z</motion.text>
+        </>
+      )}
     </svg>
   );
 }
@@ -489,14 +612,29 @@ const WALK_DURATION_MS = 2200;
 const IDLE_MIN_MS = 8000;
 const IDLE_MAX_MS = 35000;
 const SLEEP_AFTER_MS = 30000;
+const THOUGHT_INTERVAL_MS = 45000;
+const THOUGHT_DURATION_MS = 6000;
 
-export default function NekoCat({ activeTabIndex }: { activeTabIndex: number }) {
+const GENERIC_THOUGHTS = [
+  '🐾 Meow~',
+  '✨ Have a great day!',
+  '📖 Time to read?',
+  '💤 So peaceful...',
+  '🌸 Keep going!',
+];
+
+export default function NekoCat({ activeTabIndex, reminders = [] }: {
+  activeTabIndex: number;
+  reminders?: { type: string; name: string; date: string; time?: string }[];
+}) {
   const [state, setState] = useState<NekoState>('idle-sit');
   const [posX, setPosX] = useState(50);
   const [facingRight, setFacingRight] = useState(true);
+  const [thought, setThought] = useState<string | null>(null);
   const stateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const walkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const thoughtTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastInteraction = useRef(Date.now());
   const prevTabRef = useRef(activeTabIndex);
   const isVisibleRef = useRef(true);
@@ -512,9 +650,7 @@ export default function NekoCat({ activeTabIndex }: { activeTabIndex: number }) 
   const resetSleepTimer = useCallback(() => {
     lastInteraction.current = Date.now();
     if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current);
-    sleepTimerRef.current = setTimeout(() => {
-      setState('sleep');
-    }, SLEEP_AFTER_MS);
+    sleepTimerRef.current = setTimeout(() => setState('sleep'), SLEEP_AFTER_MS);
   }, []);
 
   const walkTo = useCallback((targetPercent: number, onArrive?: () => void) => {
@@ -523,13 +659,11 @@ export default function NekoCat({ activeTabIndex }: { activeTabIndex: number }) 
     const goingRight = targetPercent > startPos;
     setFacingRight(goingRight);
     setState(goingRight ? 'walk-right' : 'walk-left');
-
     if (walkIntervalRef.current) clearInterval(walkIntervalRef.current);
     const steps = 35;
     const stepTime = WALK_DURATION_MS / steps;
     const delta = (targetPercent - startPos) / steps;
     let step = 0;
-
     walkIntervalRef.current = setInterval(() => {
       step++;
       setPosX(prev => prev + delta);
@@ -561,6 +695,31 @@ export default function NekoCat({ activeTabIndex }: { activeTabIndex: number }) 
     };
     stateTimerRef.current = setTimeout(cycle, IDLE_MIN_MS);
   }, [walkTo]);
+
+  // Thought bubble cycle
+  useEffect(() => {
+    const showThought = () => {
+      const stateNow = stateRef.current;
+      if (stateNow === 'sleep' || stateNow === 'jump') return;
+
+      let msg: string;
+      // Show schedule reminder if available
+      if (reminders.length > 0 && Math.random() < 0.6) {
+        const r = reminders[Math.floor(Math.random() * reminders.length)];
+        msg = `📅 ${r.type}: ${r.name}${r.time ? ` @ ${r.time}` : ''}`;
+      } else {
+        msg = GENERIC_THOUGHTS[Math.floor(Math.random() * GENERIC_THOUGHTS.length)];
+      }
+
+      setThought(msg);
+      setTimeout(() => setThought(null), THOUGHT_DURATION_MS);
+
+      thoughtTimerRef.current = setTimeout(showThought, THOUGHT_INTERVAL_MS + Math.random() * 20000);
+    };
+
+    thoughtTimerRef.current = setTimeout(showThought, 15000 + Math.random() * 15000);
+    return () => { if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current); };
+  }, [reminders]);
 
   // Tab change
   useEffect(() => {
@@ -644,8 +803,11 @@ export default function NekoCat({ activeTabIndex }: { activeTabIndex: number }) 
           left: { duration: 0.08, ease: 'linear' },
           y: { duration: state === 'fall' ? 0.6 : 0.45, ease: 'easeOut' },
         }}
-        style={{ transform: 'translateX(-50%)', opacity: 0.8 }}
+        style={{ transform: 'translateX(-50%)', opacity: 0.82 }}
       >
+        <AnimatePresence>
+          {thought && <ThoughtBubble message={thought} />}
+        </AnimatePresence>
         <motion.div
           animate={
             state === 'wobble'
