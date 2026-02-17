@@ -1,10 +1,11 @@
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Leaf, Home, Check } from 'lucide-react';
+import { Type, RotateCcw, Bell, Clock, HelpCircle, CalendarDays, Download, FolderInput, ChevronRight, Info, Moon, Sun, Palette, Grid3X3, Sparkles, Leaf, Home, Check, Cat } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { useTheme, THEME_OPTIONS, type ThemeName } from '@/contexts/ThemeContext';
 import { useReminderNotifications } from '@/hooks/useReminderNotifications';
 import { usePioneer } from '@/contexts/PioneerContext';
+import { useNekoEnabled } from '@/components/NekoCat';
 import { exportBackup, importBackup } from '@/lib/backup-service';
 import { t } from '@/lib/i18n';
 import { Switch } from '@/components/ui/switch';
@@ -42,6 +43,7 @@ export default function SettingsPage() {
   const { fontSize, setFontSize, language, resetProgress } = useReadingProgress();
   const { theme, mode, setTheme, toggleMode } = useTheme();
   const { resetEntries } = usePioneer();
+  const { nekoEnabled, setNekoEnabled } = useNekoEnabled();
   const {
     isSupported,
     permissionState,
@@ -97,7 +99,9 @@ export default function SettingsPage() {
     <div className="min-h-screen pb-20">
       <div className="px-5 pt-12 pb-4 safe-top">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('settings.title', language)}</p>
-        <h1 className="mt-1.5 text-2xl font-bold text-foreground tracking-tight">{t('settings.subtitle', language)}</h1>
+        <h1 className="mt-1.5 text-2xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Caveat', cursive", fontSize: '28px' }}>
+          {t('settings.subtitle', language)}
+        </h1>
       </div>
 
       <div className="px-5 max-w-4xl mx-auto md:grid md:grid-cols-2 md:gap-6">
@@ -177,6 +181,21 @@ export default function SettingsPage() {
                 max={24}
                 step={1}
               />
+            </div>
+          </div>
+
+          {/* Neko Cat */}
+          <div className={sectionClass}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground mb-3">Animations</p>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <Cat className="h-5 w-5 text-primary" />
+                <div>
+                  <span className="text-sm text-foreground">Neko (In-App Pet)</span>
+                  <p className="text-[10px] text-muted-foreground">Isang cute na pusa na sumusunod sa iyo</p>
+                </div>
+              </div>
+              <Switch checked={nekoEnabled} onCheckedChange={setNekoEnabled} />
             </div>
           </div>
         </div>
@@ -317,7 +336,7 @@ export default function SettingsPage() {
               <Info className="h-5 w-5 text-primary mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-foreground">{t('app.title', language)}</p>
-                <p className="text-[10px] text-muted-foreground">Version 2.3.0</p>
+                <p className="text-[10px] text-muted-foreground">Version 3.0.0</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {t('settings.aboutDesc', language)}
                 </p>

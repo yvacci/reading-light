@@ -26,6 +26,11 @@ function saveSettings(settings: ReminderSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+function getTodayLocal(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 export function useReminderNotifications() {
   const [settings, setSettings] = useState<ReminderSettings>(loadSettings);
   const [permissionState, setPermissionState] = useState<NotificationPermission>(
@@ -61,23 +66,24 @@ export function useReminderNotifications() {
     setSettings(prev => ({ ...prev, time }));
   }, []);
 
-  // Check if we should show a notification
+  // Main notification check loop
   useEffect(() => {
-    if (!settings.enabled || !isSupported || permissionState !== 'granted') return;
+    if (!isSupported || permissionState !== 'granted') return;
 
     const checkAndNotify = () => {
-      const now = new Date();
-      const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
-      // Re-read from storage to avoid stale closure
+      // Always re-read from localStorage for freshest state
       const current = loadSettings();
+      if (!current.enabled) return;
+
+      const todayKey = getTodayLocal();
       if (current.lastNotifiedDate === todayKey) return;
 
-      const [targetHour, targetMinute] = settings.time.split(':').map(Number);
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
+      const now = new Date();
+      const [targetHour, targetMinute] = current.time.split(':').map(Number);
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const targetMinutes = targetHour * 60 + targetMinute;
 
-      if (currentHour > targetHour || (currentHour === targetHour && currentMinute >= targetMinute)) {
+      if (currentMinutes >= targetMinutes) {
         try {
           new Notification('📖 Oras na para Magbasa!', {
             body: 'Naghihintay ang iyong daily Bible reading. Manatiling consistent sa iyong plano!',
@@ -85,22 +91,33 @@ export function useReminderNotifications() {
             tag: 'daily-reading-reminder',
           });
         } catch (e) {
-          // Fallback: some browsers block Notification constructor
           console.warn('Notification failed:', e);
         }
-        const updated = { ...settings, lastNotifiedDate: todayKey };
-        setSettings(updated);
+        const updated: ReminderSettings = { ...current, lastNotifiedDate: todayKey };
         saveSettings(updated);
+        setSettings(updated);
       }
     };
 
     // Check immediately
     checkAndNotify();
 
-    // Check every 30 seconds for more reliable triggering
+    // Check every 30 seconds
     const interval = setInterval(checkAndNotify, 30000);
-    return () => clearInterval(interval);
-  }, [settings.enabled, settings.time, isSupported, permissionState]);
+
+    // Also check when app becomes visible (crucial for mobile)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndNotify();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isSupported, permissionState]); // Minimal dependencies - reads from localStorage
 
   return {
     isSupported,

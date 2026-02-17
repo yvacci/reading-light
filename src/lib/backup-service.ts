@@ -16,6 +16,7 @@ const LOCAL_STORAGE_KEYS = [
   'nwt-daily-text-cache',
   'nwt-daily-text-lang',
   'nwt-bookmarks',
+  'nwt-journal',
   'nwt-journal-entries',
   'nwt-pioneer-data',
   'nwt-studies-data',
@@ -26,6 +27,10 @@ const LOCAL_STORAGE_KEYS = [
   'nwt-reminder-settings',
   'nwt-theme',
   'nwt-theme-mode',
+  'nwt-book-view',
+  'nwt-tab-memory',
+  'nwt-neko-enabled',
+  'nwt-schedule-notified',
 ];
 
 interface BackupData {
@@ -35,7 +40,7 @@ interface BackupData {
 }
 
 /**
- * Export all app data as a JSON file download.
+ * Export all app data as a .nwt file download.
  */
 export function exportBackup(): void {
   const data: BackupData = {
@@ -72,7 +77,7 @@ export function exportBackup(): void {
 }
 
 /**
- * Import app data from a backup JSON file. Returns the number of keys restored.
+ * Import app data from a backup file. Returns the number of keys restored.
  */
 export async function importBackup(file: File): Promise<number> {
   if (file.size > MAX_BACKUP_SIZE) {

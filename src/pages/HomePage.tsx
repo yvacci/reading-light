@@ -12,6 +12,8 @@ import { t } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import WeeklyChart from '@/components/WeeklyChart';
 import ReadingStatsCard from '@/components/ReadingStatsCard';
+import MinistryBreakdownChart from '@/components/MinistryBreakdownChart';
+import { useScheduleReminders } from '@/hooks/useScheduleReminders';
 
 function PioneerSummaryCard() {
   const { getMonthSummary } = usePioneer();
@@ -34,7 +36,7 @@ function PioneerSummaryCard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Megaphone className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Ministry Summary</span>
+          <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "'Caveat', cursive", fontSize: '14px' }}>Ministry Summary</span>
         </div>
         <button onClick={() => navigate('/pioneer')} className="text-[10px] text-primary font-medium hover:underline">
           View All →
@@ -59,7 +61,6 @@ function PioneerSummaryCard() {
         </div>
       </div>
 
-      {/* Successful visits this month */}
       {(successfulBS > 0 || successfulRV > 0) && (
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center gap-2 rounded-xl bg-success/10 px-3 py-2">
@@ -87,6 +88,40 @@ function PioneerSummaryCard() {
   );
 }
 
+function UpcomingRemindersCard() {
+  const { getUpcomingReminders } = useScheduleReminders();
+  const reminders = getUpcomingReminders();
+
+  if (reminders.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.4 }}
+      className="rounded-2xl border border-border bg-card p-4"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <Calendar className="h-4 w-4 text-warning" />
+        <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "'Caveat', cursive", fontSize: '14px' }}>
+          Mga Paalala
+        </span>
+      </div>
+      <div className="space-y-2">
+        {reminders.map((r, i) => (
+          <div key={i} className="flex items-center gap-2 rounded-xl bg-warning/5 px-3 py-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-foreground truncate">{r.name}</p>
+              <p className="text-[10px] text-muted-foreground">{r.type}{r.time ? ` · ${r.time}` : ''}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { getOverallProgress, lastRead, getTodaysReading } = useReadingProgress();
@@ -104,7 +139,7 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('app.title')}</p>
-          <h1 className="mt-1.5 text-2xl font-bold text-foreground whitespace-pre-line tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="mt-1.5 text-2xl font-bold text-foreground whitespace-pre-line tracking-tight" style={{ fontFamily: "'Caveat', cursive", fontSize: '28px' }}>
             {t('home.subtitle')}
           </h1>
           <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
@@ -138,6 +173,9 @@ export default function HomePage() {
           {/* Pioneer Summary */}
           <PioneerSummaryCard />
 
+          {/* Ministry Breakdown Chart */}
+          <MinistryBreakdownChart />
+
           {/* Weekly Progress Chart */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -150,6 +188,9 @@ export default function HomePage() {
 
         {/* RIGHT COLUMN */}
         <div className="space-y-5 mt-5 md:mt-0">
+          {/* Upcoming Reminders */}
+          <UpcomingRemindersCard />
+
           {/* Today's Reading */}
           {todaysReading && todaysReading.length > 0 && (
             <motion.div
