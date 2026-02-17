@@ -37,8 +37,8 @@ export function useNekoEnabled() {
 }
 
 /* ─── 3D Cat Materials ─── */
-const furColor = new THREE.Color('#FEFEFA');
-const furDarkColor = new THREE.Color('#F0EBE5');
+const furColor = new THREE.Color('#F5EDE4');
+const furDarkColor = new THREE.Color('#E0D5C8');
 const pinkColor = new THREE.Color('#E8A0A0');
 const noseColor = new THREE.Color('#D08888');
 const eyeWhite = new THREE.Color('#FFFFFF');
@@ -495,22 +495,28 @@ function ThoughtBubble({ message }: { message: string }) {
 /* ─── 3D Canvas Wrapper ─── */
 function CatCanvas({ state, facingRight, showParticles }: { state: NekoState; facingRight: boolean; showParticles: boolean }) {
   return (
-    <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28">
+    <div className="w-24 h-24 md:w-28 md:h-28 lg:w-32 lg:h-32" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }}>
       <Canvas
-        camera={{ position: [0, 0.2, 1.8], fov: 30, near: 0.1, far: 10 }}
+        camera={{ position: [0.3, 0.5, 2.2], fov: 26, near: 0.1, far: 10 }}
         gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
         style={{ background: 'transparent' }}
         dpr={[1, 1.5]}
         frameloop="always"
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 4, 2]} intensity={0.8} color="#FFF8F0" />
-        <directionalLight position={[-1, 2, -1]} intensity={0.3} color="#E0E8FF" />
-        <pointLight position={[0, -0.5, 0.5]} intensity={0.15} color="#FFE0D0" />
+        <ambientLight intensity={1.4} />
+        <directionalLight position={[3, 5, 3]} intensity={1.6} color="#FFFAF0" />
+        <directionalLight position={[-2, 3, -1]} intensity={0.7} color="#E8EEFF" />
+        <pointLight position={[1, 0, 1]} intensity={0.5} color="#FFF0E0" />
+        <hemisphereLight args={['#FFEEDD', '#DDEEFF', 0.6]} />
 
         <Suspense fallback={null}>
           <Cat3D state={state} facingRight={facingRight} />
           <Particles3D active={showParticles} />
+          {/* Ground shadow */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.45, 0]}>
+            <circleGeometry args={[0.35, 24]} />
+            <meshBasicMaterial color="#000000" transparent opacity={0.08} />
+          </mesh>
         </Suspense>
       </Canvas>
     </div>
