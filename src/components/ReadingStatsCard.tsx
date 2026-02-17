@@ -37,7 +37,7 @@ export default function ReadingStatsCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.12, duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-4"
+      className="ghibli-card rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
         <BarChart3 className="h-4 w-4 text-primary" />

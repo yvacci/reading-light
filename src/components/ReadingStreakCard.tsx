@@ -10,11 +10,11 @@ export default function ReadingStreakCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.12, duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-4"
+      className="ghibli-card rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
         <Flame className={`h-4 w-4 ${currentStreak > 0 ? 'text-warning' : 'text-muted-foreground'}`} />
-        <span className="text-xs font-semibold text-foreground">Reading Streak</span>
+        <span className="text-xs font-semibold text-foreground ghibli-heading" style={{ fontSize: '14px' }}>Reading Streak</span>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
