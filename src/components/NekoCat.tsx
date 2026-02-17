@@ -1,14 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Import realistic cat pose images
-import nekoSit from '@/assets/neko/neko-sit.png';
-import nekoWalk from '@/assets/neko/neko-walk.png';
-import nekoSleep from '@/assets/neko/neko-sleep.png';
-import nekoStretch from '@/assets/neko/neko-stretch.png';
-import nekoGroom from '@/assets/neko/neko-groom.png';
-import nekoLiedown from '@/assets/neko/neko-liedown.png';
-import nekoPlay from '@/assets/neko/neko-play.png';
+import * as THREE from 'three';
 
 const NEKO_ENABLED_KEY = 'nwt-neko-enabled';
 
@@ -43,92 +36,436 @@ export function useNekoEnabled() {
   return { nekoEnabled: enabled, setNekoEnabled: toggle };
 }
 
-/* ─── State to image mapping ─── */
-function getNekoImage(state: NekoState): string {
-  switch (state) {
-    case 'walk-left':
-    case 'walk-right':
-      return nekoWalk;
-    case 'sleep':
-      return nekoSleep;
-    case 'idle-stretch':
-    case 'wake':
-      return nekoStretch;
-    case 'idle-groom':
-      return nekoGroom;
-    case 'idle-liedown':
-    case 'idle-roll':
-      return nekoLiedown;
-    case 'idle-play':
-    case 'fall':
-      return nekoPlay;
-    case 'idle-sit':
-    case 'idle-look':
-    case 'jump':
-    case 'wobble':
-    default:
-      return nekoSit;
-  }
-}
+/* ─── 3D Cat Materials ─── */
+const furColor = new THREE.Color('#FEFEFA');
+const furDarkColor = new THREE.Color('#F0EBE5');
+const pinkColor = new THREE.Color('#E8A0A0');
+const noseColor = new THREE.Color('#D08888');
+const eyeWhite = new THREE.Color('#FFFFFF');
+const irisColor = new THREE.Color('#4A9CC8');
+const pupilColor = new THREE.Color('#1A2A35');
 
-/* ─── Sparkle / Petal Particles ─── */
-function Particles({ active }: { active: boolean }) {
-  const [particles, setParticles] = useState<{ id: number; x: number; y: number; type: 'sparkle' | 'petal'; size: number }[]>([]);
-  const idRef = useRef(0);
+/* ─── 3D Animated Cat Component ─── */
+function Cat3D({ state, facingRight }: { state: NekoState; facingRight: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const headRef = useRef<THREE.Group>(null);
+  const tailRef = useRef<THREE.Group>(null);
+  const tailSeg1 = useRef<THREE.Group>(null);
+  const tailSeg2 = useRef<THREE.Group>(null);
+  const tailSeg3 = useRef<THREE.Group>(null);
+  const frontLeftLeg = useRef<THREE.Group>(null);
+  const frontRightLeg = useRef<THREE.Group>(null);
+  const backLeftLeg = useRef<THREE.Group>(null);
+  const backRightLeg = useRef<THREE.Group>(null);
+  const leftEyelid = useRef<THREE.Mesh>(null);
+  const rightEyelid = useRef<THREE.Mesh>(null);
+  const bodyRef = useRef<THREE.Mesh>(null);
+  const leftEye = useRef<THREE.Group>(null);
+  const rightEye = useRef<THREE.Group>(null);
 
-  useEffect(() => {
-    if (!active) { setParticles([]); return; }
+  const isWalking = state === 'walk-left' || state === 'walk-right';
+  const isSleeping = state === 'sleep';
+  const isLying = state === 'idle-liedown' || state === 'idle-roll';
+  const isPlaying = state === 'idle-play';
+  const isStretching = state === 'idle-stretch';
+  const isGrooming = state === 'idle-groom';
+  const isLooking = state === 'idle-look';
 
-    const spawn = () => {
-      const count = 2 + Math.floor(Math.random() * 3);
-      const newParticles = Array.from({ length: count }, () => ({
-        id: idRef.current++,
-        x: -20 + Math.random() * 40,
-        y: -10 + Math.random() * 30,
-        type: (Math.random() > 0.5 ? 'sparkle' : 'petal') as 'sparkle' | 'petal',
-        size: 4 + Math.random() * 6,
-      }));
-      setParticles(newParticles);
-      setTimeout(() => setParticles([]), 2500);
-    };
+  // Blink timer
+  const blinkRef = useRef(0);
+  const nextBlink = useRef(3 + Math.random() * 4);
 
-    spawn();
-    const interval = setInterval(spawn, 8000 + Math.random() * 12000);
-    return () => clearInterval(interval);
-  }, [active]);
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    const t = performance.now() * 0.001;
+
+    // Flip direction
+    groupRef.current.scale.x = facingRight ? 1 : -1;
+
+    // ── Body breathing ──
+    if (bodyRef.current) {
+      const breathScale = isSleeping ? 0.03 : 0.015;
+      const breathSpeed = isSleeping ? 1.2 : 2;
+      bodyRef.current.scale.y = 1 + Math.sin(t * breathSpeed) * breathScale;
+      bodyRef.current.scale.x = 1 - Math.sin(t * breathSpeed) * breathScale * 0.5;
+    }
+
+    // ── Body position for lying/sleeping ──
+    if (isLying || isSleeping) {
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, -0.3, delta * 3);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -0.15, delta * 3);
+    } else if (isStretching) {
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, -0.15, delta * 3);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, -0.05, delta * 3);
+    } else {
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, 0, delta * 4);
+      groupRef.current.position.y = THREE.MathUtils.lerp(groupRef.current.position.y, 0, delta * 4);
+    }
+
+    // ── Walking leg animation ──
+    const walkSpeed = 8;
+    const walkAmp = 0.4;
+    if (frontLeftLeg.current) {
+      frontLeftLeg.current.rotation.x = isWalking ? Math.sin(t * walkSpeed) * walkAmp : 0;
+    }
+    if (frontRightLeg.current) {
+      frontRightLeg.current.rotation.x = isWalking ? Math.sin(t * walkSpeed + Math.PI) * walkAmp : 0;
+    }
+    if (backLeftLeg.current) {
+      backLeftLeg.current.rotation.x = isWalking ? Math.sin(t * walkSpeed + Math.PI) * walkAmp * 0.8 : 0;
+    }
+    if (backRightLeg.current) {
+      backRightLeg.current.rotation.x = isWalking ? Math.sin(t * walkSpeed) * walkAmp * 0.8 : 0;
+    }
+
+    // ── Walking body bob ──
+    if (isWalking && groupRef.current) {
+      groupRef.current.position.y = Math.abs(Math.sin(t * walkSpeed * 2)) * 0.02;
+    }
+
+    // ── Head animation ──
+    if (headRef.current) {
+      if (isLooking) {
+        headRef.current.rotation.y = Math.sin(t * 0.5) * 0.5;
+        headRef.current.rotation.z = Math.sin(t * 0.7) * 0.1;
+      } else if (isGrooming) {
+        headRef.current.rotation.x = Math.sin(t * 2) * 0.2 + 0.3;
+        headRef.current.rotation.y = -0.2;
+      } else if (isSleeping) {
+        headRef.current.rotation.x = 0.2;
+        headRef.current.rotation.y = 0;
+      } else if (isPlaying) {
+        headRef.current.rotation.y = Math.sin(t * 3) * 0.3;
+        headRef.current.rotation.x = Math.sin(t * 2) * -0.15;
+      } else {
+        headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, Math.sin(t * 0.3) * 0.15, delta * 2);
+        headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, 0, delta * 3);
+        headRef.current.rotation.z = THREE.MathUtils.lerp(headRef.current.rotation.z, 0, delta * 3);
+      }
+    }
+
+    // ── Tail sway ──
+    const tailSpeed = isPlaying ? 4 : isSleeping ? 0.5 : 1.5;
+    const tailAmp = isPlaying ? 0.5 : isSleeping ? 0.1 : 0.3;
+    if (tailSeg1.current) tailSeg1.current.rotation.z = Math.sin(t * tailSpeed) * tailAmp;
+    if (tailSeg2.current) tailSeg2.current.rotation.z = Math.sin(t * tailSpeed + 0.5) * tailAmp * 0.8;
+    if (tailSeg3.current) tailSeg3.current.rotation.z = Math.sin(t * tailSpeed + 1) * tailAmp * 0.6;
+
+    // ── Blink animation ──
+    blinkRef.current += delta;
+    const blinkProgress = blinkRef.current - nextBlink.current;
+    let eyelidScale = 0;
+    if (isSleeping) {
+      eyelidScale = 1;
+    } else if (blinkProgress > 0 && blinkProgress < 0.15) {
+      eyelidScale = Math.sin((blinkProgress / 0.15) * Math.PI);
+    }
+    if (blinkProgress > 0.15) {
+      blinkRef.current = 0;
+      nextBlink.current = 2 + Math.random() * 5;
+    }
+    if (leftEyelid.current) leftEyelid.current.scale.y = eyelidScale;
+    if (rightEyelid.current) rightEyelid.current.scale.y = eyelidScale;
+
+    // ── Eye look direction ──
+    if (leftEye.current && rightEye.current) {
+      if (isLooking) {
+        const lookX = Math.sin(t * 0.5) * 0.03;
+        const lookY = Math.cos(t * 0.7) * 0.02;
+        leftEye.current.position.x = -0.15 + lookX;
+        leftEye.current.position.y = 0.05 + lookY;
+        rightEye.current.position.x = 0.15 + lookX;
+        rightEye.current.position.y = 0.05 + lookY;
+      }
+    }
+
+    // ── Playing paw raise ──
+    if (isPlaying && frontRightLeg.current) {
+      frontRightLeg.current.rotation.x = Math.sin(t * 3) * 0.6 - 0.3;
+      frontRightLeg.current.rotation.z = Math.sin(t * 4) * 0.2;
+    }
+  });
 
   return (
-    <AnimatePresence>
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          className="absolute pointer-events-none"
-          initial={{ opacity: 0, x: p.x, y: p.y, scale: 0 }}
-          animate={{
-            opacity: [0, 0.8, 0.6, 0],
-            x: p.x + (Math.random() - 0.5) * 30,
-            y: p.y - 20 - Math.random() * 20,
-            scale: [0, 1.2, 1, 0.5],
-            rotate: p.type === 'petal' ? [0, 180, 360] : [0, 90, 180],
-          }}
-          exit={{ opacity: 0, scale: 0 }}
-          transition={{ duration: 2 + Math.random(), ease: 'easeOut' }}
-          style={{ width: p.size, height: p.size }}
-        >
-          {p.type === 'sparkle' ? (
-            <svg viewBox="0 0 12 12" className="w-full h-full">
-              <path d="M6,0 L7,4.5 L12,6 L7,7.5 L6,12 L5,7.5 L0,6 L5,4.5 Z"
-                fill="hsl(45, 90%, 70%)" opacity="0.8" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 12 12" className="w-full h-full">
-              <ellipse cx="6" cy="6" rx="4" ry="6" fill="hsl(340, 60%, 80%)"
-                opacity="0.7" transform="rotate(30 6 6)" />
-            </svg>
-          )}
-        </motion.div>
+    <group ref={groupRef}>
+      {/* Body */}
+      <mesh ref={bodyRef} position={[0, 0, 0]}>
+        <sphereGeometry args={[0.35, 24, 16]} />
+        <meshStandardMaterial color={furColor} roughness={0.9} />
+      </mesh>
+      {/* Body back half */}
+      <mesh position={[-0.15, -0.02, 0]}>
+        <sphereGeometry args={[0.32, 24, 16]} />
+        <meshStandardMaterial color={furColor} roughness={0.9} />
+      </mesh>
+      {/* Chest highlight */}
+      <mesh position={[0.15, 0.05, 0.1]}>
+        <sphereGeometry args={[0.18, 16, 12]} />
+        <meshStandardMaterial color="#FEFEFE" roughness={0.85} transparent opacity={0.6} />
+      </mesh>
+
+      {/* Head */}
+      <group ref={headRef} position={[0.35, 0.2, 0]}>
+        <mesh>
+          <sphereGeometry args={[0.25, 24, 20]} />
+          <meshStandardMaterial color={furColor} roughness={0.85} />
+        </mesh>
+        {/* Cheeks */}
+        <mesh position={[0.05, -0.05, 0.15]}>
+          <sphereGeometry args={[0.12, 12, 8]} />
+          <meshStandardMaterial color="#FEFEFE" roughness={0.9} transparent opacity={0.5} />
+        </mesh>
+        <mesh position={[0.05, -0.05, -0.15]}>
+          <sphereGeometry args={[0.12, 12, 8]} />
+          <meshStandardMaterial color="#FEFEFE" roughness={0.9} transparent opacity={0.5} />
+        </mesh>
+
+        {/* Left ear */}
+        <group position={[0.05, 0.22, 0.12]} rotation={[0, 0, 0.2]}>
+          <mesh>
+            <coneGeometry args={[0.07, 0.18, 8]} />
+            <meshStandardMaterial color={furColor} roughness={0.85} />
+          </mesh>
+          <mesh position={[0, -0.01, 0.01]} scale={[0.6, 0.7, 0.6]}>
+            <coneGeometry args={[0.07, 0.18, 8]} />
+            <meshStandardMaterial color={pinkColor} roughness={0.7} />
+          </mesh>
+        </group>
+        {/* Right ear */}
+        <group position={[0.05, 0.22, -0.12]} rotation={[0, 0, 0.2]}>
+          <mesh>
+            <coneGeometry args={[0.07, 0.18, 8]} />
+            <meshStandardMaterial color={furColor} roughness={0.85} />
+          </mesh>
+          <mesh position={[0, -0.01, -0.01]} scale={[0.6, 0.7, 0.6]}>
+            <coneGeometry args={[0.07, 0.18, 8]} />
+            <meshStandardMaterial color={pinkColor} roughness={0.7} />
+          </mesh>
+        </group>
+
+        {/* Eyes */}
+        <group ref={leftEye} position={[0.18, 0.05, 0.1]}>
+          {/* Eye white */}
+          <mesh>
+            <sphereGeometry args={[0.055, 16, 12]} />
+            <meshStandardMaterial color={eyeWhite} roughness={0.3} />
+          </mesh>
+          {/* Iris */}
+          <mesh position={[0.02, 0, 0]}>
+            <sphereGeometry args={[0.038, 14, 10]} />
+            <meshStandardMaterial color={irisColor} roughness={0.2} metalness={0.1} />
+          </mesh>
+          {/* Pupil */}
+          <mesh position={[0.04, 0, 0]}>
+            <sphereGeometry args={[0.02, 10, 8]} />
+            <meshStandardMaterial color={pupilColor} roughness={0.1} />
+          </mesh>
+          {/* Eye shine */}
+          <mesh position={[0.045, 0.015, 0.015]}>
+            <sphereGeometry args={[0.008, 8, 6]} />
+            <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.5} />
+          </mesh>
+          {/* Eyelid */}
+          <mesh ref={leftEyelid} position={[0.02, 0.04, 0]} scale={[1, 0, 1]}>
+            <sphereGeometry args={[0.058, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={furColor} roughness={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+
+        <group ref={rightEye} position={[0.18, 0.05, -0.1]}>
+          <mesh>
+            <sphereGeometry args={[0.055, 16, 12]} />
+            <meshStandardMaterial color={eyeWhite} roughness={0.3} />
+          </mesh>
+          <mesh position={[0.02, 0, 0]}>
+            <sphereGeometry args={[0.038, 14, 10]} />
+            <meshStandardMaterial color={irisColor} roughness={0.2} metalness={0.1} />
+          </mesh>
+          <mesh position={[0.04, 0, 0]}>
+            <sphereGeometry args={[0.02, 10, 8]} />
+            <meshStandardMaterial color={pupilColor} roughness={0.1} />
+          </mesh>
+          <mesh position={[0.045, 0.015, -0.015]}>
+            <sphereGeometry args={[0.008, 8, 6]} />
+            <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.5} />
+          </mesh>
+          <mesh ref={rightEyelid} position={[0.02, 0.04, 0]} scale={[1, 0, 1]}>
+            <sphereGeometry args={[0.058, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color={furColor} roughness={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+
+        {/* Nose */}
+        <mesh position={[0.23, -0.02, 0]}>
+          <sphereGeometry args={[0.025, 10, 8]} />
+          <meshStandardMaterial color={noseColor} roughness={0.5} />
+        </mesh>
+
+        {/* Mouth lines */}
+        {/* Whiskers - thin cylinders */}
+        {[0.08, 0, -0.08].map((yOff, i) => (
+          <group key={`whisker-l-${i}`}>
+            <mesh position={[0.2, -0.04 + yOff * 0.3, 0.12]} rotation={[0, 0.3 + yOff * 0.3, yOff * 0.2]}>
+              <cylinderGeometry args={[0.002, 0.001, 0.15, 4]} />
+              <meshStandardMaterial color="#C8BEB2" roughness={0.5} transparent opacity={0.4} />
+            </mesh>
+            <mesh position={[0.2, -0.04 + yOff * 0.3, -0.12]} rotation={[0, -0.3 - yOff * 0.3, yOff * 0.2]}>
+              <cylinderGeometry args={[0.002, 0.001, 0.15, 4]} />
+              <meshStandardMaterial color="#C8BEB2" roughness={0.5} transparent opacity={0.4} />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* Front left leg */}
+      <group ref={frontLeftLeg} position={[0.15, -0.25, 0.13]}>
+        <mesh position={[0, -0.1, 0]}>
+          <capsuleGeometry args={[0.04, 0.15, 8, 8]} />
+          <meshStandardMaterial color={furColor} roughness={0.9} />
+        </mesh>
+        {/* Paw */}
+        <mesh position={[0.01, -0.2, 0]}>
+          <sphereGeometry args={[0.045, 10, 8]} />
+          <meshStandardMaterial color={furDarkColor} roughness={0.85} />
+        </mesh>
+        {/* Paw pad */}
+        <mesh position={[0.01, -0.22, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.025, 8]} />
+          <meshStandardMaterial color={pinkColor} roughness={0.7} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* Front right leg */}
+      <group ref={frontRightLeg} position={[0.15, -0.25, -0.13]}>
+        <mesh position={[0, -0.1, 0]}>
+          <capsuleGeometry args={[0.04, 0.15, 8, 8]} />
+          <meshStandardMaterial color={furColor} roughness={0.9} />
+        </mesh>
+        <mesh position={[0.01, -0.2, 0]}>
+          <sphereGeometry args={[0.045, 10, 8]} />
+          <meshStandardMaterial color={furDarkColor} roughness={0.85} />
+        </mesh>
+        <mesh position={[0.01, -0.22, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[0.025, 8]} />
+          <meshStandardMaterial color={pinkColor} roughness={0.7} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+
+      {/* Back left leg */}
+      <group ref={backLeftLeg} position={[-0.2, -0.22, 0.14]}>
+        <mesh position={[0, -0.1, 0]}>
+          <capsuleGeometry args={[0.05, 0.12, 8, 8]} />
+          <meshStandardMaterial color={furColor} roughness={0.9} />
+        </mesh>
+        <mesh position={[0.02, -0.19, 0]}>
+          <sphereGeometry args={[0.05, 10, 8]} />
+          <meshStandardMaterial color={furDarkColor} roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Back right leg */}
+      <group ref={backRightLeg} position={[-0.2, -0.22, -0.14]}>
+        <mesh position={[0, -0.1, 0]}>
+          <capsuleGeometry args={[0.05, 0.12, 8, 8]} />
+          <meshStandardMaterial color={furColor} roughness={0.9} />
+        </mesh>
+        <mesh position={[0.02, -0.19, 0]}>
+          <sphereGeometry args={[0.05, 10, 8]} />
+          <meshStandardMaterial color={furDarkColor} roughness={0.85} />
+        </mesh>
+      </group>
+
+      {/* Tail - 3 articulated segments */}
+      <group ref={tailRef} position={[-0.4, 0.1, 0]}>
+        <group ref={tailSeg1} rotation={[0, 0, 0.5]}>
+          <mesh position={[-0.08, 0.05, 0]}>
+            <capsuleGeometry args={[0.035, 0.12, 8, 6]} />
+            <meshStandardMaterial color={furColor} roughness={0.9} />
+          </mesh>
+          <group ref={tailSeg2} position={[-0.12, 0.12, 0]} rotation={[0, 0, 0.3]}>
+            <mesh position={[-0.06, 0.04, 0]}>
+              <capsuleGeometry args={[0.03, 0.1, 8, 6]} />
+              <meshStandardMaterial color={furColor} roughness={0.9} />
+            </mesh>
+            <group ref={tailSeg3} position={[-0.08, 0.1, 0]} rotation={[0, 0, 0.2]}>
+              <mesh position={[-0.04, 0.03, 0]}>
+                <capsuleGeometry args={[0.025, 0.08, 8, 6]} />
+                <meshStandardMaterial color={furDarkColor} roughness={0.9} />
+              </mesh>
+              {/* Tail tip fluff */}
+              <mesh position={[-0.06, 0.08, 0]}>
+                <sphereGeometry args={[0.03, 8, 6]} />
+                <meshStandardMaterial color={furColor} roughness={0.95} />
+              </mesh>
+            </group>
+          </group>
+        </group>
+      </group>
+    </group>
+  );
+}
+
+/* ─── Sparkle Particles in 3D ─── */
+function Particles3D({ active }: { active: boolean }) {
+  const ref = useRef<THREE.Group>(null);
+  const particles = useRef<{ pos: THREE.Vector3; vel: THREE.Vector3; life: number; maxLife: number; type: 'sparkle' | 'petal' }[]>([]);
+  const spawnTimer = useRef(0);
+
+  useFrame((_, delta) => {
+    if (!ref.current) return;
+    spawnTimer.current += delta;
+
+    if (active && spawnTimer.current > 0.3 && particles.current.length < 8) {
+      spawnTimer.current = 0;
+      particles.current.push({
+        pos: new THREE.Vector3((Math.random() - 0.5) * 0.8, Math.random() * 0.3, (Math.random() - 0.5) * 0.4),
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.1, 0.15 + Math.random() * 0.1, (Math.random() - 0.5) * 0.05),
+        life: 0,
+        maxLife: 1.5 + Math.random(),
+        type: Math.random() > 0.5 ? 'sparkle' : 'petal',
+      });
+    }
+
+    // Update particles
+    particles.current = particles.current.filter(p => {
+      p.life += delta;
+      p.pos.add(p.vel.clone().multiplyScalar(delta));
+      p.vel.y -= delta * 0.05;
+      return p.life < p.maxLife;
+    });
+
+    // Update meshes
+    const children = ref.current.children;
+    for (let i = 0; i < children.length; i++) {
+      const p = particles.current[i];
+      if (p) {
+        children[i].visible = true;
+        children[i].position.copy(p.pos);
+        const alpha = 1 - p.life / p.maxLife;
+        children[i].scale.setScalar(alpha * 0.5);
+        children[i].rotation.y += delta * 2;
+        children[i].rotation.z += delta;
+      } else {
+        children[i].visible = false;
+      }
+    }
+  });
+
+  return (
+    <group ref={ref}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh key={i} visible={false}>
+          <octahedronGeometry args={[0.02, 0]} />
+          <meshStandardMaterial
+            color={i % 2 === 0 ? '#FFD700' : '#FFB0C8'}
+            emissive={i % 2 === 0 ? '#FFD700' : '#FFB0C8'}
+            emissiveIntensity={0.5}
+            transparent
+            opacity={0.7}
+          />
+        </mesh>
       ))}
-    </AnimatePresence>
+    </group>
   );
 }
 
@@ -140,7 +477,7 @@ function ThoughtBubble({ message }: { message: string }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -5, scale: 0.8 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="absolute -top-12 left-1/2 -translate-x-1/2 pointer-events-none"
+      className="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none"
       style={{ width: 'max-content', maxWidth: 180 }}
     >
       <div className="relative bg-card/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 shadow-lg border border-border/30">
@@ -151,73 +488,31 @@ function ThoughtBubble({ message }: { message: string }) {
           <path d="M2,0 Q6,7 10,0" className="fill-card" opacity="0.9" />
         </svg>
       </div>
-      <motion.div
-        className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-card/80"
-        animate={{ scale: [0.8, 1, 0.8] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute -bottom-6 left-[calc(50%-4px)] w-1 h-1 rounded-full bg-card/60"
-        animate={{ scale: [0.6, 1, 0.6] }}
-        transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-      />
     </motion.div>
   );
 }
 
-/* ─── Realistic Cat Sprite (image-based) ─── */
-function CatSprite({ state, facingRight }: { state: NekoState; facingRight: boolean }) {
-  const imageSrc = getNekoImage(state);
-  const isIdle = state.startsWith('idle-') || state === 'wobble';
-
+/* ─── 3D Canvas Wrapper ─── */
+function CatCanvas({ state, facingRight, showParticles }: { state: NekoState; facingRight: boolean; showParticles: boolean }) {
   return (
-    <div
-      className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16"
-      style={{
-        transform: facingRight ? 'scaleX(1)' : 'scaleX(-1)',
-      }}
-    >
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={imageSrc}
-          src={imageSrc}
-          alt=""
-          draggable={false}
-          className="w-full h-full object-contain select-none"
-          style={{
-            filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))',
-          }}
-          initial={{ opacity: 0.5, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0.5, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-        />
-      </AnimatePresence>
+    <div className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28">
+      <Canvas
+        camera={{ position: [0, 0.2, 1.8], fov: 30, near: 0.1, far: 10 }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
+        style={{ background: 'transparent' }}
+        dpr={[1, 1.5]}
+        frameloop="always"
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[3, 4, 2]} intensity={0.8} color="#FFF8F0" />
+        <directionalLight position={[-1, 2, -1]} intensity={0.3} color="#E0E8FF" />
+        <pointLight position={[0, -0.5, 0.5]} intensity={0.15} color="#FFE0D0" />
 
-      {/* Subtle breathing for idle states */}
-      {isIdle && (
-        <motion.div
-          className="absolute inset-0"
-          animate={{ scaleY: [1, 1.01, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
-
-      {/* Sleep Zzz */}
-      {state === 'sleep' && (
-        <div className="absolute -top-2 -right-1">
-          <motion.span
-            className="text-[8px] font-bold text-primary/50 block"
-            animate={{ opacity: [0, 0.6, 0], y: [0, -8, -16] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >z</motion.span>
-          <motion.span
-            className="text-[6px] font-bold text-primary/40 block absolute top-0 left-2"
-            animate={{ opacity: [0, 0.4, 0], y: [0, -6, -12] }}
-            transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-          >z</motion.span>
-        </div>
-      )}
+        <Suspense fallback={null}>
+          <Cat3D state={state} facingRight={facingRight} />
+          <Particles3D active={showParticles} />
+        </Suspense>
+      </Canvas>
     </div>
   );
 }
@@ -256,6 +551,9 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
   const lastInteraction = useRef(Date.now());
   const prevTabRef = useRef(activeTabIndex);
   const isVisibleRef = useRef(true);
+  const stateRef = useRef(state);
+
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   const tabTargets = useMemo(() => [10, 30, 50, 70, 90], []);
 
@@ -299,7 +597,6 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
       if (Math.random() < 0.25) {
         const target = Math.max(5, Math.min(95, 10 + Math.random() * 80));
         walkTo(target, () => {
-          // After walking, randomly face a direction (not always toward user)
           setFacingRight(Math.random() > 0.5);
           setState('idle-sit');
           stateTimerRef.current = setTimeout(cycle, IDLE_MIN_MS + Math.random() * (IDLE_MAX_MS - IDLE_MIN_MS));
@@ -307,7 +604,6 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
       } else {
         const randomIdle = IDLE_STATES[Math.floor(Math.random() * IDLE_STATES.length)];
         setState(randomIdle);
-        // Randomly change facing direction during idle
         if (Math.random() > 0.6) setFacingRight(Math.random() > 0.5);
         const duration = randomIdle === 'idle-groom' || randomIdle === 'idle-stretch'
           ? 3000 + Math.random() * 4000
@@ -318,7 +614,7 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
     stateTimerRef.current = setTimeout(cycle, IDLE_MIN_MS);
   }, [walkTo]);
 
-  // Particle effect cycle during idle
+  // Particle effect cycle
   useEffect(() => {
     const scheduleParticles = () => {
       particleTimerRef.current = setTimeout(() => {
@@ -336,10 +632,9 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
 
   // Thought bubble cycle
   useEffect(() => {
-    const showThought = () => {
-      const stateNow = stateRef.current;
-      if (stateNow === 'sleep' || stateNow === 'jump') return;
-
+    const showThoughtFn = () => {
+      const s = stateRef.current;
+      if (s === 'sleep' || s === 'jump') return;
       let msg: string;
       if (reminders.length > 0 && Math.random() < 0.6) {
         const r = reminders[Math.floor(Math.random() * reminders.length)];
@@ -347,13 +642,11 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
       } else {
         msg = GENERIC_THOUGHTS[Math.floor(Math.random() * GENERIC_THOUGHTS.length)];
       }
-
       setThought(msg);
       setTimeout(() => setThought(null), THOUGHT_DURATION_MS);
-      thoughtTimerRef.current = setTimeout(showThought, THOUGHT_INTERVAL_MS + Math.random() * 20000);
+      thoughtTimerRef.current = setTimeout(showThoughtFn, THOUGHT_INTERVAL_MS + Math.random() * 20000);
     };
-
-    thoughtTimerRef.current = setTimeout(showThought, 15000 + Math.random() * 15000);
+    thoughtTimerRef.current = setTimeout(showThoughtFn, 15000 + Math.random() * 15000);
     return () => { if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current); };
   }, [reminders]);
 
@@ -406,9 +699,6 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
     return () => document.removeEventListener('visibilitychange', handler);
   }, [clearTimers, resetSleepTimer, startIdleCycle]);
 
-  const stateRef = useRef(state);
-  useEffect(() => { stateRef.current = state; }, [state]);
-
   // Scroll wobble
   useEffect(() => {
     let scrollTimeout: ReturnType<typeof setTimeout>;
@@ -434,44 +724,19 @@ export default function NekoCat({ activeTabIndex, reminders = [] }: {
           left: `${posX}%`,
           y: state === 'jump' ? [0, -28, -32, -24, 0]
             : state === 'fall' ? [0, 4, 8, 12, 0]
+            : state === 'wobble' ? [0, -3, 3, -2, 0]
             : 0,
         }}
         transition={{
           left: { duration: 0.08, ease: 'linear' },
-          y: { duration: state === 'fall' ? 0.6 : 0.45, ease: 'easeOut' },
+          y: { duration: state === 'fall' ? 0.6 : state === 'wobble' ? 0.5 : 0.45, ease: 'easeOut' },
         }}
         style={{ transform: 'translateX(-50%)' }}
       >
-        {/* Particles */}
-        <Particles active={showParticles} />
-
-        {/* Thought bubble */}
         <AnimatePresence>
           {thought && <ThoughtBubble message={thought} />}
         </AnimatePresence>
-
-        {/* Cat body animations */}
-        <motion.div
-          animate={
-            state === 'wobble'
-              ? { rotate: [-5, 5, -3, 3, -1, 0] }
-              : state === 'jump'
-              ? { scale: [1, 0.85, 1.15, 1] }
-              : state === 'fall'
-              ? { rotate: [0, 8, -8, 4, 0] }
-              : state.startsWith('walk-')
-              ? { y: [0, -2, 0, -2, 0] }
-              : state === 'wake'
-              ? { scale: [0.9, 1.05, 1] }
-              : {}
-          }
-          transition={{
-            duration: state.startsWith('walk-') ? 0.4 : state === 'wake' ? 0.8 : 0.5,
-            repeat: state.startsWith('walk-') ? Infinity : 0,
-          }}
-        >
-          <CatSprite state={state} facingRight={facingRight} />
-        </motion.div>
+        <CatCanvas state={state} facingRight={facingRight} showParticles={showParticles} />
       </motion.div>
     </div>
   );
