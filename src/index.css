@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Caveat:wght@400;600;700&family=Patrick+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Caveat:wght@400;600;700&family=Patrick+Hand&family=Quicksand:wght@400;500;600;700&display=swap');
 @import './styles/themes.css';
 
 @tailwind base;
@@ -28,6 +28,62 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
+
+/* ========================================
+   GHIBLI VISUAL STYLE — Storybook Aesthetic
+   Soft, warm, hand-drawn look across all tabs
+   ======================================== */
+
+/* Heading style — hand-drawn feel */
+.ghibli-heading {
+  font-family: 'Caveat', cursive;
+  letter-spacing: -0.01em;
+}
+
+/* Body text — clean readable */
+.ghibli-body {
+  font-family: 'Quicksand', 'Inter', sans-serif;
+}
+
+/* Ghibli-styled card container */
+.ghibli-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.ghibli-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: 
+    radial-gradient(ellipse at 20% 0%, hsl(var(--primary) / 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, hsl(var(--accent) / 0.03) 0%, transparent 60%);
+}
+
+/* Section label — uppercase small caps with hand-drawn font */
+.ghibli-section-label {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Pencil-line divider */
+.ghibli-divider {
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    hsl(var(--border)) 0px,
+    hsl(var(--border)) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.5;
 }
 
 /* Scrollbar styles */

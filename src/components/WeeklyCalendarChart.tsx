@@ -23,8 +23,8 @@ export default function WeeklyCalendarChart() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <h3 className="mb-3 text-xs font-semibold text-foreground">{t('progress.thisWeek', language)}</h3>
+    <div className="ghibli-card rounded-2xl border border-border bg-card p-4">
+      <h3 className="mb-3 text-xs font-semibold text-foreground ghibli-heading" style={{ fontSize: '14px' }}>{t('progress.thisWeek', language)}</h3>
 
       <div className="flex justify-around mb-4">
         {enrichedData.map((d, i) => (
@@ -69,6 +69,7 @@ export default function WeeklyCalendarChart() {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '0.75rem',
                   fontSize: '11px',
+                  fontFamily: "'Caveat', cursive",
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value} min`, language === 'en' ? 'Reading Time' : 'Oras ng Pagbabasa']}

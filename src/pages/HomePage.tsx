@@ -31,12 +31,12 @@ function PioneerSummaryCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-4 space-y-3"
+      className="ghibli-card rounded-2xl border border-border bg-card p-4 space-y-3"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Megaphone className="h-4 w-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "'Caveat', cursive", fontSize: '14px' }}>Ministry Summary</span>
+          <span className="text-xs font-semibold text-foreground ghibli-heading" style={{ fontSize: '14px' }}>Ministry Summary</span>
         </div>
         <button onClick={() => navigate('/pioneer')} className="text-[10px] text-primary font-medium hover:underline">
           View All →
@@ -99,11 +99,11 @@ function UpcomingRemindersCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-4"
+      className="ghibli-card rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-4 w-4 text-warning" />
-        <span className="text-xs font-semibold text-foreground" style={{ fontFamily: "'Caveat', cursive", fontSize: '14px' }}>
+        <span className="text-xs font-semibold text-foreground ghibli-heading" style={{ fontSize: '14px' }}>
           Mga Paalala
         </span>
       </div>
@@ -139,7 +139,7 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('app.title')}</p>
-          <h1 className="mt-1.5 text-2xl font-bold text-foreground whitespace-pre-line tracking-tight" style={{ fontFamily: "'Caveat', cursive", fontSize: '28px' }}>
+          <h1 className="mt-1.5 text-2xl font-bold text-foreground whitespace-pre-line tracking-tight ghibli-heading" style={{ fontSize: '28px' }}>
             {t('home.subtitle')}
           </h1>
           <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">

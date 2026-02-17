@@ -27,7 +27,7 @@ function UpcomingVisitsCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15, duration: 0.4 }}
-      className="rounded-2xl border border-border bg-card p-4"
+      className="ghibli-card rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-4 w-4 text-primary" />
@@ -104,7 +104,7 @@ export default function ProgressPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center rounded-2xl border border-border bg-card p-6"
+            className="flex flex-col items-center rounded-2xl border border-border bg-card p-6 ghibli-card"
           >
             <div className="relative flex h-28 w-28 items-center justify-center">
               <svg className="absolute h-full w-full -rotate-90" viewBox="0 0 100 100">

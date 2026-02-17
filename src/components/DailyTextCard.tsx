@@ -91,7 +91,7 @@ export default function DailyTextCard() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05, duration: 0.35 }}
-        className="rounded-2xl border border-border bg-card overflow-hidden"
+        className="ghibli-card rounded-2xl border border-border bg-card overflow-hidden"
       >
         {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-border/50 bg-primary/[0.03]">
