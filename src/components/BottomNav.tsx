@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { recordTabPosition, getTabRoot, useTabNavigation } from '@/hooks/useTabMemory';
 import NekoCat from '@/components/NekoCat';
 import { useNekoEnabled } from '@/components/NekoCat';
+import { useScheduleReminders } from '@/hooks/useScheduleReminders';
 
 export default function BottomNav() {
   const { language } = useReadingProgress();
@@ -14,6 +15,8 @@ export default function BottomNav() {
   const location = useLocation();
   const { getNavigationTarget } = useTabNavigation();
   const { nekoEnabled } = useNekoEnabled();
+  const { getUpcomingReminders } = useScheduleReminders();
+  const reminders = useMemo(() => getUpcomingReminders(), [getUpcomingReminders]);
 
   const navItems = [
     { to: '/', icon: Home, labelKey: 'nav.home' },
@@ -41,7 +44,7 @@ export default function BottomNav() {
 
   return (
     <>
-      {nekoEnabled && <NekoCat activeTabIndex={Math.max(0, activeTabIndex)} />}
+      {nekoEnabled && <NekoCat activeTabIndex={Math.max(0, activeTabIndex)} reminders={reminders} />}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl safe-bottom">
         <div className="mx-auto flex max-w-lg items-center justify-around py-1">
           {navItems.map(({ to, icon: Icon, labelKey }) => {
