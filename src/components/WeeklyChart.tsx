@@ -57,13 +57,15 @@ export default function WeeklyChart() {
                 formatter={(value: number) => [`${value} min`, 'Oras ng Pagbabasa']}
               />
               <Area
-                type="natural"
+                type="monotone"
                 dataKey="minutes"
                 stroke="hsl(var(--primary))"
-                strokeWidth={2}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 fill="url(#colorMinutesGhibli)"
-                dot={{ fill: 'hsl(var(--primary))', r: 3.5, strokeWidth: 2, stroke: 'hsl(var(--card))' }}
-                activeDot={{ r: 5, strokeWidth: 2, stroke: 'hsl(var(--card))' }}
+                dot={{ fill: 'hsl(var(--primary))', r: 4, strokeWidth: 2.5, stroke: 'hsl(var(--card))' }}
+                activeDot={{ r: 6, strokeWidth: 2.5, stroke: 'hsl(var(--card))', fill: 'hsl(var(--primary))' }}
               />
             </AreaChart>
           </ResponsiveContainer>
