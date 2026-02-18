@@ -416,29 +416,6 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         </p>
       )}
 
-      <div className="fixed bottom-16 left-0 right-0 flex items-center justify-between border-t border-border bg-card/95 px-4 py-2 backdrop-blur-lg safe-bottom">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => goToChapter(-1)}
-          disabled={bookId === 1 && chapter === 1}
-          className="gap-1 text-xs"
-        >
-          <ChevronLeft className="h-4 w-4" /> {t('reader.previous')}
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          {chapter} / {book.chapters}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => goToChapter(1)}
-          disabled={bookId === 66 && chapter === book.chapters}
-          className="gap-1 text-xs"
-        >
-          {t('reader.next')} <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
 
       <BookmarkDialog
         open={bookmarkOpen}

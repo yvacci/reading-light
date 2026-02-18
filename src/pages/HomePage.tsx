@@ -69,7 +69,7 @@ function PioneerSummaryCard() {
           <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
           <div>
             <span className="text-sm font-bold text-foreground">{uniqueBSPeople}</span>
-            <p className="text-[9px] text-muted-foreground">Bible Study (people)</p>
+            <p className="text-[9px] text-muted-foreground">Bible Study (BS)</p>
           </div>
         </div>
         {/* Potential Bible Study (RV) — unique people */}
