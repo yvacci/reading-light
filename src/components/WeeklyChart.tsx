@@ -9,8 +9,8 @@ export default function WeeklyChart() {
 
   return (
     <div className="ghibli-card rounded-2xl border border-border bg-card p-4">
-      <h3 className="mb-3 text-xs font-semibold text-foreground ghibli-heading" style={{ fontSize: '14px' }}>
-        {t('progress.weeklyActivity', language)}
+      <h3 className="mb-3 app-subheading text-foreground" style={{ fontSize: '12px' }}>
+        {t('progress.weeklyActivity', language).toUpperCase()}
       </h3>
       {hasData ? (
         <div className="h-40">
@@ -35,12 +35,12 @@ export default function WeeklyChart() {
               />
               <XAxis
                 dataKey="day"
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Patrick Hand', cursive" }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Josefin Sans', sans-serif" }}
                 axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 0.5 }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Patrick Hand', cursive" }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Josefin Sans', sans-serif" }}
                 axisLine={false}
                 tickLine={false}
                 unit="m"
@@ -51,7 +51,7 @@ export default function WeeklyChart() {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '0.75rem',
                   fontSize: '12px',
-                  fontFamily: "'Caveat', cursive",
+                  fontFamily: "'Josefin Sans', sans-serif",
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value} min`, 'Oras ng Pagbabasa']}

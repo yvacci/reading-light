@@ -26,6 +26,7 @@ interface PioneerContextType {
     daysWithData: number;
     daysInMonth: number;
   };
+  getYearlyTotal: () => number;
 }
 
 const STORAGE_KEY = 'nwt-pioneer-data';
@@ -94,8 +95,22 @@ export function PioneerProvider({ children }: { children: React.ReactNode }) {
     return { totalHours, bibleStudies, returnVisits, witnessingHours, otherWitnessingHours, daysWithData, daysInMonth };
   }, [entries]);
 
+  // Service year: September to August
+  const getYearlyTotal = useCallback(() => {
+    const now = new Date();
+    const syStartYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+    let total = 0;
+    for (let m = 0; m < 12; m++) {
+      const year = syStartYear + (m >= 4 ? 1 : 0); // Sep=0..Dec=3 same year, Jan=4..Aug=11 next year
+      const month = ((8 + m) % 12) + 1; // 9,10,11,12,1,2,3,4,5,6,7,8
+      const summary = getMonthSummary(year, month);
+      total += summary.totalHours;
+    }
+    return total;
+  }, [entries]);
+
   return (
-    <PioneerContext.Provider value={{ entries, getEntry, saveEntry, deleteEntry, resetEntries, getMonthSummary }}>
+    <PioneerContext.Provider value={{ entries, getEntry, saveEntry, deleteEntry, resetEntries, getMonthSummary, getYearlyTotal }}>
       {children}
     </PioneerContext.Provider>
   );
