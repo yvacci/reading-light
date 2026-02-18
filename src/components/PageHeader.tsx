@@ -24,7 +24,7 @@ export default function PageHeader({ title, subtitle, showBack, actions }: PageH
             </button>
           )}
           <div>
-            <h1 className="text-lg font-semibold leading-tight text-foreground tracking-tight ghibli-heading" style={{ fontSize: '22px' }}>
+            <h1 className="text-lg leading-tight text-foreground tracking-tight app-title" style={{ fontSize: '22px' }}>
               {title}
             </h1>
             {subtitle && (
