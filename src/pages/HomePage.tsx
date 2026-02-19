@@ -18,10 +18,8 @@ function PioneerSummaryCard() {
   const now = new Date();
   const summary = getMonthSummary(now.getFullYear(), now.getMonth() + 1);
 
-  // Yearly goal: service year Sep–Aug
   const yearlyTotal = getYearlyTotal();
 
-  // Unique BS people this month (people with at least 1 successful visit this month)
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const uniqueBSPeople = studies.filter(s => s.type === 'bible-study' && (s.visitHistory || []).some(vh => vh.date.startsWith(yearMonth) && (vh.status === 'successful' || !vh.status))).length;
   const uniqueRVPeople = studies.filter(s => s.type === 'return-visit' && (s.visitHistory || []).some(vh => vh.date.startsWith(yearMonth) && (vh.status === 'successful' || !vh.status))).length;
@@ -40,7 +38,7 @@ function PioneerSummaryCard() {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Megaphone className="h-4 w-4 text-primary" />
+          <Megaphone className="h-4 w-4 text-muted-foreground" />
           <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>MINISTRY SUMMARY</span>
         </div>
         <button onClick={() => navigate('/pioneer')} className="text-[10px] text-primary font-medium hover:underline">
@@ -50,35 +48,31 @@ function PioneerSummaryCard() {
 
       <div className="grid grid-cols-2 gap-2">
         {/* Yearly Goal */}
-        <div className="flex flex-col items-center gap-1 rounded-xl bg-primary/10 p-3">
-          <Target className="h-3.5 w-3.5 text-primary" />
-          <span className="text-lg font-bold text-primary">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}h</span></span>
+        <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
+          <Target className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-lg font-bold text-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
           <span className="text-[10px] text-muted-foreground font-medium">Yearly Goal</span>
         </div>
         {/* Monthly Goal */}
-        <div className="flex flex-col items-center gap-1 rounded-xl bg-primary/10 p-3">
-          <Clock className="h-3.5 w-3.5 text-primary" />
-          <span className="text-lg font-bold text-primary">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}h</span></span>
+        <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
+          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-lg font-bold text-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
           <span className="text-[10px] text-muted-foreground font-medium">Monthly Goal</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {/* Bible Study — unique people */}
-        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5">
-          <BookOpen className="h-3.5 w-3.5 text-primary shrink-0" />
-          <div>
-            <span className="text-sm font-bold text-foreground">{uniqueBSPeople}</span>
-            <p className="text-[9px] text-muted-foreground">Bible Study (BS)</p>
-          </div>
+        <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
+          <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-lg font-bold text-foreground">{uniqueBSPeople}</span>
+          <span className="text-[10px] text-muted-foreground font-medium text-center">Bible Study (BS)</span>
         </div>
         {/* Potential Bible Study (RV) — unique people */}
-        <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5">
-          <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-          <div>
-            <span className="text-sm font-bold text-foreground">{uniqueRVPeople}</span>
-            <p className="text-[9px] text-muted-foreground">Potential Bible Study (RV)</p>
-          </div>
+        <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
+          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-lg font-bold text-foreground">{uniqueRVPeople}</span>
+          <span className="text-[10px] text-muted-foreground font-medium text-center">Potential Bible Study (RV)</span>
         </div>
       </div>
 
@@ -103,13 +97,13 @@ function UpcomingRemindersCard() {
       className="ghibli-card rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Calendar className="h-4 w-4 text-warning" />
+        <Calendar className="h-4 w-4 text-muted-foreground" />
         <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>MGA PAALALA</span>
       </div>
       <div className="space-y-2">
         {reminders.map((r, i) => (
-          <div key={i} className="flex items-center gap-2 rounded-xl bg-warning/5 px-3 py-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-warning shrink-0" />
+          <div key={i} className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-semibold text-foreground truncate">{r.name}</p>
               <p className="text-[10px] text-muted-foreground">{r.type}{r.time ? ` · ${r.time}` : ''}</p>
@@ -179,7 +173,7 @@ export default function HomePage() {
               transition={{ delay: 0.15, duration: 0.4 }}
             >
               <div className="flex items-center gap-2 mb-3">
-                <CalendarDays className="h-4 w-4 text-primary" />
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
                 <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>{t('home.todaysReading').toUpperCase()}</span>
               </div>
               <div className="space-y-2">
@@ -191,7 +185,7 @@ export default function HomePage() {
                         onClick={() => navigate(`/reader/${item.bookId}/${item.chapter}`)}
                         className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted"
                       >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-muted-foreground">
                           {i + 1}
                         </div>
                         <span className="text-sm font-medium text-foreground flex-1">
@@ -205,7 +199,7 @@ export default function HomePage() {
                             <div className="space-y-0.5">
                               {events.events.map((ev, j) => (
                                 <div key={j} className="flex items-start gap-1.5">
-                                  <Calendar className="h-3 w-3 text-primary/70 mt-0.5 shrink-0" />
+                                  <Calendar className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
                                   <p className="text-[10px] text-muted-foreground">
                                     <span className="font-bold">{ev.year}</span> {ev.event}
                                   </p>
@@ -217,7 +211,7 @@ export default function HomePage() {
                             <div className="mt-0.5">
                               {events.locations.map((loc, j) => (
                                 <div key={j} className="flex items-start gap-1.5">
-                                  <MapPin className="h-3 w-3 text-primary/70 mt-0.5 shrink-0" />
+                                  <MapPin className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
                                   <p className="text-[10px] text-muted-foreground">{loc.location}</p>
                                 </div>
                               ))}
@@ -241,7 +235,7 @@ export default function HomePage() {
               onClick={() => navigate(`/reader/${lastRead.bookId}/${lastRead.chapter}`)}
               className="flex w-full items-center gap-3 rounded-xl py-3 text-left transition-colors hover:opacity-70"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-muted-foreground">
                 <BookOpen className="h-5 w-5" />
               </div>
               <div className="flex-1">
@@ -273,7 +267,7 @@ export default function HomePage() {
                 onClick={() => navigate(to)}
                 className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50"
               >
-                <Icon className="h-5 w-5 text-primary shrink-0" />
+                <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
                 <span className="text-sm font-medium text-foreground">{label}</span>
                 <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
               </button>
