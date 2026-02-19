@@ -1,14 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&family=Lora:wght@400;500;600;700&display=swap');
 @import './styles/themes.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@layer base {
-  /* Variables are defined in themes.css — no fallback needed here.
-     ThemeContext always applies a theme-* class to <html>. */
-}
 
 @layer base {
   * {
@@ -17,7 +12,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Josefin Sans', sans-serif;
+    font-family: 'Lora', Georgia, serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -31,11 +26,14 @@
 }
 
 /* ========================================
-   GHIBLI VISUAL STYLE — Storybook Aesthetic
-   Soft, warm, hand-drawn look across all tabs
+   TYPOGRAPHY SYSTEM
+   - Titles: Josefin Sans bold (Giorgio proxy)
+   - Subheadings: Josefin Sans all-caps wide tracking
+   - Bible/daily text content: Josefin Sans
+   - All other UI text: Lora (serif)
    ======================================== */
 
-/* Title font — Giorgio-style (using Josefin Sans bold as proxy) */
+/* Title font — Giorgio-style */
 .app-title {
   font-family: 'Josefin Sans', sans-serif;
   font-weight: 700;
@@ -49,6 +47,12 @@
   text-transform: uppercase;
   letter-spacing: 0.15em;
   font-size: 11px;
+}
+
+/* Bible chapter text and daily text content */
+.bible-content,
+.daily-text-content {
+  font-family: 'Josefin Sans', sans-serif;
 }
 
 /* Legacy aliases */
@@ -81,6 +85,17 @@
   height: 1px;
   background: hsl(var(--border));
   opacity: 0.5;
+}
+
+/* ========================================
+   HEADING & TEXT COLOR RULES
+   Headings: black/foreground
+   All other text, icons, numbers: dark gray
+   ======================================== */
+h1, h2, h3, h4, h5, h6,
+.app-title,
+.ghibli-heading {
+  color: hsl(var(--foreground));
 }
 
 /* Scrollbar styles */
@@ -177,7 +192,7 @@
   background-color: hsl(var(--primary) / 0.15);
 }
 
-/* User highlights - allow selection on highlighted text */
+/* User highlights */
 .bible-content mark.user-highlight {
   color: inherit;
   padding: 0 1px;

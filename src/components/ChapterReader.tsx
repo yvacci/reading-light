@@ -448,6 +448,9 @@ export default function ChapterReader({ bookId, chapter }: Props) {
         onCopy={handleCopyText}
         activeColor={editingHighlightColor}
         selectedText={selectedText}
+        bookId={bookId}
+        chapter={chapter}
+        verse={selectedVerse}
       />
 
       <ReferencePane

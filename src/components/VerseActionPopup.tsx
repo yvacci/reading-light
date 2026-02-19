@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bookmark, PenLine, Trash2, Copy, X, Check } from 'lucide-react';
+import { Bookmark, PenLine, Trash2, Copy, X, Check, ExternalLink } from 'lucide-react';
 import { HIGHLIGHT_COLORS } from '@/hooks/useHighlights';
 import { toast } from 'sonner';
 
@@ -14,10 +14,13 @@ interface Props {
   onCopy: () => void;
   activeColor?: string;
   selectedText?: string;
+  bookId?: number;
+  chapter?: number;
+  verse?: number;
 }
 
 export default function VerseActionPopup({
-  open, onClose, position, onSelectColor, onBookmark, onJournal, onDelete, onCopy, activeColor, selectedText,
+  open, onClose, position, onSelectColor, onBookmark, onJournal, onDelete, onCopy, activeColor, selectedText, bookId, chapter, verse,
 }: Props) {
   const handleCopy = () => {
     if (selectedText) {
@@ -26,6 +29,16 @@ export default function VerseActionPopup({
       }).catch(() => {
         toast.error('Hindi makopya');
       });
+    }
+    onClose();
+  };
+
+  const handleSearchWol = () => {
+    if (bookId && chapter) {
+      const query = verse
+        ? `${bookId} ${chapter}:${verse}`
+        : `${bookId} ${chapter}`;
+      window.open(`https://wol.jw.org/tl/wol/b/r27/lp-tg/nwtsty/${bookId}/${chapter}#v=${bookId}:${chapter}:${verse || 1}`, '_blank');
     }
     onClose();
   };
@@ -43,7 +56,7 @@ export default function VerseActionPopup({
             className="fixed z-50 rounded-2xl border border-border bg-card shadow-xl overflow-hidden"
             style={{
               left: Math.max(8, Math.min(position.x - 140, window.innerWidth - 288)),
-              top: Math.max(10, position.y - 120),
+              top: Math.max(10, position.y - 140),
               width: 280,
             }}
           >
@@ -75,22 +88,29 @@ export default function VerseActionPopup({
                 onClick={() => { onBookmark(); onClose(); }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-muted/60 transition-colors"
               >
-                <Bookmark className="h-4 w-4 text-primary" />
-                <span className="text-foreground text-xs font-medium">Bookmark</span>
+                <Bookmark className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-xs font-medium">Bookmark</span>
               </button>
               <button
                 onClick={() => { onJournal(); onClose(); }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-muted/60 transition-colors"
               >
-                <PenLine className="h-4 w-4 text-primary" />
-                <span className="text-foreground text-xs font-medium">Journal</span>
+                <PenLine className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-xs font-medium">Journal</span>
               </button>
               <button
                 onClick={handleCopy}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-muted/60 transition-colors"
               >
-                <Copy className="h-4 w-4 text-primary" />
-                <span className="text-foreground text-xs font-medium">Kopyahin</span>
+                <Copy className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-xs font-medium">Kopyahin</span>
+              </button>
+              <button
+                onClick={handleSearchWol}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm hover:bg-muted/60 transition-colors"
+              >
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground text-xs font-medium">Hanapin sa wol.jw.org</span>
               </button>
               {onDelete && (
                 <button

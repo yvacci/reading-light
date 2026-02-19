@@ -59,7 +59,7 @@ export default function BookmarksPage() {
                       {bookName} {bm.chapter}
                       {bm.verse ? `:${bm.verse}` : ''}
                     </span>
-                    <p className="mt-1 text-xs text-foreground/80 leading-relaxed line-clamp-3">
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed line-clamp-3">
                       {bm.verseText}
                     </p>
                     {bm.note && (

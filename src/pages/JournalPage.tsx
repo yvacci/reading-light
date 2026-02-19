@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine, Trash2, Edit3, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { PenLine, Trash2, Edit3, BookOpen, ChevronDown, ChevronUp, Heart, Lightbulb, HandHeart, HelpCircle, Smile, GraduationCap } from 'lucide-react';
 import { useJournal, type JournalEntry } from '@/contexts/JournalContext';
 import { getLocalizedBookName } from '@/lib/localization';
 import { t } from '@/lib/i18n';
@@ -20,13 +20,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-const MOODS: Record<string, string> = {
-  '🙏': 'Prayerful',
-  '💡': 'Insightful',
-  '❤️': 'Grateful',
-  '🤔': 'Reflective',
-  '😊': 'Joyful',
-  '📚': 'Studious',
+const MOOD_ICONS: Record<string, { icon: React.ElementType; label: string }> = {
+  '🙏': { icon: HandHeart, label: 'Prayerful' },
+  '💡': { icon: Lightbulb, label: 'Insightful' },
+  '❤️': { icon: Heart, label: 'Grateful' },
+  '🤔': { icon: HelpCircle, label: 'Reflective' },
+  '😊': { icon: Smile, label: 'Joyful' },
+  '📚': { icon: GraduationCap, label: 'Studious' },
 };
 
 export default function JournalPage() {
@@ -67,7 +67,7 @@ export default function JournalPage() {
             className="flex flex-col items-center gap-3 py-16 text-center"
           >
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <PenLine className="h-8 w-8 text-primary" />
+              <PenLine className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground">{t('journal.empty', language)}</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
@@ -92,6 +92,9 @@ export default function JournalPage() {
                 year: 'numeric',
               });
 
+              const moodData = entry.mood ? MOOD_ICONS[entry.mood] : null;
+              const MoodIcon = moodData?.icon || PenLine;
+
               return (
                 <motion.div
                   key={entry.id}
@@ -105,8 +108,8 @@ export default function JournalPage() {
                     onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                     className="flex w-full items-start gap-3 p-4 text-left"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg">
-                      {entry.mood || '📝'}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                      <MoodIcon className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{entry.title}</p>
@@ -138,13 +141,14 @@ export default function JournalPage() {
                         className="overflow-hidden"
                       >
                         <div className="px-4 pb-4">
-                          <div className="rounded-xl bg-muted/50 p-3 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                          <div className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                             {entry.content}
                           </div>
-                          {entry.mood && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {t('journal.mood', language)}: {entry.mood} {MOODS[entry.mood] || ''}
-                            </p>
+                          {entry.mood && moodData && (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
+                              <MoodIcon className="h-3.5 w-3.5" />
+                              <span>{t('journal.mood', language)}: {moodData.label}</span>
+                            </div>
                           )}
                           <div className="flex gap-2 mt-3">
                             <Button

@@ -29,7 +29,6 @@ const LOCAL_STORAGE_KEYS = [
   'nwt-theme-mode',
   'nwt-book-view',
   'nwt-tab-memory',
-  'nwt-neko-enabled',
   'nwt-schedule-notified',
 ];
 
@@ -65,15 +64,29 @@ export function exportBackup(): void {
     }
   }
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const jsonStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const filename = `nwt-backup-${new Date().toISOString().slice(0, 10)}.nwt`;
+  
+  // Use multiple download approaches for maximum compatibility
   const url = URL.createObjectURL(blob);
+  
+  // Try the link approach
   const a = document.createElement('a');
   a.href = url;
-  a.download = `nwt-backup-${new Date().toISOString().slice(0, 10)}.nwt`;
+  a.download = filename;
+  a.style.display = 'none';
   document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  
+  // Use setTimeout to ensure DOM is ready
+  setTimeout(() => {
+    a.click();
+    // Clean up after a delay
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }, 0);
 }
 
 /**

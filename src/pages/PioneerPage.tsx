@@ -1,7 +1,7 @@
 import { useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp, ArrowRight, Minus, Plus, Bell, Calendar, MapPin, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, BookOpen, Users, Megaphone, TrendingUp, ArrowRight, Minus, Plus, Bell, Calendar, MapPin, MoreHorizontal, Target } from 'lucide-react';
 import { usePioneer, PioneerEntry } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
@@ -24,19 +24,19 @@ function StepperField({ label, value, onChange, step = 1, max = 99, icon }: {
     <div className="flex items-center justify-between rounded-xl bg-muted/50 px-3 py-2.5">
       <div className="flex items-center gap-2">
         {icon}
-        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(0, +(value - step).toFixed(1)))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-foreground transition-colors hover:bg-muted"
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-muted-foreground transition-colors hover:bg-muted"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
-        <span className="w-10 text-center text-sm font-bold text-foreground">{value}</span>
+        <span className="w-10 text-center text-sm font-bold text-muted-foreground">{value}</span>
         <button
           onClick={() => onChange(Math.min(max, +(value + step).toFixed(1)))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-foreground transition-colors hover:bg-muted"
+          className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border text-muted-foreground transition-colors hover:bg-muted"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -60,23 +60,103 @@ function getServiceYear(refDate: Date): { start: Date; end: Date; label: string 
   };
 }
 
-function ServiceYearCard({ entries, language }: { entries: Record<string, PioneerEntry>; language: string }) {
+/** Combined metrics: Service Year, Monthly Goal, Successful BS, Successful RV */
+function CombinedMetricsCard({ entries, totalHours, language }: {
+  entries: Record<string, PioneerEntry>;
+  totalHours: number;
+  language: string;
+}) {
+  const { getStudyCount, getSuccessfulVisitsThisMonth } = useStudies();
   const sy = getServiceYear(new Date());
-  let totalHours = 0;
+  let yearlyTotal = 0;
 
   Object.entries(entries).forEach(([dateKey, entry]) => {
     const d = new Date(dateKey + 'T12:00:00');
     if (d >= sy.start && d <= sy.end) {
-      totalHours += entry.ministryHours + entry.bibleStudies + entry.returnVisits + entry.witnessingHours + (entry.otherWitnessingHours || 0);
+      yearlyTotal += entry.ministryHours + entry.bibleStudies + entry.returnVisits + entry.witnessingHours + (entry.otherWitnessingHours || 0);
     }
   });
 
-  const percent = Math.min(100, Math.round((totalHours / SERVICE_YEAR_TARGET) * 100));
-  const now = new Date();
-  const totalDays = Math.ceil((sy.end.getTime() - sy.start.getTime()) / 86400000);
-  const elapsedDays = Math.max(1, Math.ceil((now.getTime() - sy.start.getTime()) / 86400000));
-  const expectedHours = Math.round((elapsedDays / totalDays) * SERVICE_YEAR_TARGET);
-  const onTrack = totalHours >= expectedHours;
+  const yearPercent = Math.min(100, Math.round((yearlyTotal / SERVICE_YEAR_TARGET) * 100));
+  const monthPercent = Math.min(100, Math.round((totalHours / TARGET_HOURS) * 100));
+
+  const successfulBS = getSuccessfulVisitsThisMonth('bible-study');
+  const successfulRV = getSuccessfulVisitsThisMonth('return-visit');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 }}
+      className="rounded-2xl border border-border bg-card p-4 space-y-4"
+    >
+      <h3 className="text-xs font-bold text-foreground app-title">Ministry Overview</h3>
+
+      {/* Service Year + Monthly Goal */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-primary/5 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Target className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Yearly Goal</span>
+          </div>
+          <div className="text-center">
+            <span className="text-xl font-bold text-foreground">{yearlyTotal}</span>
+            <span className="text-xs text-muted-foreground">/{SERVICE_YEAR_TARGET}</span>
+          </div>
+          <Progress value={yearPercent} className="h-1.5" />
+          <p className="text-[9px] text-muted-foreground text-center">{sy.label}</p>
+        </div>
+        <div className="rounded-xl bg-primary/5 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monthly Goal</span>
+          </div>
+          <div className="text-center">
+            <span className="text-xl font-bold text-foreground">{totalHours}</span>
+            <span className="text-xs text-muted-foreground">/{TARGET_HOURS}</span>
+          </div>
+          <Progress value={monthPercent} className="h-1.5" />
+          <p className="text-[9px] text-muted-foreground text-center">{monthPercent}%</p>
+        </div>
+      </div>
+
+      {/* Successful BS + RV */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
+          <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div>
+            <span className="text-lg font-bold text-foreground">{successfulBS}</span>
+            <p className="text-[9px] text-muted-foreground">Matagumpay na BS</p>
+          </div>
+        </div>
+        <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
+          <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div>
+            <span className="text-lg font-bold text-foreground">{successfulRV}</span>
+            <p className="text-[9px] text-muted-foreground">Matagumpay na RV</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/** Form of Ministry — replaces Priority Breakdown + Buod ng Buwan */
+function FormOfMinistry({ totalFS, totalBS, totalRV, totalPW, totalOther }: {
+  totalFS: number; totalBS: number; totalRV: number; totalPW: number; totalOther: number;
+}) {
+  const total = totalFS + totalBS + totalRV + totalPW + totalOther;
+  
+  const priorities = [
+    { label: 'Field Service', value: totalFS, icon: <Megaphone className="h-3.5 w-3.5 text-muted-foreground" /> },
+    { label: 'Bible Study', value: totalBS, icon: <BookOpen className="h-3.5 w-3.5 text-muted-foreground" /> },
+    { label: 'Return Visit', value: totalRV, icon: <Users className="h-3.5 w-3.5 text-muted-foreground" /> },
+    { label: 'Public Witnessing', value: totalPW, icon: <Clock className="h-3.5 w-3.5 text-muted-foreground" /> },
+    { label: 'Others', value: totalOther, icon: <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" /> },
+  ];
+
+  const getPercent = (v: number) => total > 0 ? Math.round((v / total) * 100) : 0;
+  const getGoalPercent = (v: number) => TARGET_HOURS > 0 ? Math.round((v / TARGET_HOURS) * 100) : 0;
 
   return (
     <motion.div
@@ -85,98 +165,34 @@ function ServiceYearCard({ entries, language }: { entries: Record<string, Pionee
       transition={{ delay: 0.2 }}
       className="rounded-2xl border border-border bg-card p-4 space-y-3"
     >
-      <div className="flex items-center gap-2">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        <h3 className="text-xs font-semibold text-foreground">{t('pioneer.serviceYear', language)}</h3>
-        <span className="ml-auto text-[10px] text-muted-foreground">{sy.label}</span>
-      </div>
+      <h3 className="text-xs font-bold text-foreground app-title">Form of Ministry</h3>
 
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-muted-foreground">{t('pioneer.serviceYearHours', language)}</span>
-          <span className={`text-sm font-bold ${onTrack ? 'text-success' : 'text-foreground'}`}>
-            {totalHours} / {SERVICE_YEAR_TARGET}
-          </span>
-        </div>
-        <Progress value={percent} className="h-2" />
-      </div>
-
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{t('pioneer.expectedPace', language)}: {expectedHours}h</span>
-        <span className={`font-semibold ${onTrack ? 'text-success' : 'text-foreground'}`}>
-          {onTrack ? (language === 'en' ? 'On track' : 'Nasa tamang bilis') : (language === 'en' ? 'Behind pace' : 'Nahuhuli')}
-        </span>
-      </div>
-    </motion.div>
-  );
-}
-
-/** Priority breakdown with tree indicator */
-function PriorityBreakdown({ totalFS, totalBS, totalRV, totalPW, totalOther }: {
-  totalFS: number; totalBS: number; totalRV: number; totalPW: number; totalOther: number;
-}) {
-  const total = totalFS + totalBS + totalRV + totalPW + totalOther;
-  
-  const priorities = [
-    { label: 'Field Service', value: totalFS, icon: <Megaphone className="h-3.5 w-3.5" /> },
-    { label: 'Bible Study', value: totalBS, icon: <BookOpen className="h-3.5 w-3.5" /> },
-    { label: 'Return Visit', value: totalRV, icon: <Users className="h-3.5 w-3.5" /> },
-    { label: 'Public Witnessing', value: totalPW, icon: <Clock className="h-3.5 w-3.5" /> },
-    { label: 'Others', value: totalOther, icon: <MoreHorizontal className="h-3.5 w-3.5" /> },
-  ];
-
-  const getPercent = (v: number) => total > 0 ? Math.round((v / total) * 100) : 0;
-  
-  // Tree health: healthy if first priority > fifth priority
-  const isHealthy = totalFS >= totalOther;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.35 }}
-      className="rounded-2xl border border-border bg-card p-4 space-y-3"
-    >
-      <h3 className="text-xs font-semibold text-foreground">Priority Breakdown</h3>
-
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {priorities.map((p, i) => {
           const pct = getPercent(p.value);
+          const goalPct = getGoalPercent(p.value);
           return (
             <div key={i} className="space-y-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2">
                   {p.icon}
-                  <span className="text-[11px] font-medium text-foreground">{p.label}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    <span className="font-bold text-foreground">{pct}%</span> {p.label}
+                  </span>
                 </div>
-                <span className="text-[11px] font-bold text-foreground">{pct}%</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {p.value}/{TARGET_HOURS} — <span className="font-semibold text-foreground">{goalPct}%</span>
+                </span>
               </div>
               <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full bg-primary transition-all duration-500"
-                  style={{ width: `${pct}%` }}
+                  style={{ width: `${Math.min(100, goalPct)}%` }}
                 />
               </div>
             </div>
           );
         })}
-      </div>
-
-      {/* Tree Health Indicator */}
-      <div className="flex items-center gap-3 pt-2 border-t border-border/40">
-        <div className="text-3xl leading-none">
-          {isHealthy ? '🌳' : '🌱'}
-        </div>
-        <div>
-          <p className="text-[11px] font-semibold text-foreground">
-            {isHealthy ? 'Malusog na Punong-Kahoy' : 'Nagsisimulang Supling'}
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            {isHealthy
-              ? 'Field service ang una mong priority — magaling!'
-              : 'Mas marami ang "Others" kaysa Field Service — kailangan pang lumago.'}
-          </p>
-        </div>
       </div>
     </motion.div>
   );
@@ -199,7 +215,7 @@ function StudiesVisitsPanel({ language }: { language: string }) {
       {/* Bible Studies */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <BookOpen className="h-4 w-4 text-primary" />
+          <BookOpen className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Bible Study ({bibleStudies.length})</h3>
         </div>
         {bibleStudies.length === 0 ? (
@@ -210,7 +226,7 @@ function StudiesVisitsPanel({ language }: { language: string }) {
           <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
             {bibleStudies.map(s => (
               <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                <BookOpen className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <BookOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
                   {s.lastVisitDate && (
@@ -223,7 +239,7 @@ function StudiesVisitsPanel({ language }: { language: string }) {
                       onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address)}`, '_blank')}
                       className="flex items-center gap-1 mt-0.5"
                     >
-                      <MapPin className="h-2.5 w-2.5 text-primary" />
+                      <MapPin className="h-2.5 w-2.5 text-muted-foreground" />
                       <span className="text-[10px] text-primary hover:underline truncate">{s.address}</span>
                     </button>
                   )}
@@ -237,7 +253,7 @@ function StudiesVisitsPanel({ language }: { language: string }) {
       {/* Return Visits */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <Users className="h-4 w-4 text-primary" />
+          <Users className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Return Visit ({returnVisits.length})</h3>
         </div>
         {returnVisits.length === 0 ? (
@@ -248,7 +264,7 @@ function StudiesVisitsPanel({ language }: { language: string }) {
           <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
             {returnVisits.map(s => (
               <div key={s.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                <Users className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-foreground truncate">{s.name}</p>
                   {s.lastVisitDate && (
@@ -296,13 +312,13 @@ function StudiesVisitsPanel({ language }: { language: string }) {
       {scheduledVisits.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="h-4 w-4 text-primary" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-xs font-bold text-foreground uppercase tracking-wide">Naka-iskedyul</h3>
           </div>
           <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/40 overflow-hidden">
             {scheduledVisits.map(visit => (
               <div key={visit.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                <Clock className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-foreground truncate">{visit.name}</p>
                   <p className="text-[10px] text-muted-foreground">
@@ -323,7 +339,6 @@ export default function PioneerPage() {
   const navigate = useNavigate();
   const { language } = useReadingProgress();
   const { entries, getEntry, saveEntry } = usePioneer();
-  const { getStudyCount, getSuccessfulVisitsThisMonth } = useStudies();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [formData, setFormData] = useState({ ministryHours: 0, bibleStudies: 0, returnVisits: 0, witnessingHours: 0, otherWitnessingHours: 0 });
@@ -382,16 +397,13 @@ export default function PioneerPage() {
     ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     : ['Lin', 'Lun', 'Mar', 'Miy', 'Huw', 'Biy', 'Sab'];
 
-  const hoursPercent = Math.min(100, Math.round((totalHours / TARGET_HOURS) * 100));
-
   return (
     <div className="min-h-screen pb-20">
       <div className="flex-1 min-w-0">
         <PageHeader title={t('pioneer.title', language)} subtitle={t('pioneer.subtitle', language)} />
 
-
         <div className="px-4 pt-4 max-w-5xl mx-auto md:grid md:grid-cols-[1fr_1fr] md:gap-6">
-          {/* LEFT COLUMN — Calendar + Service Year + Monthly Target */}
+          {/* LEFT COLUMN — Calendar + Monthly Target */}
           <div className="space-y-4">
             {/* Calendar */}
             <motion.div
@@ -401,11 +413,11 @@ export default function PioneerPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                  <ChevronLeft className="h-5 w-5 text-foreground" />
+                  <ChevronLeft className="h-5 w-5 text-muted-foreground" />
                 </button>
                 <span className="text-sm font-semibold text-foreground">{monthName}</span>
                 <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                  <ChevronRight className="h-5 w-5 text-foreground" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </button>
               </div>
 
@@ -428,7 +440,7 @@ export default function PioneerPage() {
                       onClick={() => handleDayClick(day)}
                       className={`relative aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all
                         ${isToday ? 'ring-2 ring-primary' : ''}
-                        ${hasData ? 'bg-primary/15 text-foreground' : 'bg-muted/30 text-muted-foreground'}
+                        ${hasData ? 'bg-primary/15 text-muted-foreground' : 'bg-muted/30 text-muted-foreground'}
                         hover:opacity-80`}
                     >
                       {day}
@@ -439,9 +451,6 @@ export default function PioneerPage() {
               </div>
             </motion.div>
 
-            {/* Service Year Summary */}
-            <ServiceYearCard entries={entries} language={language} />
-
             {/* Monthly Target */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -451,77 +460,27 @@ export default function PioneerPage() {
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-xs text-foreground">{t('pioneer.totalHours', language)}</span>
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{t('pioneer.totalHours', language)}</span>
                 </div>
-                <span className={`text-sm font-bold ${totalHours >= TARGET_HOURS ? 'text-success' : 'text-foreground'}`}>
+                <span className={`text-sm font-bold ${totalHours >= TARGET_HOURS ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {totalHours} / {TARGET_HOURS}
                 </span>
               </div>
-              <Progress value={hoursPercent} className="h-2" />
+              <Progress value={Math.min(100, Math.round((totalHours / TARGET_HOURS) * 100))} className="h-2" />
               <div className="text-[10px] text-muted-foreground text-center">
                 {daysWithData} / {daysInMonth} {t('pioneer.daysLogged', language)}
               </div>
             </motion.div>
           </div>
 
-          {/* RIGHT COLUMN — Monthly Summary + Priority + Studies & Visits */}
+          {/* RIGHT COLUMN — Combined Metrics + Form of Ministry + Studies & Visits */}
           <div className="space-y-4 mt-4 md:mt-0">
-            {/* Monthly Summary (Buod ng Buwan) */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="rounded-2xl border border-border bg-card p-4 space-y-4"
-            >
-              <h3 className="text-xs font-semibold text-foreground">{t('pioneer.monthlySummary', language)}</h3>
+            {/* Combined Metrics: Service Year, Monthly Goal, Successful BS/RV */}
+            <CombinedMetricsCard entries={entries} totalHours={totalHours} language={language} />
 
-              {/* Successful visits — larger highlight boxes */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-success/10 px-4 py-3 flex flex-col items-center gap-1">
-                  <BookOpen className="h-4 w-4 text-success" />
-                  <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('bible-study')}</span>
-                  <p className="text-[10px] text-muted-foreground">Matagumpay na BS</p>
-                </div>
-                <div className="rounded-xl bg-success/10 px-4 py-3 flex flex-col items-center gap-1">
-                  <Users className="h-4 w-4 text-success" />
-                  <span className="text-lg font-bold text-success">{getSuccessfulVisitsThisMonth('return-visit')}</span>
-                  <p className="text-[10px] text-muted-foreground">Matagumpay na RV</p>
-                </div>
-              </div>
-
-              {/* All hour categories — uniform small boxes with icons */}
-              <div className="grid grid-cols-5 gap-2">
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
-                  <Megaphone className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{totalFS}h</span>
-                  <p className="text-[9px] text-muted-foreground">Field Svc</p>
-                </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
-                  <BookOpen className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{totalBS}h</span>
-                  <p className="text-[9px] text-muted-foreground">Bible Study</p>
-                </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
-                  <Users className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{totalRV}h</span>
-                  <p className="text-[9px] text-muted-foreground">Return Visit</p>
-                </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{totalPW}h</span>
-                  <p className="text-[9px] text-muted-foreground">Witnessing</p>
-                </div>
-                <div className="rounded-xl bg-muted/50 px-2 py-2.5 flex flex-col items-center gap-1">
-                  <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-foreground">{totalOther}h</span>
-                  <p className="text-[9px] text-muted-foreground">Others</p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Priority Breakdown */}
-            <PriorityBreakdown
+            {/* Form of Ministry */}
+            <FormOfMinistry
               totalFS={totalFS}
               totalBS={totalBS}
               totalRV={totalRV}
@@ -538,7 +497,7 @@ export default function PioneerPage() {
               className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                <BookOpen className="h-4 w-4 text-primary" />
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1">
                 <span className="text-sm font-semibold text-foreground">{t('studies.title', language)}</span>
@@ -575,7 +534,7 @@ export default function PioneerPage() {
                 onChange={v => setFormData(p => ({ ...p, ministryHours: v }))}
                 step={0.5}
                 max={24}
-                icon={<Clock className="h-4 w-4 text-primary" />}
+                icon={<Clock className="h-4 w-4 text-muted-foreground" />}
               />
               <StepperField
                 label={t('pioneer.bibleStudies', language)}
@@ -583,7 +542,7 @@ export default function PioneerPage() {
                 onChange={v => setFormData(p => ({ ...p, bibleStudies: v }))}
                 step={0.5}
                 max={24}
-                icon={<BookOpen className="h-4 w-4 text-primary" />}
+                icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
               />
               <StepperField
                 label={t('pioneer.returnVisits', language)}
@@ -591,7 +550,7 @@ export default function PioneerPage() {
                 onChange={v => setFormData(p => ({ ...p, returnVisits: v }))}
                 step={0.5}
                 max={24}
-                icon={<Users className="h-4 w-4 text-primary" />}
+                icon={<Users className="h-4 w-4 text-muted-foreground" />}
               />
               <StepperField
                 label={t('pioneer.witnessingHours', language)}
@@ -599,7 +558,7 @@ export default function PioneerPage() {
                 onChange={v => setFormData(p => ({ ...p, witnessingHours: v }))}
                 step={0.5}
                 max={24}
-                icon={<Megaphone className="h-4 w-4 text-primary" />}
+                icon={<Megaphone className="h-4 w-4 text-muted-foreground" />}
               />
               <StepperField
                 label="Other Witnessing (hours)"
@@ -607,7 +566,7 @@ export default function PioneerPage() {
                 onChange={v => setFormData(p => ({ ...p, otherWitnessingHours: v }))}
                 step={0.5}
                 max={24}
-                icon={<MoreHorizontal className="h-4 w-4 text-primary" />}
+                icon={<MoreHorizontal className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
 
