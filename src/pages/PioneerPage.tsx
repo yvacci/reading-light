@@ -383,8 +383,15 @@ export default function PioneerPage() {
       <div className="flex-1 min-w-0">
         <PageHeader title={t('pioneer.title', language)} subtitle={t('pioneer.subtitle', language)} />
 
-        <div className="px-4 pt-4 max-w-5xl mx-auto md:grid md:grid-cols-[1fr_1fr] md:gap-6">
-          {/* LEFT COLUMN — Calendar + Monthly Target */}
+        <div className="px-4 pt-4 max-w-5xl mx-auto md:grid md:grid-cols-[280px_1fr] md:gap-6">
+          {/* LEFT SIDEBAR — Studies & Visits (tablet+ only) */}
+          <aside className="hidden md:block space-y-4 sticky top-4 self-start">
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <StudiesVisitsPanel language={language} />
+            </div>
+          </aside>
+
+          {/* MAIN COLUMN — Calendar + Metrics + Form of Ministry */}
           <div className="space-y-4">
             {/* Calendar */}
             <motion.div
