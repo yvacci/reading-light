@@ -35,12 +35,12 @@ export default function WeeklyChart() {
               />
               <XAxis
                 dataKey="day"
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Josefin Sans', sans-serif" }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Lora', Georgia, serif" }}
                 axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 0.5 }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Josefin Sans', sans-serif" }}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: "'Lora', Georgia, serif" }}
                 axisLine={false}
                 tickLine={false}
                 unit="m"
@@ -51,7 +51,7 @@ export default function WeeklyChart() {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '0.75rem',
                   fontSize: '12px',
-                  fontFamily: "'Josefin Sans', sans-serif",
+                  fontFamily: "'Lora', Georgia, serif",
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
                 formatter={(value: number) => [`${value} min`, 'Oras ng Pagbabasa']}

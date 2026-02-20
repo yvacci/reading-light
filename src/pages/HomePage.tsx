@@ -34,7 +34,7 @@ function PioneerSummaryCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.4 }}
-      className="ghibli-card rounded-2xl border border-border bg-card p-4 space-y-3"
+      className="rounded-2xl border border-border bg-card p-4 space-y-3"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -50,13 +50,13 @@ function PioneerSummaryCard() {
         {/* Yearly Goal */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Target className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-lg font-bold text-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
+          <span className="text-sm font-bold text-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
           <span className="text-[10px] text-muted-foreground font-medium">Yearly Goal</span>
         </div>
         {/* Monthly Goal */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-lg font-bold text-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
+          <span className="text-sm font-bold text-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
           <span className="text-[10px] text-muted-foreground font-medium">Monthly Goal</span>
         </div>
       </div>
@@ -65,13 +65,13 @@ function PioneerSummaryCard() {
         {/* Bible Study — unique people */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-lg font-bold text-foreground">{uniqueBSPeople}</span>
+          <span className="text-sm font-bold text-foreground">{uniqueBSPeople}</span>
           <span className="text-[10px] text-muted-foreground font-medium text-center">Bible Study (BS)</span>
         </div>
         {/* Potential Bible Study (RV) — unique people */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-lg font-bold text-foreground">{uniqueRVPeople}</span>
+          <span className="text-sm font-bold text-foreground">{uniqueRVPeople}</span>
           <span className="text-[10px] text-muted-foreground font-medium text-center">Potential Bible Study (RV)</span>
         </div>
       </div>
@@ -94,7 +94,7 @@ function UpcomingRemindersCard() {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="ghibli-card rounded-2xl border border-border bg-card p-4"
+      className="rounded-2xl border border-border bg-card p-4"
     >
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-4 w-4 text-muted-foreground" />

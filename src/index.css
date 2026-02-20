@@ -49,10 +49,10 @@
   font-size: 11px;
 }
 
-/* Bible chapter text and daily text content */
+/* Bible chapter text and daily text content — uses base serif (Lora) */
 .bible-content,
 .daily-text-content {
-  font-family: 'Josefin Sans', sans-serif;
+  font-family: 'Lora', Georgia, serif;
 }
 
 /* Legacy aliases */

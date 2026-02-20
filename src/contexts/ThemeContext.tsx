@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-export type ThemeName = 'bento' | 'glassmorphic' | 'soft-minimalist' | 'cottagecore';
+export type ThemeName = 'bento' | 'glassmorphic' | 'soft-minimalist' | 'cottagecore' | 'classic' | 'monochrome';
 export type ThemeMode = 'light' | 'dark';
 
 interface ThemeContextType {
@@ -51,7 +51,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove('dark', 'theme-bento', 'theme-glassmorphic', 'theme-neo-brutalist', 'theme-soft-minimalist', 'theme-cottagecore');
+    root.classList.remove('dark', 'theme-bento', 'theme-glassmorphic', 'theme-neo-brutalist', 'theme-soft-minimalist', 'theme-cottagecore', 'theme-classic', 'theme-monochrome');
     root.classList.add(`theme-${state.theme}`);
     if (state.mode === 'dark') root.classList.add('dark');
   }, [state.theme, state.mode]);
@@ -86,4 +86,6 @@ export const THEME_OPTIONS: { id: ThemeName; name: string; description: string; 
   { id: 'glassmorphic', name: 'Glassmorphic', description: 'Sleek & Layered', preview: '🔮' },
   { id: 'soft-minimalist', name: 'Soft Minimalist', description: 'Calm & Organic', preview: '🌿' },
   { id: 'cottagecore', name: 'Cottagecore', description: 'Cozy & Nostalgic', preview: '🏡' },
+  { id: 'classic', name: 'Classic', description: 'Warm & Traditional', preview: '📜' },
+  { id: 'monochrome', name: 'Monochrome', description: 'Black & White', preview: '⬛' },
 ];
