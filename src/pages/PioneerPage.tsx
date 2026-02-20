@@ -100,7 +100,7 @@ function CombinedMetricsCard({ entries, totalHours, language }: {
             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Yearly Goal</span>
           </div>
           <div className="text-center">
-            <span className="text-xl font-bold text-foreground">{yearlyTotal}</span>
+            <span className="text-sm font-bold text-foreground">{yearlyTotal}</span>
             <span className="text-xs text-muted-foreground">/{SERVICE_YEAR_TARGET}</span>
           </div>
           <Progress value={yearPercent} className="h-1.5" />
@@ -112,7 +112,7 @@ function CombinedMetricsCard({ entries, totalHours, language }: {
             <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monthly Goal</span>
           </div>
           <div className="text-center">
-            <span className="text-xl font-bold text-foreground">{totalHours}</span>
+            <span className="text-sm font-bold text-foreground">{totalHours}</span>
             <span className="text-xs text-muted-foreground">/{TARGET_HOURS}</span>
           </div>
           <Progress value={monthPercent} className="h-1.5" />
@@ -120,23 +120,6 @@ function CombinedMetricsCard({ entries, totalHours, language }: {
         </div>
       </div>
 
-      {/* Successful BS + RV */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
-          <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div>
-            <span className="text-lg font-bold text-foreground">{successfulBS}</span>
-            <p className="text-[9px] text-muted-foreground">Matagumpay na BS</p>
-          </div>
-        </div>
-        <div className="rounded-xl bg-muted/50 p-3 flex items-center gap-3">
-          <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div>
-            <span className="text-lg font-bold text-foreground">{successfulRV}</span>
-            <p className="text-[9px] text-muted-foreground">Matagumpay na RV</p>
-          </div>
-        </div>
-      </div>
     </motion.div>
   );
 }
@@ -176,9 +159,7 @@ function FormOfMinistry({ totalFS, totalBS, totalRV, totalPW, totalOther }: {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {p.icon}
-                  <span className="text-[11px] text-muted-foreground">
-                    <span className="font-bold text-foreground">{pct}%</span> {p.label}
-                  </span>
+                  <span className="text-[11px] text-muted-foreground">{p.label}</span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">
                   {p.value}/{TARGET_HOURS} — <span className="font-semibold text-foreground">{goalPct}%</span>

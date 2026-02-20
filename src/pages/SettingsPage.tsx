@@ -28,6 +28,8 @@ const themeIcons: Record<ThemeName, React.ElementType> = {
   glassmorphic: Sparkles,
   'soft-minimalist': Leaf,
   cottagecore: Home,
+  classic: Type,
+  monochrome: Moon,
 };
 
 const themePreviewColors: Record<ThemeName, { bg: string; accent: string }> = {
@@ -35,6 +37,8 @@ const themePreviewColors: Record<ThemeName, { bg: string; accent: string }> = {
   glassmorphic: { bg: 'bg-purple-50 dark:bg-purple-900/40', accent: 'bg-purple-400' },
   'soft-minimalist': { bg: 'bg-amber-50 dark:bg-stone-800', accent: 'bg-emerald-500' },
   cottagecore: { bg: 'bg-orange-50 dark:bg-stone-800', accent: 'bg-green-700' },
+  classic: { bg: 'bg-amber-50 dark:bg-slate-800', accent: 'bg-blue-700' },
+  monochrome: { bg: 'bg-gray-100 dark:bg-gray-900', accent: 'bg-gray-900 dark:bg-gray-100' },
 };
 
 export default function SettingsPage() {
