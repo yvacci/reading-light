@@ -1,45 +1,99 @@
 
 
-# Pioneer Tab Redesign
+# Multi-Tab UI Updates: Pioneer Sidebar, Daily Text, Bible Highlighting, and Home Layout
 
-## What Changes
+## Summary
+This plan covers 6 areas: (1) Add "Pampatibay" encouragement verses and Quick Links to the Pioneer left sidebar, (2) Combine "Naka-iskedyul" and "Kailangang Dalawin" into one unified visits section with richer details, (3) Fix Daily Text (Teksto) tab fonts to use serif and consistent sizing with no dark bold colors, (4) Replace verse-number-tap highlighting in the Bible reader with touch-and-drag text selection, (5) Rearrange and clean up the Home tab layout with Pampatibay section, and (6) Unify all number/letter colors and font sizes across tabs.
 
-### 1. Remove the purple "Monthly Target" box
-The progress bar section showing "Kabuuang Oras 0/50" with days logged (lines 442-462) will be deleted entirely from the Pioneer tab.
+---
 
-### 2. Restructure the layout
-**Mobile (phone):** Single column stacking vertically:
-- Calendar
-- Ministry Overview (Yearly Goal + Monthly Goal)
-- Form of Ministry
-- Studies & Visits link button
+## Changes
 
-**Tablet/Foldable (md+):** Two-column grid:
-- Left sidebar (280px, sticky): StudiesVisitsPanel (Bible Studies, Return Visits, Needs Visit, Scheduled)
-- Main column: Calendar, then Ministry Overview, then Form of Ministry, then Studies link -- all stacked vertically under the calendar
+### 1. Pioneer Tab Left Sidebar -- Add Pampatibay and Quick Links
+**File: `src/pages/PioneerPage.tsx`**
 
-### 3. Unified number sizing
-All numbers across Pioneer metrics and Home Ministry Summary will use `text-sm font-bold` (14px) consistently to match calendar day numbers.
+Add the `PIONEER_VERSES` array and `QUICK_LINKS` array (from ReferencePane) into PioneerPage. In the `StudiesVisitsPanel` or above it inside the left sidebar `<aside>`, insert:
+- A "Pampatibay" card at the top showing a random encouragement verse (above Bible Studies)
+- A "Mabilis na Link" section at the bottom with external links (WOL, JW.org, etc.)
 
-### 4. Card and font sizing improvements
-- Increase label text from `text-[10px]`/`text-[11px]` to `text-xs` (12px) for better readability
-- Ensure card padding is comfortable (`p-4`) across all cards
-- Keep serif font (Lora) consistent
+### 2. Combine Scheduled and Needs-Visit Sections
+**File: `src/pages/PioneerPage.tsx` (StudiesVisitsPanel)**
+
+Merge "Kailangang Dalawin" and "Naka-iskedyul na Bisita" into one unified "Mga Bisita" section. Each entry will show:
+- Name and type (BS/RV)
+- Last visit log (most recent from `visitHistory`)
+- Map link (address with MapPin icon)
+- Next visit date/time
+- Days since last visit
+
+### 3. Daily Text Tab -- Serif Fonts and Consistent Sizing
+**File: `src/pages/DailyTextPage.tsx`**
+
+- Change the body content `fontFamily` from `'Inter', sans-serif` to `'Lora', Georgia, serif` (line 241)
+- Change the title from `Playfair Display` to `Lora` for consistency (lines 176, 229)
+- Change all `font-bold` and `font-semibold` on text/numbers to use `text-muted-foreground` instead of `text-foreground` (no dark colors for bold text)
+
+### 4. Bible Reader -- Touch-and-Drag Text Selection for Highlighting
+**File: `src/components/ChapterReader.tsx`**
+
+- Remove the verse-number click handler that opens the action popup (lines 94-111)
+- Re-enable native text selection by removing `user-select: none` override for bible-content
+- Add a `selectionchange` / `mouseup` / `touchend` listener that detects selected text ranges
+- When user selects text by dragging, extract the selected text and the verse number(s) it spans
+- Open the `VerseActionPopup` at the selection position with the selected text for highlighting/bookmarking
+- Keep existing highlight tap-to-edit behavior on `<mark>` elements
+
+**File: `src/index.css`**
+- Remove `-webkit-user-select: none; user-select: none;` from `.bible-content` to allow text selection
+
+### 5. Home Tab -- Clean Layout with Pampatibay
+**File: `src/pages/HomePage.tsx`**
+
+- Add a "Pampatibay" encouragement card (same random verse from PIONEER_VERSES) above or below the Weekly Chart
+- Use comfortable card sizes (`p-4`, `min-h-[80px]`) -- not too small
+- Ensure all numbers use `text-sm text-muted-foreground` (not dark `text-foreground`)
+- Ensure all labels use `text-xs text-muted-foreground`
+
+### 6. Unified Color and Font Sizing
+**Files: `PioneerPage.tsx`, `HomePage.tsx`, `DailyTextPage.tsx`**
+
+- All numbers and bold text: use `text-muted-foreground` instead of `text-foreground` (no darker colors)
+- All metric numbers: `text-sm font-bold text-muted-foreground`
+- All labels: `text-xs text-muted-foreground`
+- Serif font (Lora) enforced across all content areas
 
 ---
 
 ## Technical Details
 
-### File: `src/pages/PioneerPage.tsx`
+### Files to Modify
 
-| Section | Change |
-|---------|--------|
-| Lines 442-462 | Delete the "Monthly Target" section (purple progress box) |
-| Lines 386-392 | Keep the left sidebar with StudiesVisitsPanel for `md:` screens |
-| Lines 394-463 | Restructure main column: Calendar only (remove Monthly Target) |
-| Lines 465-506 | Move CombinedMetricsCard and FormOfMinistry into the main column (under calendar), remove duplicate StudiesVisitsPanel from right column |
-| Grid layout | Change from `md:grid-cols-[280px_1fr]` with 3 visual sections to clean 2-column: `md:grid-cols-[280px_1fr]` with sidebar + single main column |
+| File | Changes |
+|------|---------|
+| `src/pages/PioneerPage.tsx` | Add PIONEER_VERSES + QUICK_LINKS arrays, add Pampatibay card above StudiesVisitsPanel in sidebar, add Quick Links below, merge Kailangang Dalawin + Naka-iskedyul into unified "Mga Bisita" section with last log, map, next visit details. Change bold number colors from `text-foreground` to `text-muted-foreground`. |
+| `src/pages/HomePage.tsx` | Add Pampatibay encouragement card. Change all `text-foreground` on numbers to `text-muted-foreground`. |
+| `src/pages/DailyTextPage.tsx` | Change body font to Lora serif, title font to Lora, change bold text colors to `text-muted-foreground`. |
+| `src/components/ChapterReader.tsx` | Remove verse-number click-to-highlight. Add touch-drag selection listener that detects selected text and opens VerseActionPopup for highlighting. |
+| `src/index.css` | Remove `user-select: none` from `.bible-content` to enable native text selection for drag highlighting. |
 
-### File: `src/pages/HomePage.tsx`
-- Ensure Ministry Summary number sizes stay at `text-sm font-bold` consistently
+### Bible Highlighting Flow (New)
+
+```text
+User touches and drags across text in Bible reader
+        |
+        v
+selectionchange / touchend fires
+        |
+        v
+Get window.getSelection() range and text
+        |
+        v
+Find verse number(s) from closest [data-verse] ancestors
+        |
+        v
+Open VerseActionPopup at selection position
+        |
+        v
+User picks highlight color -> addHighlight() with selected text + verse range
+```
 
