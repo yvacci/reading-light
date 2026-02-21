@@ -85,36 +85,12 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     doLoad();
   }, [bookId, chapter]);
 
-  // Verse tap handler
+  // Text selection handler — replaces verse-number click handler
   useEffect(() => {
     if (loading || !contentRef.current) return;
     const container = contentRef.current;
 
-    const verseElements = container.querySelectorAll('[data-verse]');
-    const handleVerseTap = (e: Event) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const el = e.currentTarget as HTMLElement;
-      const verseNum = parseInt(el.getAttribute('data-verse') || '0');
-      if (verseNum > 0) {
-        const rect = el.getBoundingClientRect();
-        setActionPopupPos({ x: rect.left + rect.width / 2, y: rect.top });
-        setPendingHighlightVerse(verseNum);
-        setPendingHighlightText(el.textContent?.replace(/^\d+\s*/, '') || '');
-        setSelectedText(el.textContent || '');
-        setSelectedVerse(verseNum);
-        setEditingHighlightId(null);
-        setEditingHighlightColor(undefined);
-        setActionPopupOpen(true);
-        setEmphasizedVerse(prev => prev === verseNum ? null : verseNum);
-      }
-    };
-
-    verseElements.forEach(el => {
-      el.addEventListener('click', handleVerseTap);
-      (el as HTMLElement).style.cursor = 'pointer';
-    });
-
+    // Footnote tap handler
     const footnoteMarkers = container.querySelectorAll('.footnote-marker[data-fn-id]');
     const handleFootnoteTap = (e: Event) => {
       e.stopPropagation();
@@ -122,14 +98,68 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       const fnId = el.getAttribute('data-fn-id');
       if (fnId) setHighlightedFootnote(fnId);
     };
-
     footnoteMarkers.forEach(el => {
       el.addEventListener('click', handleFootnoteTap);
     });
 
+    // Text selection handler for touch-drag highlighting
+    const handleSelectionEnd = () => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+
+      const text = selection.toString().trim();
+      if (text.length < 2) return;
+
+      // Make sure the selection is within our bible content
+      const range = selection.getRangeAt(0);
+      if (!container.contains(range.commonAncestorContainer)) return;
+
+      // Find verse number(s) from closest [data-verse] ancestors
+      let verseStart = 0;
+      let verseEnd = 0;
+      const startEl = range.startContainer.parentElement?.closest('[data-verse]') || range.startContainer.parentElement?.closest('.bible-content')?.querySelector('[data-verse]');
+      const endEl = range.endContainer.parentElement?.closest('[data-verse]');
+
+      if (startEl) {
+        verseStart = parseInt(startEl.getAttribute('data-verse') || '0');
+      }
+      if (endEl) {
+        verseEnd = parseInt(endEl.getAttribute('data-verse') || '0');
+      }
+      if (verseStart === 0 && verseEnd > 0) verseStart = verseEnd;
+      if (verseEnd === 0 && verseStart > 0) verseEnd = verseStart;
+      if (verseStart === 0) {
+        // Try to find the nearest verse
+        const allVerses = container.querySelectorAll('[data-verse]');
+        if (allVerses.length > 0) verseStart = parseInt(allVerses[0].getAttribute('data-verse') || '1');
+        verseEnd = verseStart;
+      }
+
+      const rect = range.getBoundingClientRect();
+      setActionPopupPos({ x: rect.left + rect.width / 2, y: rect.top });
+      setPendingHighlightVerse(verseStart);
+      setPendingHighlightText(text.slice(0, 500));
+      setSelectedText(text);
+      setSelectedVerse(verseStart);
+      setEditingHighlightId(null);
+      setEditingHighlightColor(undefined);
+      setActionPopupOpen(true);
+    };
+
+    const handleMouseUp = () => {
+      setTimeout(handleSelectionEnd, 10);
+    };
+    const handleTouchEndSelection = () => {
+      setTimeout(handleSelectionEnd, 100);
+    };
+
+    container.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('touchend', handleTouchEndSelection);
+
     return () => {
-      verseElements.forEach(el => el.removeEventListener('click', handleVerseTap));
       footnoteMarkers.forEach(el => el.removeEventListener('click', handleFootnoteTap));
+      container.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('touchend', handleTouchEndSelection);
     };
   }, [loading, content]);
 
@@ -203,6 +233,10 @@ export default function ChapterReader({ bookId, chapter }: Props) {
     if (deltaY > SWIPE_MAX_Y) return;
     if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
 
+    // Don't swipe if text is selected
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) return;
+
     if (deltaX < 0) goToChapter(1);
     else goToChapter(-1);
   }, [goToChapter]);
@@ -229,6 +263,8 @@ export default function ChapterReader({ bookId, chapter }: Props) {
       });
       setPendingHighlightText('');
     }
+    // Clear selection after highlighting
+    window.getSelection()?.removeAllRanges();
   }, [editingHighlightId, pendingHighlightText, pendingHighlightVerse, bookId, chapter, addHighlight, updateHighlightColor]);
 
   const handleHighlightDelete = useCallback(() => {
@@ -240,7 +276,7 @@ export default function ChapterReader({ bookId, chapter }: Props) {
   }, [editingHighlightId, removeHighlight]);
 
   const handleCopyText = useCallback(() => {
-    // selectedText is set when verse is tapped
+    // selectedText is set when text is selected
   }, []);
 
   const applyHighlights = useCallback(() => {
@@ -476,23 +512,29 @@ function addVerseDataAttributes(html: string): string {
       return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
     }
   );
+
   result = result.replace(
-    /(<strong>)(\d{1,2})(<\/strong>)(?!\s*<\/h)/gi,
-    (match, open, num, close) => {
+    /(<a[^>]*>\s*<sup>\s*)(\d+)(\s*<\/sup>\s*<\/a>)/gi,
+    (match, prefix, num, suffix) => {
       if (match.includes('data-verse')) return match;
-      return `<span data-verse="${num}" class="verse-tap-target">${open}${num}${close}</span>`;
+      return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
     }
   );
+
+  result = result.replace(
+    /(<sup\s+class="[^"]*verseNum[^"]*"[^>]*>)(\d+)(<\/sup>)/gi,
+    (match, prefix, num, suffix) => {
+      if (match.includes('data-verse')) return match;
+      return `<span data-verse="${num}" class="verse-tap-target">${prefix}${num}${suffix}</span>`;
+    }
+  );
+
   return result;
 }
 
 function placeholderHtml(bookId: number, chapter: number, name: string): string {
-  return `
-    <div style="text-align:center;padding:2rem 0;">
-      <p style="font-size:1.1rem;font-weight:600;">${name} ${chapter}</p>
-      <p style="font-size:0.85rem;color:var(--muted-foreground);margin-top:0.5rem;">
-        Hindi ma-load ang nilalaman ng kabanata mula sa EPUB.
-      </p>
-    </div>
-  `;
+  return `<div style="text-align:center;padding:40px 20px;color:var(--muted-foreground)">
+    <p style="font-size:1.2em;font-weight:600;margin-bottom:8px">${name} ${chapter}</p>
+    <p style="font-size:0.85em">I-download muna ang EPUB file para mabasa ang kabanatang ito.</p>
+  </div>`;
 }

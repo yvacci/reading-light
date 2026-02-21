@@ -114,8 +114,8 @@ h1, h2, h3, h4, h5, h6,
 .bible-content {
   color: hsl(var(--foreground));
   word-wrap: break-word;
-  -webkit-user-select: none;
-  user-select: none;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .bible-content h1,

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone, Users, Clock, Target } from 'lucide-react';
+import { BookOpen, ArrowRight, CheckCircle2, CalendarDays, Search, Bookmark, PenLine, MapPin, Calendar, Megaphone, Users, Clock, Target, Star } from 'lucide-react';
 import { useReadingProgress } from '@/contexts/ReadingProgressContext';
 import { usePioneer } from '@/contexts/PioneerContext';
 import { useStudies } from '@/contexts/StudiesContext';
@@ -10,6 +11,39 @@ import { getChapterEvents } from '@/lib/bible-events';
 import { t } from '@/lib/i18n';
 import WeeklyChart from '@/components/WeeklyChart';
 import { useScheduleReminders } from '@/hooks/useScheduleReminders';
+
+const PAMPATIBAY_VERSES = [
+  { ref: 'Mateo 28:19, 20', text: '"Kaya humayo kayo at gumawa ng mga alagad mula sa mga tao ng lahat ng bansa."' },
+  { ref: 'Isaias 6:8', text: '"Narito ako! Isugo mo ako!"' },
+  { ref: 'Roma 10:14', text: '"Paano naman sila tatawag sa kaniya kung hindi sila naniwala sa kaniya?"' },
+  { ref: '2 Timoteo 4:2', text: '"Ipangaral mo ang salita; gawin mo ito nang may pagkaapurahan."' },
+  { ref: 'Mga Gawa 1:8', text: '"Kayo ay magiging mga saksi ko... hanggang sa pinakamalayong bahagi ng lupa."' },
+  { ref: 'Mateo 24:14', text: '"Ang mabuting balitang ito ng Kaharian ay ipangangaral sa buong lupa."' },
+  { ref: 'Kawikaan 3:5, 6', text: '"Magtiwala ka kay Jehova nang buong puso mo."' },
+  { ref: 'Filipos 4:13', text: '"May lakas akong harapin ang lahat ng bagay sa pamamagitan niya na nagbibigay ng kapangyarihan sa akin."' },
+];
+
+function PampatibayCard() {
+  const [verse] = useState(() => PAMPATIBAY_VERSES[Math.floor(Math.random() * PAMPATIBAY_VERSES.length)]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.05, duration: 0.4 }}
+      className="rounded-2xl border border-border bg-card p-4"
+    >
+      <div className="rounded-xl bg-primary/5 p-4 border border-primary/10">
+        <div className="flex items-center gap-2 mb-2">
+          <Star className="h-3.5 w-3.5 text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Pampatibay</p>
+        </div>
+        <p className="text-sm text-muted-foreground italic leading-relaxed" style={{ fontFamily: "'Lora', Georgia, serif" }}>{verse.text}</p>
+        <p className="text-xs text-primary font-semibold mt-2">— {verse.ref}</p>
+      </div>
+    </motion.div>
+  );
+}
 
 function PioneerSummaryCard() {
   const { getMonthSummary, getYearlyTotal } = usePioneer();
@@ -39,7 +73,7 @@ function PioneerSummaryCard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Megaphone className="h-4 w-4 text-muted-foreground" />
-          <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>MINISTRY SUMMARY</span>
+          <span className="app-subheading text-muted-foreground" style={{ fontSize: '12px' }}>MINISTRY SUMMARY</span>
         </div>
         <button onClick={() => navigate('/pioneer')} className="text-[10px] text-primary font-medium hover:underline">
           View All →
@@ -50,13 +84,13 @@ function PioneerSummaryCard() {
         {/* Yearly Goal */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Target className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
+          <span className="text-sm font-bold text-muted-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
           <span className="text-xs text-muted-foreground font-medium">Yearly Goal</span>
         </div>
         {/* Monthly Goal */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
+          <span className="text-sm font-bold text-muted-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
           <span className="text-xs text-muted-foreground font-medium">Monthly Goal</span>
         </div>
       </div>
@@ -65,13 +99,13 @@ function PioneerSummaryCard() {
         {/* Bible Study — unique people */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{uniqueBSPeople}</span>
+          <span className="text-sm font-bold text-muted-foreground">{uniqueBSPeople}</span>
           <span className="text-xs text-muted-foreground font-medium text-center">Bible Study (BS)</span>
         </div>
         {/* Potential Bible Study (RV) — unique people */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-bold text-foreground">{uniqueRVPeople}</span>
+          <span className="text-sm font-bold text-muted-foreground">{uniqueRVPeople}</span>
           <span className="text-xs text-muted-foreground font-medium text-center">Potential Bible Study (RV)</span>
         </div>
       </div>
@@ -98,14 +132,14 @@ function UpcomingRemindersCard() {
     >
       <div className="flex items-center gap-2 mb-3">
         <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>MGA PAALALA</span>
+        <span className="app-subheading text-muted-foreground" style={{ fontSize: '12px' }}>MGA PAALALA</span>
       </div>
       <div className="space-y-2">
         {reminders.map((r, i) => (
           <div key={i} className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2">
             <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-foreground truncate">{r.name}</p>
+              <p className="text-[11px] font-semibold text-muted-foreground truncate">{r.name}</p>
               <p className="text-[10px] text-muted-foreground">{r.type}{r.time ? ` · ${r.time}` : ''}</p>
             </div>
           </div>
@@ -144,6 +178,9 @@ export default function HomePage() {
       <div className="px-5 pt-2 max-w-5xl mx-auto md:grid md:grid-cols-2 md:gap-6">
         {/* LEFT COLUMN */}
         <div className="space-y-5">
+          {/* Pampatibay */}
+          <PampatibayCard />
+
           {/* Combined: Weekly Reading + Overall Progress */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -174,7 +211,7 @@ export default function HomePage() {
             >
               <div className="flex items-center gap-2 mb-3">
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                <span className="app-subheading text-foreground" style={{ fontSize: '12px' }}>{t('home.todaysReading').toUpperCase()}</span>
+                <span className="app-subheading text-muted-foreground" style={{ fontSize: '12px' }}>{t('home.todaysReading').toUpperCase()}</span>
               </div>
               <div className="space-y-2">
                 {todaysReading.map((item, i) => {
@@ -188,7 +225,7 @@ export default function HomePage() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-muted-foreground">
                           {i + 1}
                         </div>
-                        <span className="text-sm font-medium text-foreground flex-1">
+                        <span className="text-sm font-medium text-muted-foreground flex-1">
                           {getLocalizedBookName(item.bookId)} {item.chapter}
                         </span>
                         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -240,7 +277,7 @@ export default function HomePage() {
               </div>
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground">{t('home.continueReading')}</p>
-                <p className="text-sm font-semibold text-foreground">
+                <p className="text-sm font-semibold text-muted-foreground">
                   {getLocalizedBookName(lastRead.bookId)} {lastRead.chapter}
                 </p>
               </div>
@@ -268,7 +305,7 @@ export default function HomePage() {
                 className="flex w-full items-center gap-4 rounded-xl px-4 py-3 text-left transition-colors hover:bg-muted/50"
               >
                 <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
-                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-sm font-medium text-muted-foreground">{label}</span>
                 <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto" />
               </button>
             ))}
