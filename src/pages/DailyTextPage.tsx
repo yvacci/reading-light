@@ -173,7 +173,7 @@ export default function DailyTextPage() {
           <Calendar className="h-4 w-4 text-primary" />
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t('dailyText.title')}</p>
         </div>
-        <h1 className="mt-1.5 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <h1 className="mt-1.5 text-xl font-bold text-foreground tracking-tight" style={{ fontFamily: "'Lora', Georgia, serif" }}>
           {t('dailyText.pageSubtitle')}
         </h1>
       </div>
@@ -185,7 +185,7 @@ export default function DailyTextPage() {
             <ChevronLeft className="h-4 w-4 text-foreground" />
           </button>
           <div className="text-center flex-1">
-            <p className="text-xs font-semibold text-foreground tracking-tight">{dateStr}</p>
+            <p className="text-xs font-semibold text-muted-foreground tracking-tight">{dateStr}</p>
             {!isToday && (
               <button
                 onClick={() => setCurrentDate(new Date())}
@@ -226,8 +226,8 @@ export default function DailyTextPage() {
               </div>
               {dailyText.title && (
                 <p
-                  className="text-[15px] font-semibold text-foreground text-center leading-relaxed daily-text-content"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  className="text-[15px] font-semibold text-muted-foreground text-center leading-relaxed daily-text-content"
+                  style={{ fontFamily: "'Lora', Georgia, serif" }}
                   onClick={handleContentClick}
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(`\u201C${makeReferencesClickable(dailyText.title)}\u201D`) }}
                 />
@@ -237,8 +237,8 @@ export default function DailyTextPage() {
             {/* Body content */}
             <div className="px-5 py-5">
               <div
-                className="text-[13px] text-foreground/80 leading-[1.85] daily-text-content"
-                style={{ textAlign: 'justify', fontFamily: "'Inter', sans-serif" }}
+                className="text-[13px] text-muted-foreground leading-[1.85] daily-text-content"
+                style={{ textAlign: 'justify', fontFamily: "'Lora', Georgia, serif" }}
                 onClick={handleContentClick}
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(makeReferencesClickable(dailyText.content)) }}
               />
@@ -267,7 +267,7 @@ export default function DailyTextPage() {
                   }}
                   className="block w-full text-left rounded-xl bg-muted/50 p-3 hover:bg-muted transition-colors"
                 >
-                  <p className="text-[11px] font-semibold text-foreground">{iv.label}</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground">{iv.label}</p>
                   {iv.loading ? (
                     <Loader2 className="h-3 w-3 text-primary animate-spin mt-1" />
                   ) : iv.text ? (
