@@ -51,13 +51,13 @@ function PioneerSummaryCard() {
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Target className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{yearlyTotal}<span className="text-xs font-normal text-muted-foreground">/{YEARLY_GOAL}</span></span>
-          <span className="text-[10px] text-muted-foreground font-medium">Yearly Goal</span>
+          <span className="text-xs text-muted-foreground font-medium">Yearly Goal</span>
         </div>
         {/* Monthly Goal */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-primary/10 p-3 min-h-[80px]">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{summary.totalHours}<span className="text-xs font-normal text-muted-foreground">/{MONTHLY_GOAL}</span></span>
-          <span className="text-[10px] text-muted-foreground font-medium">Monthly Goal</span>
+          <span className="text-xs text-muted-foreground font-medium">Monthly Goal</span>
         </div>
       </div>
 
@@ -66,19 +66,19 @@ function PioneerSummaryCard() {
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{uniqueBSPeople}</span>
-          <span className="text-[10px] text-muted-foreground font-medium text-center">Bible Study (BS)</span>
+          <span className="text-xs text-muted-foreground font-medium text-center">Bible Study (BS)</span>
         </div>
         {/* Potential Bible Study (RV) — unique people */}
         <div className="flex flex-col items-center justify-center gap-1 rounded-xl bg-muted/50 p-3 min-h-[80px]">
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm font-bold text-foreground">{uniqueRVPeople}</span>
-          <span className="text-[10px] text-muted-foreground font-medium text-center">Potential Bible Study (RV)</span>
+          <span className="text-xs text-muted-foreground font-medium text-center">Potential Bible Study (RV)</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>{summary.daysWithData} / {summary.daysInMonth} days logged</span>
-      </div>
+       <div className="flex items-center justify-between text-xs text-muted-foreground">
+         <span>{summary.daysWithData} / {summary.daysInMonth} days logged</span>
+       </div>
     </motion.div>
   );
 }

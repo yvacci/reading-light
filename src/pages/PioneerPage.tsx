@@ -97,26 +97,26 @@ function CombinedMetricsCard({ entries, totalHours, language }: {
         <div className="rounded-xl bg-primary/5 p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Target className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Yearly Goal</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Yearly Goal</span>
           </div>
           <div className="text-center">
             <span className="text-sm font-bold text-foreground">{yearlyTotal}</span>
             <span className="text-xs text-muted-foreground">/{SERVICE_YEAR_TARGET}</span>
           </div>
           <Progress value={yearPercent} className="h-1.5" />
-          <p className="text-[9px] text-muted-foreground text-center">{sy.label}</p>
+          <p className="text-[10px] text-muted-foreground text-center">{sy.label}</p>
         </div>
         <div className="rounded-xl bg-primary/5 p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">Monthly Goal</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Monthly Goal</span>
           </div>
           <div className="text-center">
             <span className="text-sm font-bold text-foreground">{totalHours}</span>
             <span className="text-xs text-muted-foreground">/{TARGET_HOURS}</span>
           </div>
           <Progress value={monthPercent} className="h-1.5" />
-          <p className="text-[9px] text-muted-foreground text-center">{monthPercent}%</p>
+          <p className="text-[10px] text-muted-foreground text-center">{monthPercent}%</p>
         </div>
       </div>
 
@@ -159,9 +159,9 @@ function FormOfMinistry({ totalFS, totalBS, totalRV, totalPW, totalOther }: {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {p.icon}
-                  <span className="text-[11px] text-muted-foreground">{p.label}</span>
+                  <span className="text-xs text-muted-foreground">{p.label}</span>
                 </div>
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {p.value}/{TARGET_HOURS} — <span className="font-semibold text-foreground">{goalPct}%</span>
                 </span>
               </div>
@@ -391,7 +391,7 @@ export default function PioneerPage() {
             </div>
           </aside>
 
-          {/* MAIN COLUMN — Calendar + Metrics + Form of Ministry */}
+          {/* MAIN COLUMN — Calendar + Ministry Overview + Form of Ministry */}
           <div className="space-y-4">
             {/* Calendar */}
             <motion.div
@@ -439,32 +439,7 @@ export default function PioneerPage() {
               </div>
             </motion.div>
 
-            {/* Monthly Target */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="rounded-2xl border border-border bg-card p-4 space-y-3"
-            >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{t('pioneer.totalHours', language)}</span>
-                </div>
-                <span className={`text-sm font-bold ${totalHours >= TARGET_HOURS ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  {totalHours} / {TARGET_HOURS}
-                </span>
-              </div>
-              <Progress value={Math.min(100, Math.round((totalHours / TARGET_HOURS) * 100))} className="h-2" />
-              <div className="text-[10px] text-muted-foreground text-center">
-                {daysWithData} / {daysInMonth} {t('pioneer.daysLogged', language)}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* RIGHT COLUMN — Combined Metrics + Form of Ministry + Studies & Visits */}
-          <div className="space-y-4 mt-4 md:mt-0">
-            {/* Combined Metrics: Service Year, Monthly Goal, Successful BS/RV */}
+            {/* Ministry Overview */}
             <CombinedMetricsCard entries={entries} totalHours={totalHours} language={language} />
 
             {/* Form of Ministry */}
@@ -489,20 +464,10 @@ export default function PioneerPage() {
               </div>
               <div className="flex-1">
                 <span className="text-sm font-semibold text-foreground">{t('studies.title', language)}</span>
-                <p className="text-[10px] text-muted-foreground">{t('studies.subtitle', language)}</p>
+                <p className="text-xs text-muted-foreground">{t('studies.subtitle', language)}</p>
               </div>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </motion.button>
-
-            {/* Studies & Visits inline on tablet+ */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="hidden md:block rounded-2xl border border-border bg-card p-4"
-            >
-              <StudiesVisitsPanel language={language} />
-            </motion.div>
           </div>
         </div>
 
